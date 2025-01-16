@@ -8,6 +8,7 @@ import { UnauthorizedExceptionFilter } from './exceptions/hmac.exception.filter'
 
 
 @Controller() //@Controller('/shopify/auth')
+@UseFilters(UnauthorizedExceptionFilter)
 export class InstallationController {
 
     private clientId: string;
@@ -27,7 +28,6 @@ export class InstallationController {
     // I have enabled global pipes, I may need to have custom ValidationPipes for some routes.
     //@Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
     @Get('/')
-    @UseFilters(UnauthorizedExceptionFilter)
     public async startInstallation(@Request() request: Request, @Query() query: GetInstallInitQueryDto, @Res() response)
     {
         try
@@ -74,7 +74,7 @@ export class InstallationController {
                 message: 'Invalid HMAC signature',
                 details: {
                     reason: 'HMAC verification failed',
-                    //requestId: 'xyz123' // if you want to include request tracking
+                    //requestId: 'xyz123' //  include request tracking
                 }
                 });
             }
@@ -83,7 +83,7 @@ export class InstallationController {
         {
             if (error instanceof UnauthorizedException)
             {
-                console.log('invalid HMAC:', error['details'].reason);
+                console.log('invalid HMAC:', error);
                 throw error
             }
              
@@ -94,40 +94,74 @@ export class InstallationController {
     public async install(@Request() request: Request, @Query() query: GetInstallCodeDto, @Res() response)
     {
 
-
-        const validRequest = await this.utilsService.validateRequestFromShopify(query);
-
-        if (validRequest)
+        try
         {
-            const shop = query.shop; const code = query.code;
+            const validRequest = await this.utilsService.validateRequestFromShopify(query);
 
-            const accessToken = await this.installationService.getAccessTokenForStore(shop, code);
-        
-            console.log(query);
-            console.log("THIS IS THE ACESS TOKEN", accessToken)
-            
-            if (accessToken != false  && accessToken.length > 0)
+            if (validRequest)
             {
-                const shopDetails = await this.installationService.getShopDetailsFromShopify(shop, accessToken);
+                const shop = query.shop; const code = query.code;
+
+                const accessToken = await this.installationService.getAccessTokenForStore(shop, code);
+            
+                console.log(query);
+                console.log("THIS IS THE ACESS TOKEN", accessToken)
                 
-                const storeToDB = this.installationService.saveStoreDetails(shopDetails, accessToken);
-
-                console.log(shopDetails)
-                if (storeToDB)
+                if (accessToken != false  && accessToken.length > 0)
                 {
-                    const isEmbedded = this.utilsService.isAppEmbedded();
-
-                    if (isEmbedded)
-                    {
+                    const shopDetails = await this.installationService.getShopDetailsFromShopify(shop, accessToken);
                     
-                    }
-                    else
+                    const storeToDB = this.installationService.saveStoreDetails(shopDetails, accessToken);
+
+                    console.log(shopDetails)
+                    if (storeToDB)
                     {
-                        //redirect to login page of the app
-                        //response.redirect('/login');
-                        response.redirect('/')
+                        const isEmbedded = this.utilsService.isAppEmbedded();
+
+                        if (isEmbedded)
+                        {
+                        
+                        }
+                        else
+                        {
+                            //redirect to login page of the app
+                            //response.redirect('/login');
+                            return response.redirect('/')
+                        }
                     }
                 }
+                else
+                {
+                    throw new UnauthorizedException({
+                    status: 401,
+                    error: 'Unauthorized',
+                    message: 'Invalid code or shop domain',
+                    details: {
+                        reason: 'failed to retrieve access token for the specified store',
+                        //requestId: 'xyz123' // include request tracking
+                    }
+                    });
+                }
+            }
+            else
+            {
+                throw new UnauthorizedException({
+                status: 401,
+                error: 'Unauthorized',
+                message: 'Invalid HMAC signature',
+                details: {
+                    reason: 'HMAC verification failed',
+                    //requestId: 'xyz123' // include request tracking
+                }
+                });
+            }
+        }
+        catch (error)
+        {
+            if (error instanceof UnauthorizedException)
+            {
+                console.log('invalid HMAC:', error);
+                throw error
             }
         }
     }

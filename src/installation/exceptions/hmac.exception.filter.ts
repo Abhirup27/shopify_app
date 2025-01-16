@@ -8,9 +8,7 @@ export class UnauthorizedExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
 
     response.status(401).json({
-      statusCode: 401,
-      message: 'Invalid HMAC signature',
-      error: 'Unauthorized'
+      exception
     });
   }
 }
