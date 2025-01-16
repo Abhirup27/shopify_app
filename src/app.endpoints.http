@@ -1,0 +1,7 @@
+### GET /shopify/auth
+
+GET http://localhost:3000/shopify/auth?shop=abhirups-store.myshopify.com&hmac=c5ffd51c40b72642cd7c45a9768278361687a3c3c914296a4a6e5a85f5544559&timestamp=1737008456?&host=YWRtaW4uc2hvcGlmeS5jb20vc3RvcmUvYWJoaXJ1cHMtc3RvcmU
+
+
+### GET /shopify/auth/redirect
+GET http://localhost:3000/shopify/auth/redirect?shop=abhirups-store.myshopify.com&hmac=123&code=c20e300279a6c4202c96de8c6a3b97ff

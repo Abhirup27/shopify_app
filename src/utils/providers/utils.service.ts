@@ -78,9 +78,9 @@ export class UtilsService {
     public getShopifyStoreURL = (endpoint: string, store: any): string =>
     {
         return this.checkIfStoreIsPrivate(store) ?
-            `https://${store.api_key}:${store.api_secret_key}@${store}/admin/api/${this.configService.get('shopify_aoi_version')}/${endpoint}`
+            `https://${store.api_key}:${store.api_secret_key}@${store.myshopify_domain}/admin/api/${this.configService.get('shopify_aoi_version')}/${endpoint}`
             :
-            `https://${store}/admin/api/${this.configService.get('shopify_api_version')}/${endpoint}`
+            `https://${store.myshopify_domain}/admin/api/${this.configService.get('shopify_api_version')}/${endpoint}`
     }
 
     public isAppEmbedded = (): boolean =>
