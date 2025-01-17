@@ -8,6 +8,10 @@ import { AppService } from './app.service';
 import { UtilsModule } from './utils/utils.module';
 import { InstallationModule } from './installation/installation.module';
 import { RouterModule } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Store } from './entities/store.entity';
+import { User } from './entities/user.entity';
+import { UserStore } from './entities/userstore.entity';
 
 @Module({
   imports: [
@@ -18,8 +22,16 @@ import { RouterModule } from '@nestjs/core';
       [{
         path: '/shopify/auth',
         module:InstallationModule
-      },
-      ])
+      },]
+    ),
+    TypeOrmModule.forRoot({
+      type: 'mysql',
+      database:'shopify_app',
+      username: 'root',
+      password:'ABHIrup_27',
+      entities: [Store, User, UserStore],
+      synchronize: true
+     })
   ],
   controllers: [AppController],
   providers: [AppService],

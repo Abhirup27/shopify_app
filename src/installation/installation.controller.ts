@@ -16,9 +16,10 @@ export class InstallationController {
     private redirectUri: string;
 
     constructor(
-    private readonly installationService: InstallationService,
-    private readonly utilsService: UtilsService,
-    private readonly configService: ConfigService,
+        private readonly installationService: InstallationService,
+        private readonly utilsService: UtilsService,
+        private readonly configService: ConfigService,
+    
     ) {
         this.clientId = configService.get('shopify_api_key');
         this.accessScopes = configService.get('shopify_api_scopes');

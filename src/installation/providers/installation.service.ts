@@ -1,15 +1,30 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
 import { AxiosHeaders } from 'axios';
+import { Store } from 'src/entities/store.entity';
+import { User } from 'src/entities/user.entity';
 import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 import { ShopifyResponse } from 'src/types/ShopifyResponse';
 import { UtilsService } from 'src/utils/providers/utils.service';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class InstallationService {
     private readonly logger = new Logger(InstallationService.name);
 
-    constructor(private readonly utilsService: UtilsService, private readonly configService: ConfigService)
+    constructor(
+        private readonly utilsService: UtilsService,
+        private readonly configService: ConfigService,
+        /**
+         * Injecting StoreRepository and UserRepository
+         */
+        @InjectRepository(Store)
+        private storesRepository: Repository<Store>,
+        @InjectRepository(User)
+        private usersRepository:Repository<User>
+    
+    )
     { }
     
     public isAccessTokenValid = async (storeDetails: any): Promise<boolean> =>
