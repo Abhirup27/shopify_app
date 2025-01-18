@@ -3,11 +3,15 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 @Entity()
 export class Store {
 
-    @PrimaryGeneratedColumn()
+    @PrimaryGeneratedColumn({
+        type: 'integer',
+        unsigned: true
+    })
     table_id: number;
 
     @Column({
         type: 'bigint',
+        unsigned:true,
         nullable: false
     })
     id: number;
@@ -28,15 +32,34 @@ export class Store {
         }
     )
     email: string;
+
+    @Column({
+        type: 'varchar',
+        length: 40
+    })
+    access_token: string;
     @Column(
         {
             type: 'varchar',
             nullable: false,
-            unique: true
+            unique: false
         }
     )
-    domain: string;
+    myshopify_domain: string;
 
-    @Column({type: 'text'})
+    @Column({
+        type: 'varchar',
+        length: 20,
+        nullable:true
+    })
+    phone: string;
+    
+    @Column({type: 'text',nullable:true})
     address1: string;
+
+    @Column({type: 'text',nullable:true})
+    address2: string;
+
+    @Column({type: 'tinytext',nullable:true})
+    zip: string;
 }

@@ -25,6 +25,7 @@ import { UserStore } from './entities/userstore.entity';
       },]
     ),
     TypeOrmModule.forRoot({
+      host: 'localhost',
       type: 'mysql',
       database:'shopify_app',
       username: 'root',

@@ -8,6 +8,7 @@ import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 import { ShopifyResponse } from 'src/types/ShopifyResponse';
 import { UtilsService } from 'src/utils/providers/utils.service';
 import { Repository } from 'typeorm';
+import { CreateShopDTO } from '../dtos/create-store.dto';
 
 @Injectable()
 export class InstallationService {
@@ -131,30 +132,52 @@ export class InstallationService {
     }
 
     /**
-     * Saves store details to the database, in store_table.
+     * Saves store details to the database, in store_table. CreateShopDTO has all the key value pairs that the shopify server returns for requesting the shop.json
      */
-    public saveStoreDetails = async (shopDetails: any, accessToken: string): Promise<boolean> =>
+    public saveStoreDetails = async (shopDetails: CreateShopDTO, accessToken: string): Promise<boolean> =>
     {
         try {
+            // const existingStore = await this.storesRepository.findOne({
+            //    // where: {'id':shopDetails['id']}
+            // })
+            console.log(shopDetails)
             const payload = {
+                'id': shopDetails['id'],
+                'name': shopDetails['name'],
+                'email': shopDetails['email'],
                 'access_token': accessToken,
                 'myshopify_domain': shopDetails['myshopify_domain'],
-                'id': parseInt(shopDetails['id'], 10),
-                'email': shopDetails['email'],
-                'name': shopDetails['name'],
                 'phone': shopDetails['phone'],
                 'address1': shopDetails['address1'],
                 'address2': shopDetails['address2'],
                 'zip': shopDetails['zip']
             };
+            let newStore: Store = this.storesRepository.create(payload);
+            newStore = await this.storesRepository.save(newStore);
 
+            //we would first need to check if this email already exists in Users table or not, if it already exists then we don't need to create.
+            const default_password = '1234';
+            const user_payload = {
+                'email': shopDetails.email,
+                'password': default_password,
+                //'store_id' : newStore.table_id in another table maybe
+                'name': shopDetails.name,
+                'email_verified_at' : new Date()
+            }
             
+            let newUser: User = this.usersRepository.create(user_payload);
+            newUser = await this.usersRepository.save(newUser);
+
+            //create a new entry with the table_id of the store table and the id of the user in another table
+            //assign roles
+            //configure webhooks to detect updates from shopify for this store.
+    
             return true;
         }
         catch (error)
         {
             //log
-            console.error('error saving store details to aatabase \n', error.message);
+            console.error('error saving store details to database \n', error);
             return false;
         }
     }

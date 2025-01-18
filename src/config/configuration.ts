@@ -2,7 +2,7 @@
 export default () => ({
   port: parseInt(process.env.PORT, 10) || 3000,
 
-  app_install_URL:'https://40f5-223-233-68-44.ngrok-free.app/shopify/auth/redirect',
+  app_install_URL:'https://3f03-223-233-68-44.ngrok-free.app/shopify/auth/redirect',
 
   shopify_api_version: '2024-01',
   shopify_api_key: process.env.API_KEY,

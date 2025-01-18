@@ -112,7 +112,7 @@ export class InstallationController {
                 {
                     const shopDetails = await this.installationService.getShopDetailsFromShopify(shop, accessToken);
                     
-                    const storeToDB = this.installationService.saveStoreDetails(shopDetails, accessToken);
+                    const storeToDB = this.installationService.saveStoreDetails(shopDetails.shop, accessToken);
 
                     console.log(shopDetails)
                     if (storeToDB)
