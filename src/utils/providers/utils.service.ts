@@ -6,6 +6,9 @@ import { firstValueFrom } from 'rxjs';
 import { ExceptionFilter, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosHeaders, AxiosRequestConfig, AxiosResponse, Method } from 'axios';
+import { Store } from 'src/entities/store.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 
 
@@ -14,15 +17,24 @@ import axios, { AxiosHeaders, AxiosRequestConfig, AxiosResponse, Method } from '
 export class UtilsService {
     constructor(
         private readonly configService: ConfigService,
-        private readonly httpService: HttpService
+        private readonly httpService: HttpService,
+
+        @InjectRepository(Store)
+        private storeRepository: Repository<Store>
     )
     {
         
     }
 
-    public getStoreByDomain = async (shop: string): Promise<any> =>
+    public getStoreByDomain = async (shop: string): Promise<Store> =>
     {
-        return null;
+        console.log(shop);
+        const existingStore =  await this.storeRepository.findOneBy({
+            myshopify_domain:shop
+           })
+        console.log(existingStore);
+        
+        return existingStore
     }
 
     public getShopifyURLForStore = async (endpoint: string, store: any): Promise<any> => {

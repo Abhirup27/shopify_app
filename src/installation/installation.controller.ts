@@ -39,10 +39,11 @@ export class InstallationController {
             const validRequest = await this.utilsService.validateRequestFromShopify(query);
             if (validRequest) {
 
-                //check query.shop if it is made optional or according to the global Validation config
+                //check query.shop if it is made optional, or according to the global Validation config
                 const storeDetails = await this.utilsService.getStoreByDomain(query.shop);
+ 
+                if (storeDetails!==null && storeDetails.myshopify_domain == query.shop) {
 
-                if (storeDetails !== null) {
                     //store exists in the app's DB
                     const validToken = await this.installationService.isAccessTokenValid(storeDetails);
                     if (validToken) {
@@ -105,8 +106,8 @@ export class InstallationController {
 
                 const accessToken = await this.installationService.getAccessTokenForStore(shop, code);
             
-                console.log(query);
-                console.log("THIS IS THE ACESS TOKEN", accessToken)
+                // console.log(query);
+                // console.log("THIS IS THE ACESS TOKEN", accessToken)
                 
                 if (accessToken != false  && accessToken.length > 0)
                 {
@@ -114,7 +115,7 @@ export class InstallationController {
                     
                     const storeToDB = this.installationService.saveStoreDetails(shopDetails.shop, accessToken);
 
-                    console.log(shopDetails)
+                    //console.log(shopDetails)
                     if (storeToDB)
                     {
                         const isEmbedded = this.utilsService.isAppEmbedded();
