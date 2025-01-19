@@ -35,6 +35,8 @@ import { UserStore } from './entities/userstore.entity';
      })
   ],
   controllers: [AppController],
+
   providers: [AppService],
+  exports: []
 })
 export class AppModule {}

@@ -3,7 +3,7 @@ import { ShopifyResponse } from 'src/types/ShopifyResponse';
 
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { ExceptionFilter, Injectable } from '@nestjs/common';
+import { ExceptionFilter, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosHeaders, AxiosRequestConfig, AxiosResponse, Method } from 'axios';
 import { Store } from 'src/entities/store.entity';
@@ -15,6 +15,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class UtilsService {
+
+    private readonly logger = new Logger(UtilsService.name);
+    
     constructor(
         private readonly configService: ConfigService,
         private readonly httpService: HttpService,
@@ -49,6 +52,8 @@ export class UtilsService {
     
     public validateRequestFromShopify = async(request: Record<string, any>): Promise<boolean> => {
         try {
+            this.logger.log(`HMAC recieved: ${request.hmac}`)
+            
             const arr: string[] = [];
             const hmac = request.hmac;
             delete request.hmac;
@@ -76,6 +81,7 @@ export class UtilsService {
         } catch (error)
         {
             // Use custom logging
+             
             return false;
         }
     }

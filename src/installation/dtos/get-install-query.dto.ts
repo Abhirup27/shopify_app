@@ -25,6 +25,10 @@ export class GetInstallInitQueryDto {
     @IsNotEmpty()
     @IsString()
     timestamp: string;
+
+    @IsOptional()
+    @IsString()
+    session?: string;
     // @IsNotEmpty()
     // @IsString()
     // code: string;

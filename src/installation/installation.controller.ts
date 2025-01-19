@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Query, Req, Request, Res, Response, UnauthorizedException, UseFilters, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Logger, Query, Req, Request, Res, Response, UnauthorizedException, UseFilters, ValidationPipe } from '@nestjs/common';
 import { InstallationService } from './providers/installation.service';
 import { UtilsService } from 'src/utils/providers/utils.service';
 import { ConfigService } from '@nestjs/config';
@@ -10,6 +10,8 @@ import { UnauthorizedExceptionFilter } from './exceptions/hmac.exception.filter'
 @Controller() //@Controller('/shopify/auth')
 @UseFilters(UnauthorizedExceptionFilter)
 export class InstallationController {
+
+    private readonly logger = new Logger(UtilsService.name);
 
     private clientId: string;
     private accessScopes: string;
@@ -38,12 +40,12 @@ export class InstallationController {
 
             const validRequest = await this.utilsService.validateRequestFromShopify(query);
             if (validRequest) {
-
+                
                 //check query.shop if it is made optional, or according to the global Validation config
                 const storeDetails = await this.utilsService.getStoreByDomain(query.shop);
  
                 if (storeDetails!==null && storeDetails.myshopify_domain == query.shop) {
-
+                    console.log('found')
                     //store exists in the app's DB
                     const validToken = await this.installationService.isAccessTokenValid(storeDetails);
                     if (validToken) {
@@ -70,6 +72,8 @@ export class InstallationController {
             }
             else
             {
+                this.logger.warn(`HMAC isn't from Shopify`)
+
                 throw new UnauthorizedException({
                 status: 401,
                 error: 'Unauthorized',
@@ -85,7 +89,7 @@ export class InstallationController {
         {
             if (error instanceof UnauthorizedException)
             {
-                console.log('invalid HMAC:', error);
+               // console.log('invalid HMAC:', error);
                 throw error
             }
              
@@ -147,6 +151,7 @@ export class InstallationController {
             }
             else
             {
+                this.logger.warn(`HMAC isn't from Shopify`)
                 throw new UnauthorizedException({
                 status: 401,
                 error: 'Unauthorized',
@@ -160,9 +165,10 @@ export class InstallationController {
         }
         catch (error)
         {
+
             if (error instanceof UnauthorizedException)
             {
-                console.log('invalid HMAC:', error);
+                //console.log('invalid HMAC:', error);
                 throw error
             }
         }

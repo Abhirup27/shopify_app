@@ -42,7 +42,7 @@ export class Store {
         {
             type: 'varchar',
             nullable: false,
-            unique: false
+            unique: true
         }
     )
     myshopify_domain: string;

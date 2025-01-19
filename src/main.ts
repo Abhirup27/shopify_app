@@ -5,6 +5,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { DataSourceOptions } from 'typeorm';
 import { createDatabase } from 'typeorm-extension';
 
+import { CustomLogger } from './custom-logger/CustomLogger';
+
 async function bootstrap() {
 
   const options: DataSourceOptions = {
@@ -23,6 +25,7 @@ async function bootstrap() {
 
 
   const app = await NestFactory.create(AppModule, {
+    //bufferLogs: true,
     logger: ['log', 'error', 'fatal', 'debug', 'warn']
   });
 
@@ -34,8 +37,14 @@ async function bootstrap() {
     })
   );
 
+  const configService = app.get(ConfigService);
 
-  await app.listen(app.get(ConfigService).get('port') ?? 3000);
+  //custom logger not working right now
+  // const logger = new CustomLogger(configService);
+
+  // app.useLogger(logger);
+  
+  await app.listen(configService.get('port') ?? 3000);
 
 
 
