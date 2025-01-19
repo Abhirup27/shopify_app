@@ -12,6 +12,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Store } from './entities/store.entity';
 import { User } from './entities/user.entity';
 import { UserStore } from './entities/userstore.entity';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -32,7 +33,8 @@ import { UserStore } from './entities/userstore.entity';
       password:'ABHIrup_27',
       entities: [Store, User, UserStore],
       synchronize: true
-     })
+     }),
+    AuthModule
   ],
   controllers: [AppController],
 

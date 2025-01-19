@@ -9,6 +9,7 @@ import { ShopifyResponse } from 'src/types/ShopifyResponse';
 import { UtilsService } from 'src/utils/providers/utils.service';
 import { Repository } from 'typeorm';
 import { CreateShopDTO } from '../dtos/create-store.dto';
+import { CreateStoreProvider } from './create-store.provider';
 
 @Injectable()
 export class InstallationService {
@@ -17,6 +18,7 @@ export class InstallationService {
     constructor(
         private readonly utilsService: UtilsService,
         private readonly configService: ConfigService,
+        private readonly createStoreProvider: CreateStoreProvider,
         /**
          * Injecting StoreRepository and UserRepository
          */
@@ -137,37 +139,10 @@ export class InstallationService {
     public saveStoreDetails = async (shopDetails: CreateShopDTO, accessToken: string): Promise<boolean> =>
     {
         try {
-            // const existingStore = await this.storesRepository.findOne({
-            //    // where: {'id':shopDetails['id']}
-            // })
-            console.log(shopDetails)
-            const payload = {
-                'id': shopDetails['id'],
-                'name': shopDetails['name'],
-                'email': shopDetails['email'],
-                'access_token': accessToken,
-                'myshopify_domain': shopDetails['myshopify_domain'],
-                'phone': shopDetails['phone'],
-                'address1': shopDetails['address1'],
-                'address2': shopDetails['address2'],
-                'zip': shopDetails['zip']
-            };
-            let newStore: Store = this.storesRepository.create(payload);
-            newStore = await this.storesRepository.save(newStore);
+           
+            const result = await this.createStoreProvider.createStore(shopDetails, accessToken);
 
-            //we would first need to check if this email already exists in Users table or not, if it already exists then we don't need to create.
-            const default_password = '1234';
-            const user_payload = {
-                'email': shopDetails.email,
-                'password': default_password,
-                //'store_id' : newStore.table_id in another table maybe
-                'name': shopDetails.name,
-                'email_verified_at' : new Date()
-            }
-            
-            let newUser: User = this.usersRepository.create(user_payload);
-            newUser = await this.usersRepository.save(newUser);
-
+            console.log(result)
             //create a new entry with the table_id of the store table and the id of the user in another table
             //assign roles
             //configure webhooks to detect updates from shopify for this store.
