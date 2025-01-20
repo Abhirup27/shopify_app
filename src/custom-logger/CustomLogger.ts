@@ -21,13 +21,14 @@ export class CustomLogger implements LoggerService {
   private readonly logToFile: boolean;
   private readonly logStream: fs.WriteStream | null = null;
 
-  constructor(private configService: ConfigService) {
-    // Safely get logging config with default value
+
+  constructor(private readonly configService: ConfigService) {
+
     const loggingConfig = this.configService.get<string>('logging') || 'false';
     this.isLoggingEnabled = loggingConfig.toLowerCase() === 'true';
     this.enabledLevels = new Set(loggingConfig.split(',').map(level => level.trim()));
     
-    // Safely get logToFile config with default value
+    //get logToFile config with default value
     const logToFileConfig = this.configService.get<string>('logToFile') || 'false';
     this.logToFile = logToFileConfig.toLowerCase() === 'true';
 
@@ -129,6 +130,11 @@ export class CustomLogger implements LoggerService {
   onApplicationShutdown() {
     if (this.logStream) {
       try {
+        fs.writeFileSync(
+          this.logStream.path as string,
+          `APP SHUTDOWN AT ${new Date().toISOString()}\n`,
+          { flag: 'a' }
+        );
         this.logStream.end();
       } catch (error) {
         console.error('Failed to close log stream:', error);

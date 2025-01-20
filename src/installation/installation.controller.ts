@@ -11,7 +11,7 @@ import { UnauthorizedExceptionFilter } from './exceptions/hmac.exception.filter'
 @UseFilters(UnauthorizedExceptionFilter)
 export class InstallationController {
 
-    private readonly logger = new Logger(UtilsService.name);
+    private readonly logger = new Logger(InstallationController.name);
 
     private clientId: string;
     private accessScopes: string;
@@ -122,6 +122,8 @@ export class InstallationController {
                     //console.log(shopDetails)
                     if (storeToDB)
                     {
+                        this.logger.log(`Store ${shopDetails.id} Succesfully installed and stored to the Database.`)
+
                         const isEmbedded = this.utilsService.isAppEmbedded();
 
                         if (isEmbedded)
@@ -138,6 +140,7 @@ export class InstallationController {
                 }
                 else
                 {
+                    this.logger.debug(`Installation failed. Failed to retrieve access token for code ${code} and shop domain ${shop}.`)
                     throw new UnauthorizedException({
                     status: 401,
                     error: 'Unauthorized',

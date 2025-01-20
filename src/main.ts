@@ -39,16 +39,34 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
-  //custom logger not working right now
-  // const logger = new CustomLogger(configService);
-
-  // app.useLogger(logger);
+  const logger = new CustomLogger(configService);
+  app.useLogger(logger);
   
   await app.listen(configService.get('port') ?? 3000);
 
 
 
-  console.log(app.get(ConfigService).get('port'))
-  console.log( app.get(ConfigService).get('database.port'))
+  process.on('SIGINT', async () => {
+    try {
+      logger.log('Received SIGINT signal. Gracefully shutting down...');
+      await app.close();
+      process.exit(0);
+    } catch (error) {
+      console.error('Error during shutdown:', error);
+      process.exit(1);
+    }
+  });
+
+  process.on('SIGTERM', async () => {
+    try {
+      logger.log('Received SIGTERM signal. Gracefully shutting down...');
+      await app.close();
+      process.exit(0);
+    } catch (error) {
+      console.error('Error during shutdown:', error);
+      process.exit(1);
+    }
+  });
+
 }
 bootstrap();
