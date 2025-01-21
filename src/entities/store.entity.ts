@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { User } from "./user.entity";
 
 @Entity()
 export class Store {
@@ -15,6 +16,18 @@ export class Store {
         nullable: false
     })
     id: number;
+
+    @Column({
+    type: 'bigint',
+    unsigned: true,
+    nullable: false
+    })
+    user_id: number;
+
+    @ManyToOne(() => User, { nullable: false })
+    @JoinColumn({ name: 'user_id', referencedColumnName: 'user_id' })
+    user: User;
+    
     @Column(
         {
             type: 'varchar',

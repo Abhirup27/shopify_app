@@ -10,8 +10,9 @@ export class AuthController {
     )
     { }
 
+    //I probably wont need this controller as I would use the auth module from the web-app module
      @Post('sign-in')
-    public async signIn(@Body() signInDto: SignInDto): Promise<string> {
+    public async signIn(@Body() signInDto: SignInDto): Promise<any> {
             
          
          return 'ok'

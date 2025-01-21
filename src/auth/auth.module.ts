@@ -5,17 +5,26 @@ import { HashingProvider } from './providers/hashing.provider';
 import { BcryptProvider } from './providers/bcrypt.provider';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/entities/user.entity';
+import { UserModule } from 'src/web-app/user/user.module';
+import { AuthMiddleware } from './auth.middleware';
+import { SignInProvider } from './providers/sign-in.provider';
 
 @Module({
   controllers: [AuthController],
   providers: [
-    AuthService, {
+    AuthMiddleware,
+    AuthService,
+    {
     provide: HashingProvider,
-      useClass: BcryptProvider //we can replace Bcrypt with other algorithms. This provider implements the methods of the HashingProvider abstract class. We can use argon2
-    
-  }
+    useClass: BcryptProvider //we can replace Bcrypt with other algorithms. This provider implements the methods of the HashingProvider abstract class. We can use argon2
+    },
+    SignInProvider
   ],
-  imports: [ TypeOrmModule.forFeature([User])],
-  exports: [AuthService, HashingProvider]
+  imports: [
+    UserModule,
+    TypeOrmModule.forFeature([User])
+  ],
+  exports: [AuthService, HashingProvider, AuthMiddleware]
+  
 })
 export class AuthModule {}

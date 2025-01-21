@@ -44,8 +44,8 @@ export class InstallationController {
                 //check query.shop if it is made optional, or according to the global Validation config
                 const storeDetails = await this.utilsService.getStoreByDomain(query.shop);
  
-                if (storeDetails!==null && storeDetails.myshopify_domain == query.shop) {
-                    console.log('found')
+                if (storeDetails !== null && storeDetails.myshopify_domain == query.shop) {
+                    
                     //store exists in the app's DB
                     const validToken = await this.installationService.isAccessTokenValid(storeDetails);
                     if (validToken) {
@@ -66,7 +66,7 @@ export class InstallationController {
                 }
                 else {
                     
-                    console.log(endpoint)
+                    //console.log(endpoint)
                     return response.redirect(303, endpoint); //There are other ways to redirect, need to understand them.
                 }
             }
@@ -122,7 +122,7 @@ export class InstallationController {
                     //console.log(shopDetails)
                     if (storeToDB)
                     {
-                        this.logger.log(`Store ${shopDetails.id} Succesfully installed and stored to the Database.`)
+                        this.logger.log(`App succesfully installed for store ${shopDetails.shop.domain} and stored to the Database.`)
 
                         const isEmbedded = this.utilsService.isAppEmbedded();
 

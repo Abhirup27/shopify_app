@@ -11,7 +11,7 @@ export class BcryptProvider implements HashingProvider{
     
 
     }
-    comparePassword(data: string | Buffer, encryptedData: string): Promise<Boolean> {
+    comparePassword(data: string | Buffer, encryptedData: string): Promise<boolean> {
 
         return bcrypt.compare(data, encryptedData);
         

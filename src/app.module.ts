@@ -7,12 +7,20 @@ import configuration from './config/configuration';
 import { AppService } from './app.service';
 import { UtilsModule } from './utils/utils.module';
 import { InstallationModule } from './installation/installation.module';
-import { RouterModule } from '@nestjs/core';
+import { APP_GUARD, RouterModule } from '@nestjs/core';
+
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Store } from './entities/store.entity';
 import { User } from './entities/user.entity';
 import { UserStore } from './entities/userstore.entity';
 import { AuthModule } from './auth/auth.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
+import { WebAppModule } from './web-app/web-app.module';
+
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { throttlerConfig } from './config/rate-limiting.config';
+import { RateLimitingGuard } from './guards/rate-limiting/rate-limiting.guard';
+import { CsrfController } from './csrf.controller';
 
 @Module({
   imports: [
@@ -33,12 +41,20 @@ import { AuthModule } from './auth/auth.module';
       password:'ABHIrup_27',
       entities: [Store, User, UserStore],
       synchronize: true
-     }),
-    AuthModule
+    }),
+    ThrottlerModule.forRoot({throttlers: [throttlerConfig]}),
+    AuthModule,
+    WebhooksModule,
+    WebAppModule
   ],
-  controllers: [AppController],
+  controllers: [CsrfController],
 
-  providers: [AppService],
+  providers: [AppService,
+    {
+      provide: APP_GUARD,
+      useClass: RateLimitingGuard
+    }
+  ],
   exports: []
 })
 export class AppModule {}

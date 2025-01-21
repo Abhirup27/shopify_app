@@ -3,6 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "src/entities/user.entity";
 import { Repository } from "typeorm";
 import { SignInDto } from "../dtos/signin.dto";
+import { SignInProvider } from "./sign-in.provider";
 
 
 @Injectable()
@@ -10,6 +11,8 @@ export class AuthService{
     private readonly logger = new Logger(AuthService.name);
 
     constructor(
+
+        private readonly signInProvider: SignInProvider,
         @InjectRepository(User)
         private usersRepository:Repository<User>
     )
@@ -18,11 +21,12 @@ export class AuthService{
     }
 
     //email: string, password: string, id: string
-    public login = async(signInDto: SignInDto): Promise<string> =>
+    public login = async(signInDto: SignInDto): Promise<any> =>
     {
 
 
-        return 'SAMPLE_TOKEN'
+
+        return await this.signInProvider.signIn(signInDto);
 
     }
 }
