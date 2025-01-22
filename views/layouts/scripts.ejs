@@ -10,9 +10,43 @@
 <script src="/assets/js/main.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 <script>
-    $.ajaxSetup({
-        headers: {
-            'x-csrf-token': $('meta[name="csrf-token"]').attr('content')
-        }
+   document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const formData = new FormData(this);
+        console.log(formData.get('email'))
+        // Convert FormData to plain object
+        const data = {};
+        formData.forEach((value, key) => {
+            data[key] = value;
+        });
+
+        fetch(this.action, {
+            method: 'POST',
+            headers: {
+                'x-csrf-token': csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'text/html'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                return response.text();
+            }
+        })
+        .then(html => {
+            if (html) {
+                document.documentElement.innerHTML = html;
+            }
+        })
+        .catch(error => console.error('Error:', error));
     });
+});
 </script>

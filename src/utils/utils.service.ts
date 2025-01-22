@@ -9,6 +9,8 @@ import axios, { AxiosHeaders, AxiosRequestConfig, AxiosResponse, Method } from '
 import { Store } from 'src/entities/store.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CsrfProvider } from './providers/csrf.provider';
+import { Request, Response } from 'express';
 
 
 
@@ -22,11 +24,14 @@ export class UtilsService {
         private readonly configService: ConfigService,
         private readonly httpService: HttpService,
 
+        private readonly csrfProvider: CsrfProvider,
+
         @InjectRepository(Store)
         private storeRepository: Repository<Store>
     )
     {
-        
+        //csrfProvider = new CsrfProvider(undefined);
+
     }
 
     public getStoreByDomain = async (shop: string): Promise<Store> =>
@@ -138,7 +143,7 @@ export class UtilsService {
                 //     })
                 // );
             }
-            // Handle the endpoint-based overload
+            // Handle the calls with where the second arguement is not an object, that is, the call includes endpoint, headers, payload as separate values, not an object. 
             else {
                 response = await firstValueFrom(
                     this.httpService.request({
@@ -169,50 +174,17 @@ export class UtilsService {
         }
     }
 
-    // public  requestToShopify = async (method: Method, endpoint: string, headers: AxiosHeaders, payload: Record<string, any>): Promise<ShopifyResponse> =>
-    // {
-    //     //let reqResult: AxiosResponse = null;
-    //     const reqResult: ShopifyResponse = { status: false , respBody: null}
-    //     const axiosMethod = this.httpService[method];
-    //    this.httpService.request
-    //     try {
-    //         if (!axiosMethod)
-    //         {
-    //              throw new Error(`Unsupported method: ${method}`);
-    //         }
+    public getGenerateTokenfunction = (): Function => 
+    {
+        return this.csrfProvider.getGenerateToken;
+    }
 
-    //         const options = { headers: headers };
+     public generateToken = (req: Request, res: Response): string => 
+    {
+         //const gentoken: Function = this.csrfProvider.getGenerateToken;
 
-    //         if (method.toLowerCase() === 'get' || method.toLowerCase() === 'delete')
-    //         {
-    //             reqResult.respBody = await axiosMethod(endpoint, options);
-    //             reqResult.status = true;
-    //         }
-    //         else if (['post', 'put', 'patch'].includes(method.toLowerCase()))
-    //         {
-    //             reqResult.respBody = await axiosMethod(endpoint, payload, options);
-    //             reqResult.status = true;
-    //         }
+         return this.csrfProvider.generateToken(req, res);
+         
 
-    //         return reqResult;
-    //     }
-    //     catch (error)
-    //     {
-    //         //reqResult.respBody["error"] = true;
-    //         //log to file
-
-    //         reqResult.error = true;
-    //         console.log(error.message);
-
-    //         if (error.response)
-    //         { 
-    //             reqResult.respBody = error.response.data;
-    //             reqResult.statusCode = error.response.status;
-    //             return reqResult;
-    //         }
-
-    //         reqResult.respBody = error.message;
-    //         return reqResult;
-    //     }
-    // }
+    }
 }

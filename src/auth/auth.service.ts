@@ -2,8 +2,8 @@ import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "src/entities/user.entity";
 import { Repository } from "typeorm";
-import { SignInDto } from "../dtos/signin.dto";
-import { SignInProvider } from "./sign-in.provider";
+import { SignInDto } from "./dtos/signin.dto";
+import { SignInProvider } from "./providers/sign-in.provider";
 
 
 @Injectable()
@@ -13,8 +13,8 @@ export class AuthService{
     constructor(
 
         private readonly signInProvider: SignInProvider,
-        @InjectRepository(User)
-        private usersRepository:Repository<User>
+        // @InjectRepository(User)
+        // private usersRepository:Repository<User>
     )
     {
 

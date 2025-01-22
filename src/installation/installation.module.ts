@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { InstallationService } from './providers/installation.service';
 import { UtilsModule } from 'src/utils/utils.module';
 import { InstallationController } from './installation.controller';

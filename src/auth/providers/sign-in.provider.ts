@@ -1,4 +1,4 @@
-import { Injectable, RequestTimeoutException, UnauthorizedException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, RequestTimeoutException, UnauthorizedException } from '@nestjs/common';
 import { UserService } from 'src/web-app/user/user.service';
 import { SignInDto } from '../dtos/signin.dto';
 import { HashingProvider } from './hashing.provider';
@@ -7,6 +7,7 @@ import { HashingProvider } from './hashing.provider';
 export class SignInProvider {
 
     constructor(
+        @Inject(forwardRef(()=> UserService))
         private readonly usersService: UserService,
 
         private readonly hashingProvider: HashingProvider

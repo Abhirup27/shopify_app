@@ -6,7 +6,7 @@ import { Store } from 'src/entities/store.entity';
 import { User } from 'src/entities/user.entity';
 import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 import { ShopifyResponse } from 'src/types/ShopifyResponse';
-import { UtilsService } from 'src/utils/providers/utils.service';
+import { UtilsService } from 'src/utils/utils.service';
 import { Repository } from 'typeorm';
 import { CreateShopDTO } from '../dtos/create-store.dto';
 import { CreateStoreProvider } from './create-store.provider';

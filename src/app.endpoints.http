@@ -1,7 +1,7 @@
 ### GET /shopify/auth
 
 GET http://localhost:3000/shopify/auth?shop=abhirups-store.myshopify.com&hmac=c5ffd51c40b72642cd7c45a9768278361687a3c3c914296a4a6e5a85f5544559&timestamp=1737008456?&host=YWRtaW4uc2hvcGlmeS5jb20vc3RvcmUvYWJoaXJ1cHMtc3RvcmU
-
+##Authorization: Bearer xzc23125dscfc%&343fds
 
 ### GET /shopify/auth/redirect
 GET http://localhost:3000/shopify/auth/redirect?shop=abhirups-store.myshopify.com&hmac=123&code=c20e300279a6c4202c96de8c6a3b97ff
@@ -19,8 +19,13 @@ X-Shopify-Access-Token:'asdsa'
 ###
 POST https://abhirups-store.myshopify.com/admin/oauth/access_token
 Content-Type: application/json
+
 {
     "client_id": "9487e51ae4b8200621f078429d8b4da9",
     "client_secret": "bd1f66a90c36084199ee73e11ffbeb75",
     "code":"1232142197321"
 }
+
+POST http://localhost:3000/
+Cookie: x-csrf-token=fsfsf;
+x-csrf-token:fsfsf

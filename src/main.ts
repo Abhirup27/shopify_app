@@ -10,7 +10,8 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { doubleCsrf } from 'csrf-csrf';
 import * as cookieParser from 'cookie-parser';
-import { CsrfExceptionFilter } from './installation/exceptions/csrf.exception.filter';
+import { CsrfExceptionFilter } from './filters/csrf.exception.filter';
+import { CsrfMiddleware } from './middlewares/csrf.middleware';
 
 async function bootstrap() {
 
@@ -41,12 +42,14 @@ async function bootstrap() {
       transform: true
     })
   );
-
+  //app.useGlobalFilters(new CsrfExceptionFilter());
+  
   const configService = app.get(ConfigService);
   const logger = new CustomLogger(configService);
   app.useLogger(logger);
+  
   app.use(cookieParser());
-  app.useGlobalFilters(new CsrfExceptionFilter());
+ 
   app.useStaticAssets(join(__dirname, '..', 'public'));
   app.setBaseViewsDir(join(__dirname, '..', 'views'));
   app.setViewEngine('ejs');

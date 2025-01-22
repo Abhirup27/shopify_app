@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
 
 import { ConfigModule } from '@nestjs/config';
@@ -7,7 +7,7 @@ import configuration from './config/configuration';
 import { AppService } from './app.service';
 import { UtilsModule } from './utils/utils.module';
 import { InstallationModule } from './installation/installation.module';
-import { APP_GUARD, RouterModule } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, RouterModule } from '@nestjs/core';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Store } from './entities/store.entity';
@@ -21,6 +21,8 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { throttlerConfig } from './config/rate-limiting.config';
 import { RateLimitingGuard } from './guards/rate-limiting/rate-limiting.guard';
 import { CsrfController } from './csrf.controller';
+import { CsrfMiddleware } from './middlewares/csrf.middleware';
+import { CsrfExceptionFilter } from './filters/csrf.exception.filter';
 
 @Module({
   imports: [
@@ -50,6 +52,10 @@ import { CsrfController } from './csrf.controller';
   controllers: [CsrfController],
 
   providers: [AppService,
+   {
+      provide: APP_FILTER,
+      useClass: CsrfExceptionFilter
+    },
     {
       provide: APP_GUARD,
       useClass: RateLimitingGuard
@@ -57,4 +63,10 @@ import { CsrfController } from './csrf.controller';
   ],
   exports: []
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+    configure(consumer: MiddlewareConsumer) {
+    consumer.apply(CsrfMiddleware)
+  .forRoutes('*')
+  }
+}
+
