@@ -1,4 +1,4 @@
-import { Body, Controller, forwardRef, Get, Inject, Post, Render, Req, Res } from '@nestjs/common';
+import { Body, Controller, forwardRef, Get, HttpCode, HttpStatus, Inject, Post, Render, Req, Res } from '@nestjs/common';
 import { doubleCsrf, DoubleCsrfConfigOptions } from 'csrf-csrf';
 import { Request, Response} from 'express';
 import { AuthService } from 'src/auth/auth.service';
@@ -25,14 +25,15 @@ export class WebAppController {
         return {appName: 'Shopify App', style: '',csrfToken: token, messages: ''}
   }
     @Post('login')
+    @HttpCode(HttpStatus.OK)
     public async login(@Body() body, @Req() req: Request, @Res() res : Response)
     {
 
       console.log(body)
       const response = await this.authService.login({ email: body.email, password: body.password });
       
-      console.log(response)
-      return response;
+      console.log("response is", response)
+      return res.send(response);
 
     }
     @Get('/dashboard')

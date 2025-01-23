@@ -4,7 +4,7 @@ import { Response } from 'express';
 @Catch(HttpException)
 export class CsrfExceptionFilter extends BaseExceptionFilter  {
   catch(exception: any, host: ArgumentsHost) {
-    console.log('hello123')
+    //console.log('hello123')
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
@@ -25,7 +25,7 @@ export class CsrfExceptionFilter extends BaseExceptionFilter  {
       });
     }
 
-    console.log(exception)
+    //console.log(exception)
    super.catch(exception, host);
   }
 }

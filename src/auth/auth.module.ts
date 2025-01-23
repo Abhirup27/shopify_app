@@ -9,6 +9,10 @@ import { UserModule } from 'src/web-app/user/user.module';
 import { AuthMiddleware } from './auth.middleware';
 import { SignInProvider } from './providers/sign-in.provider';
 
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule } from '@nestjs/config';
+import jwtConfig from './config/jwt.config';
+
 @Module({
   controllers: [AuthController],
   providers: [
@@ -22,7 +26,9 @@ import { SignInProvider } from './providers/sign-in.provider';
   ],
   imports: [
     UserModule,
-    TypeOrmModule.forFeature([User])
+    TypeOrmModule.forFeature([User]),
+    ConfigModule.forFeature(jwtConfig),
+    //JwtModule.registerAsync(jwtConfig.asProvider())
   ],
   exports: [AuthService, HashingProvider, AuthMiddleware]
   

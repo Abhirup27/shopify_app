@@ -4,7 +4,7 @@ import { UtilsService } from 'src/utils/utils.service';
 import { ConfigService } from '@nestjs/config';
 import { GetInstallInitQueryDto } from './dtos/get-install-query.dto';
 import { GetInstallCodeDto } from './dtos/get-code-query.dto';
-import { UnauthorizedExceptionFilter } from './exceptions/hmac.exception.filter';
+import { UnauthorizedExceptionFilter } from '../filters/hmac.exception.filter';
 
 
 @Controller() //@Controller('/shopify/auth')

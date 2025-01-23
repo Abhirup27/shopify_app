@@ -1,9 +1,11 @@
-import { forwardRef, Inject, Injectable, RequestTimeoutException, UnauthorizedException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, RequestTimeoutException, UnauthorizedException, UseFilters } from '@nestjs/common';
 import { UserService } from 'src/web-app/user/user.service';
 import { SignInDto } from '../dtos/signin.dto';
 import { HashingProvider } from './hashing.provider';
+import { RequestExceptionFilter } from '../../filters/timeout.exception.filter';
 
 @Injectable()
+@UseFilters(RequestExceptionFilter)
 export class SignInProvider {
 
     constructor(
