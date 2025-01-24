@@ -28,7 +28,7 @@ import jwtConfig from './config/jwt.config';
     UserModule,
     TypeOrmModule.forFeature([User]),
     ConfigModule.forFeature(jwtConfig),
-    //JwtModule.registerAsync(jwtConfig.asProvider())
+    JwtModule.registerAsync(jwtConfig.asProvider())
   ],
   exports: [AuthService, HashingProvider, AuthMiddleware]
   

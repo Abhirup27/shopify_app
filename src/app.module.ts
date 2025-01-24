@@ -1,7 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
 
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/configuration';
 
 import { AppService } from './app.service';
@@ -24,9 +24,19 @@ import { CsrfController } from './csrf.controller';
 import { CsrfMiddleware } from './middlewares/csrf.middleware';
 import { CsrfExceptionFilter } from './filters/csrf.exception.filter';
 
+//we pass this value through the command line/system variables
+const ENV = process.env.NODE_ENV;
+
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
+    ConfigModule.forRoot(
+      {
+        isGlobal: true,
+        load: [configuration],
+        //envFilePath: ['.env.development']
+        envFilePath: !ENV ? '.env' : `.env.${ENV}`,
+      }
+    ),
     UtilsModule,
     InstallationModule,
     RouterModule.register(
@@ -35,14 +45,23 @@ import { CsrfExceptionFilter } from './filters/csrf.exception.filter';
         module:InstallationModule
       },]
     ),
-    TypeOrmModule.forRoot({
-      host: 'localhost',
-      type: 'mysql',
-      database:'shopify_app',
-      username: 'root',
-      password:'ABHIrup_27',
-      entities: [Store, User, UserStore],
-      synchronize: true
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+
+      useFactory: async (configService: ConfigService) => ({
+
+        host: configService.get('database.host'),
+        type: configService.get('database.type').toString(),
+        port: parseInt(configService.get('database.port'), 10),
+        database: configService.get<string>('database.name'),
+        username: configService.get<string>('database.username'),
+        password: configService.get<string>('database.password'),
+
+        entities: [Store, User, UserStore],
+        synchronize: configService.get<boolean>('database.synchronize'),
+        autoLoadEntities: configService.get<boolean>('database.autoload')
+      }),
     }),
     ThrottlerModule.forRoot({throttlers: [throttlerConfig]}),
     AuthModule,

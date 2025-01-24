@@ -14,7 +14,6 @@ import { CsrfExceptionFilter } from './filters/csrf.exception.filter';
 import { CsrfMiddleware } from './middlewares/csrf.middleware';
 
 async function bootstrap() {
-
   const options: DataSourceOptions = {
     host:'localhost',
     type: 'mysql',

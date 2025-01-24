@@ -1,9 +1,12 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "src/entities/user.entity";
 import { Repository } from "typeorm";
 import { SignInDto } from "./dtos/signin.dto";
 import { SignInProvider } from "./providers/sign-in.provider";
+import { JwtService } from "@nestjs/jwt";
+import jwtConfig from "./config/jwt.config";
+import { ConfigType } from "@nestjs/config";
 
 
 @Injectable()
@@ -15,6 +18,11 @@ export class AuthService{
         private readonly signInProvider: SignInProvider,
         // @InjectRepository(User)
         // private usersRepository:Repository<User>
+
+        private readonly jwtSerice: JwtService,
+
+        // @Inject(jwtConfig.KEY)
+        // private readonly jwtConfig: ConfigType<typeof jwtConfig>
     )
     {
 
