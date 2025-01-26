@@ -4,13 +4,22 @@ import { WebAppController } from './web-app.controller';
 import { AuthMiddleware } from 'src/auth/auth.middleware';
 import { AuthModule } from 'src/auth/auth.module';
 import { UtilsModule } from 'src/utils/utils.module';
+import { ConfigModule } from '@nestjs/config';
+import jwtConfig from 'src/auth/config/jwt.config';
+import { JwtModule } from '@nestjs/jwt';
 
 
 /**
  * This module will import submodules which will serve different pages of the website.
  */
 @Module({
-  imports: [UtilsModule, UserModule, AuthModule],
+  imports: [
+    UtilsModule,
+    UserModule,
+    AuthModule,
+    ConfigModule.forFeature(jwtConfig),
+    JwtModule.registerAsync(jwtConfig.asProvider())
+  ],
   controllers: [WebAppController]
 })
 export class WebAppModule implements NestModule {

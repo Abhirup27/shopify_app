@@ -1,0 +1,70 @@
+import { CanActivate, ExecutionContext, Inject, Injectable, SetMetadata, UnauthorizedException } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { Observable } from 'rxjs';
+import jwtConfiguration from '../config/jwt.config';
+import { Request } from 'express';
+import { REQUEST_USER_KEY } from '../constants/auth.constants';
+import { Reflector } from '@nestjs/core';
+
+
+export const Public = () => SetMetadata('isPublic', true);
+
+@Injectable()
+export class AccessTokenGuard implements CanActivate {
+
+  constructor(
+    private reflector: Reflector,
+    private readonly jwtService: JwtService,
+
+    @Inject(jwtConfiguration.KEY)
+    private readonly jwtConfig: ConfigType<typeof jwtConfiguration>
+  ) { }
+
+  private extractToken = (request: Request): string | undefined => {
+    
+    const [_, token] = request.headers.authorization?.split(' ') ?? [];
+    return token;
+  }
+  
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+
+    //check if the route is public or not. A controller or a specific endpoint can be set public by using @Public()
+    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
+      context.getHandler(),
+      context.getClass()
+    ])
+    if (isPublic)
+    {
+      return true;
+    }
+
+    //extract the request from context
+    const request = context.switchToHttp().getRequest();
+    //get the response object
+    const response = context.switchToHttp().getResponse();
+    //extract token
+    const token = this.extractToken(request);
+
+    //validate the token
+    if (!token)
+    {
+      throw new UnauthorizedException();
+      
+    }
+
+    try {
+      const payload = await this.jwtService.verifyAsync(token, this.jwtConfig);
+
+      request[REQUEST_USER_KEY] = payload;
+    } catch (error)
+    {
+
+      throw new UnauthorizedException();
+    }
+    
+    return true;
+  }
+
+
+}

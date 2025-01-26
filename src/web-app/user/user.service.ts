@@ -17,4 +17,16 @@ export class UserService {
     {
         return this.findOneUserProvider.findOneById(userid);
     }
+
+    public async createUser(): Promise<User | boolean> 
+    {
+
+        return true
+    }
+
+    public async createManyUsers(): Promise<User | boolean> 
+    {
+        
+        return true
+    }
 }
