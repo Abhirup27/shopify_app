@@ -23,6 +23,7 @@ import { RateLimitingGuard } from './guards/rate-limiting/rate-limiting.guard';
 import { CsrfController } from './csrf.controller';
 import { CsrfMiddleware } from './middlewares/csrf.middleware';
 import { CsrfExceptionFilter } from './filters/csrf.exception.filter';
+import { JobsModule } from './jobs/jobs.module';
 
 //we pass this value through the command line/system variables
 const ENV = process.env.NODE_ENV;
@@ -66,7 +67,8 @@ const ENV = process.env.NODE_ENV;
     ThrottlerModule.forRoot({throttlers: [throttlerConfig]}),
     AuthModule,
     WebhooksModule,
-    WebAppModule
+    WebAppModule,
+    JobsModule
   ],
   controllers: [CsrfController],
 

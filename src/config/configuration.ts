@@ -29,5 +29,12 @@ export default () => ({
     password: process.env.DB_PASSWORD,
     synchronize: process.env.DB_SYNC === 'true' ? true : false,
     autoload: process.env.DB_AUTOLOAD === 'true' ? true : false,
-  }
+  },
+
+  redis: {
+    host: process.env.REDIS_HOST.toString() ?? 'localhost',
+    port: parseInt(process.env.REDIS_PORT ?? '6379', 10) 
+  },
+
+  webhooks: []
 });
