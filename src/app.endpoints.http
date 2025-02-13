@@ -31,3 +31,6 @@ Cookie: x-csrf-token=fsfsf;
 x-csrf-token:fsfsf
 
 GET http://localhost:3000/jobs/configureWebhook
+
+GET http://localhost:3000/dashboard
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiIyN2FiaGlydXBAZ21haWwuY29tIiwiaWF0IjoxNzM5NDIyMjQxLCJleHAiOjE3Mzk0MjU4NDEsImF1ZCI6Imh0dHBzOi8vN2JhNi0yMjMtMjMzLTc2LTIwNy5uZ3Jvay1mcmVlLmFwcCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.KLz5nPsPTCX9hjwcwHhwGhVrRfi-qSDf1n_MQEkBNNU

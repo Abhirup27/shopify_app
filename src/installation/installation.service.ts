@@ -1,15 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
+
 import { AxiosHeaders } from 'axios';
-import { Store } from 'src/entities/store.entity';
-import { User } from 'src/entities/user.entity';
+
 import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 import { ShopifyResponse } from 'src/types/ShopifyResponse';
 import { UtilsService } from 'src/utils/utils.service';
 import { Repository } from 'typeorm';
-import { CreateShopDTO } from '../dtos/create-store.dto';
-import { CreateStoreProvider } from './create-store.provider';
+import { CreateShopDTO } from './dtos/create-store.dto';
+import { CreateStoreProvider } from './providers/create-store.provider';
+import { UserStore } from 'src/entities/userstore.entity';
+import { CreateSuperAdmin } from './providers/create-super-admin';
 
 @Injectable()
 export class InstallationService {
@@ -19,13 +20,14 @@ export class InstallationService {
         private readonly utilsService: UtilsService,
         private readonly configService: ConfigService,
         private readonly createStoreProvider: CreateStoreProvider,
+        private readonly createSuperAdminProvider: CreateSuperAdmin
         /**
          * Injecting StoreRepository and UserRepository
          */
-        @InjectRepository(Store)
-        private storesRepository: Repository<Store>,
-        @InjectRepository(User)
-        private usersRepository:Repository<User>
+        // @InjectRepository(Store)
+        // private storesRepository: Repository<Store>,
+        // @InjectRepository(User)
+        // private usersRepository:Repository<User>
     
     )
     { }
@@ -138,23 +140,53 @@ export class InstallationService {
      */
     public saveStoreDetails = async (shopDetails: CreateShopDTO, accessToken: string): Promise<boolean> =>
     {
+        let result;
         try {
            
-            const result = await this.createStoreProvider.createStore(shopDetails, accessToken);
+            result = await this.createStoreProvider.createStore(shopDetails, accessToken);
 
             console.log(result)
             //create a new entry with the table_id of the store table and the id of the user in another table
             //assign roles
-            //configure webhooks to detect updates from shopify for this store.
     
-            return true;
+            //return true;
         }
         catch (error)
         {
-            //log
-            console.error('error saving store details to database \n', error);
+            
+            this.logger.error('error saving store details to database', error);
             return false;
         }
+
+        const createRelation: UserStore | false = await this.createSuperAdmin(result.user.user_id, result.store.table_id);
+        if (typeof createRelation == 'boolean')
+        {
+            return false;
+        }
+        return true;
+
     }
 
+
+    public createSuperAdmin = async (userId: number, storeId:number): Promise<UserStore | false> =>
+    {
+        let result: UserStore | null;
+        try {
+            result = await this.createSuperAdminProvider.create(userId, storeId);
+            if (result == null)
+            {
+                throw Error('failed to create entry in database');
+            }
+        }
+        catch (error)
+        {
+
+            this.logger.error('Error in creating Super Admin: ', error);
+
+            return false;
+        }
+
+        return result;
+
+    }
 }

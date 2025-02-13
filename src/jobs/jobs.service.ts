@@ -10,6 +10,6 @@ export class JobsService {
 
     public configure = async (): Promise<any> =>
     {
-        await this.configQueue.add(CONFIGURE_QUEUE, {foo: 'base'})
+        await this.configQueue.add(CONFIGURE_QUEUE, {storeId: 1})
     }
 }

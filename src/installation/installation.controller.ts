@@ -1,5 +1,5 @@
 import { BadRequestException, Controller, Get, Logger, Query, Req, Request, Res, Response, UnauthorizedException, UseFilters, ValidationPipe } from '@nestjs/common';
-import { InstallationService } from './providers/installation.service';
+import { InstallationService } from './installation.service';
 import { UtilsService } from 'src/utils/utils.service';
 import { ConfigService } from '@nestjs/config';
 import { GetInstallInitQueryDto } from './dtos/get-install-query.dto';

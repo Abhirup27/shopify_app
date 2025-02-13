@@ -36,9 +36,13 @@ export class CsrfMiddleware implements NestMiddleware {
   }
 
   use(req: Request, res: Response, next: NextFunction) {
-    console.log(req.path)
+    console.log(req.baseUrl)
     // Skip CSRF check for specific routes if needed
-    if (req.path === '/login' && req.method === 'POST') {
+    if (req.baseUrl === '/login' && req.method === 'POST') {
+      return next();
+    }
+    else if (req.baseUrl == '/webhook/app/uninstalled')
+    {
       return next();
     }
 

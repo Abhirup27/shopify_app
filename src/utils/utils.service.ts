@@ -113,11 +113,11 @@ export class UtilsService {
 
 
     //These first two functions are the other way the function can be called. It can be called like in the PHP code too
-    public requestToShopify( method: 'get' | 'delete', options: Omit<ShopifyRequestOptions, 'data'>): Promise<ShopifyResponse>;
+    public async requestToShopify( method: 'get' | 'delete', options: Omit<ShopifyRequestOptions, 'data'>): Promise<ShopifyResponse>;
 
-    public requestToShopify( method: 'post' | 'put' | 'patch', options: ShopifyRequestOptions): Promise<ShopifyResponse>;
+    public async requestToShopify( method: 'post' | 'put' | 'patch', options: ShopifyRequestOptions): Promise<ShopifyResponse>;
 
-    public requestToShopify(method: Method, endpoint: string, headers: AxiosHeaders, payload?: Record<string, any>): Promise<ShopifyResponse>;
+    public async requestToShopify(method: Method, endpoint: string, headers: AxiosHeaders, payload?: Record<string, any>): Promise<ShopifyResponse>;
 
     //one implementation handles all the overloads
     public async requestToShopify(method: Method,

@@ -6,6 +6,7 @@ import jwtConfiguration from '../config/jwt.config';
 import { Request } from 'express';
 import { REQUEST_USER_KEY } from '../constants/auth.constants';
 import { Reflector } from '@nestjs/core';
+import { UserService } from 'src/web-app/user/user.service';
 
 
 export const Public = () => SetMetadata('isPublic', true);
@@ -18,7 +19,9 @@ export class AccessTokenGuard implements CanActivate {
     private readonly jwtService: JwtService,
 
     @Inject(jwtConfiguration.KEY)
-    private readonly jwtConfig: ConfigType<typeof jwtConfiguration>
+    private readonly jwtConfig: ConfigType<typeof jwtConfiguration>,
+
+    private userService: UserService    
   ) { }
 
   private extractToken = (request: Request): string | undefined => {
@@ -57,9 +60,14 @@ export class AccessTokenGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync(token, this.jwtConfig);
 
       request[REQUEST_USER_KEY] = payload;
+      console.log('the payload is ', payload);
+
+      const { User, UserStore } = await this.userService.findOneByEmail(payload.email);
+      console.log(User, UserStore);
+      
     } catch (error)
     {
-
+      
       throw new UnauthorizedException();
     }
     

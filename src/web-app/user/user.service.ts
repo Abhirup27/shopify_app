@@ -9,7 +9,7 @@ export class UserService {
         private readonly findOneUserProvider : FindOneUser
     ){}
 
-    public async findOneByEmail(email: string): Promise<{ User: User, UserStore: UserStore[] }> 
+    public async findOneByEmail(email: string): Promise<{ User: User, UserStore: UserStore[]}> 
     {
         return this.findOneUserProvider.findOneByEmail(email);
     }

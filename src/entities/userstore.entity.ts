@@ -31,6 +31,7 @@ export class UserStore{
      @Column('simple-array')
         roles: string[];
     
-    @Column('simple-array')
-        permissions: string[];
+    @Column('simple-array',{nullable: true})
+    
+        permissions?: string[];
 }

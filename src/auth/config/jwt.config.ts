@@ -18,7 +18,7 @@ export default registerAs('jwt', ():JwtModuleOptions => {
         secret: process.env.JWT_SECRET ?? 'randomstring',
         signOptions:  
         {            
-        audience: process.env.JWT_TOKEN_AUDIENCE ?? 'https://5aee-223-233-68-44.ngrok-free.app',
+        audience: process.env.JWT_TOKEN_AUDIENCE ?? 'https://7ba6-223-233-76-207.ngrok-free.app',
         issuer: process.env.JWT_TOKEN_ISSUER,
         expiresIn: parseInt(process.env.JWT_ACCESS_TOKEN_TTL ?? '3600', 10)
         },
