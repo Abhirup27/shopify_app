@@ -64,6 +64,8 @@ export class AccessTokenGuard implements CanActivate {
 
       const { User, UserStore } = await this.userService.findOneByEmail(payload.email);
       console.log(User, UserStore);
+      request.user = User;
+      request.roles = UserStore;
       
     } catch (error)
     {

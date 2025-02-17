@@ -7,6 +7,6 @@ export class JobsController {
     @Get('/configureWebhook')
     public async config()
     {
-        return this.jobsService.configure();
+        return this.jobsService.configure(1);
     }
 }

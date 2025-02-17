@@ -1,5 +1,6 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./user.entity";
+import { Product } from "./product.entities";
 
 @Entity()
 export class Store {
@@ -9,6 +10,9 @@ export class Store {
         unsigned: true
     })
     table_id: number;
+    
+    @OneToMany(() => Product, product => product.store_id)
+    products: Product[];
 
     @Column({
         type: 'bigint',
@@ -75,4 +79,5 @@ export class Store {
 
     @Column({type: 'tinytext',nullable:true})
     zip: string;
+
 }

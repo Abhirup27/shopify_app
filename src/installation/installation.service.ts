@@ -11,6 +11,9 @@ import { CreateShopDTO } from './dtos/create-store.dto';
 import { CreateStoreProvider } from './providers/create-store.provider';
 import { UserStore } from 'src/entities/userstore.entity';
 import { CreateSuperAdmin } from './providers/create-super-admin';
+import { User } from 'src/entities/user.entity';
+import { Store } from 'src/entities/store.entity';
+import { JobsService } from 'src/jobs/jobs.service';
 
 @Injectable()
 export class InstallationService {
@@ -19,6 +22,7 @@ export class InstallationService {
     constructor(
         private readonly utilsService: UtilsService,
         private readonly configService: ConfigService,
+        private readonly jobsService: JobsService,
         private readonly createStoreProvider: CreateStoreProvider,
         private readonly createSuperAdminProvider: CreateSuperAdmin
         /**
@@ -138,9 +142,9 @@ export class InstallationService {
     /**
      * Saves store details to the database, in store_table. CreateShopDTO has all the key value pairs that the shopify server returns for requesting the shop.json
      */
-    public saveStoreDetails = async (shopDetails: CreateShopDTO, accessToken: string): Promise<boolean> =>
+    public saveStoreDetails = async (shopDetails: CreateShopDTO, accessToken: string): Promise<{table_id: number | null, success: boolean}> =>
     {
-        let result;
+        let result: { success?: boolean; user: User; store: Store; };
         try {
            
             result = await this.createStoreProvider.createStore(shopDetails, accessToken);
@@ -155,15 +159,16 @@ export class InstallationService {
         {
             
             this.logger.error('error saving store details to database', error);
-            return false;
+            return {table_id: null, success: false};
         }
 
+        await this.jobsService.getProducts(result.store);
         const createRelation: UserStore | false = await this.createSuperAdmin(result.user.user_id, result.store.table_id);
         if (typeof createRelation == 'boolean')
         {
-            return false;
+            return {table_id: result.store.table_id, success: false};
         }
-        return true;
+        return {table_id: result.store.table_id, success: true};
 
     }
 

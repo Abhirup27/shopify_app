@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { GetInstallInitQueryDto } from './dtos/get-install-query.dto';
 import { GetInstallCodeDto } from './dtos/get-code-query.dto';
 import { UnauthorizedExceptionFilter } from '../filters/hmac.exception.filter';
+import { JobsService } from 'src/jobs/jobs.service';
 
 
 @Controller() //@Controller('/shopify/auth')
@@ -21,6 +22,7 @@ export class InstallationController {
         private readonly installationService: InstallationService,
         private readonly utilsService: UtilsService,
         private readonly configService: ConfigService,
+        private readonly jobsService: JobsService
     
     ) {
         this.clientId = configService.get('shopify_api_key');
@@ -117,10 +119,12 @@ export class InstallationController {
                 {
                     const shopDetails = await this.installationService.getShopDetailsFromShopify(shop, accessToken);
                     
-                    const storeToDB = this.installationService.saveStoreDetails(shopDetails.shop, accessToken);
+                    const storeToDB = await this.installationService.saveStoreDetails(shopDetails.shop, accessToken);
 
+                    this.jobsService.configure(storeToDB.table_id)
+                   
                     //console.log(shopDetails)
-                    if (storeToDB)
+                    if (storeToDB.success)
                     {
                         this.logger.log(`App succesfully installed for store ${shopDetails.shop.domain} and stored to the Database.`)
 
@@ -136,6 +140,10 @@ export class InstallationController {
                             //response.redirect('/login');
                             return response.redirect('/')
                         }
+                    }
+                    else
+                    {
+                        //failed to store all details in DB    
                     }
                 }
                 else

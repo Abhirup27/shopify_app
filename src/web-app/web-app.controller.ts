@@ -38,7 +38,16 @@ export class WebAppController {
       const response = await this.authService.login({ email: body.email, password: body.password });
       
       console.log("response is", response)
-      return res.send(response);
+      
+      //req.headers.authorization = "Bearer "+response.accessToken; 
+      //req.secret = "Bearer " + response; 
+      res.cookie('access_token', response.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 1 * 60 * 60 * 1000 // 1 hour
+      });
+      res.redirect('/dashboard');
 
   }
   
@@ -47,11 +56,13 @@ export class WebAppController {
     @Render('home')
     public async getDashboard(@Req() req: Request, @Res() res)
     {
+      console.log(req.headers.authorization)
+      console.log(req["user"],req["roles"]);
       const token = this.utilsService.generateToken(req, res)
 
       return {
         user: {
-          name: 'Roop',
+          name: req["user"].name,
 
         },
         csrfToken: token,

@@ -1,14 +1,17 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Request } from 'express';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
-  getJWTAuthToken = async (req): Promise<string> =>
+  getJWTAuthToken = (req: Request): string =>
   {
     //this might be different, I might need to check the object later.
-    return (req.headers.authorization != undefined) ? req.headers.authorization?.split(' ')[1] : null;
+    //return (req.headers.authorization != undefined) ? req.headers.authorization?.split(' ')[1] : null;
+
+    return req.cookies['access_token'];
   }
 
-  use(req: any, res: any, next: () => void) {
+  use(req: Request, res: any, next: () => void) {
 
     const token = this.getJWTAuthToken(req);
 
@@ -18,8 +21,8 @@ export class AuthMiddleware implements NestMiddleware {
     }
     else
     {
-      //make sure the token is valid
-      
+      //set req.headers.authorization so that the guard can process
+      req.headers.authorization ="Bearer "+token;      
 
       //add role and permissions to the request object.
     }

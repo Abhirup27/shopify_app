@@ -1,19 +1,21 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { JobsService } from './jobs.service';
-import { CONFIGURE_QUEUE, PRODUCTS_QUEUE } from './constants/jobs.constants';
+import { CONFIGURE_QUEUE, ORDERS_QUEUE, PRODUCTS_QUEUE, STORES_QUEUE } from './constants/jobs.constants';
 import { ConfigWebhookConsumer } from './consumers/config-webhoook.consumer';
 import { JobsController } from './jobs.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Store } from 'src/entities/store.entity';
 import { UtilsModule } from 'src/utils/utils.module';
+import { Product } from 'src/entities/product.entities';
+import { GetProductsConsumer } from './consumers/get-products.consumer';
 
 @Module({
 
   imports: [
     UtilsModule,
-    TypeOrmModule.forFeature([Store]),
+    TypeOrmModule.forFeature([Store, Product]),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -29,13 +31,13 @@ import { UtilsModule } from 'src/utils/utils.module';
      BullModule.registerQueueAsync(
        { name: CONFIGURE_QUEUE },
        { name: PRODUCTS_QUEUE },
-       { name: 'Order' },
-       { name: 'Store' }
+       { name: ORDERS_QUEUE },
+       { name: STORES_QUEUE }
      )
   ],
 
-  providers: [JobsService, ConfigWebhookConsumer],
-
-  controllers: [JobsController]
+  providers: [JobsService, ConfigWebhookConsumer, GetProductsConsumer],
+  controllers: [JobsController],
+  exports: [JobsService]
 })
 export class JobsModule {}
