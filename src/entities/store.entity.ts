@@ -1,6 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./user.entity";
 import { Product } from "./product.entities";
+import { Order } from "./order.entity";
 
 @Entity()
 export class Store {
@@ -11,8 +12,11 @@ export class Store {
     })
     table_id: number;
     
-    @OneToMany(() => Product, product => product.store_id)
+    @OneToMany(() => Product, product => product.store)
     products: Product[];
+
+    @OneToMany(() => Order, order => order.store)
+    orders: Order[];
 
     @Column({
         type: 'bigint',
@@ -20,7 +24,7 @@ export class Store {
         nullable: false
     })
     id: number;
-
+    
     @Column({
     type: 'bigint',
     unsigned: true,

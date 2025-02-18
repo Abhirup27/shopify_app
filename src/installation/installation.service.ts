@@ -14,6 +14,7 @@ import { CreateSuperAdmin } from './providers/create-super-admin';
 import { User } from 'src/entities/user.entity';
 import { Store } from 'src/entities/store.entity';
 import { JobsService } from 'src/jobs/jobs.service';
+import { NonceProvider } from './providers/nonce.provider';
 
 @Injectable()
 export class InstallationService {
@@ -24,7 +25,8 @@ export class InstallationService {
         private readonly configService: ConfigService,
         private readonly jobsService: JobsService,
         private readonly createStoreProvider: CreateStoreProvider,
-        private readonly createSuperAdminProvider: CreateSuperAdmin
+        private readonly createSuperAdminProvider: CreateSuperAdmin,
+        private readonly nonceProvider: NonceProvider
         /**
          * Injecting StoreRepository and UserRepository
          */
@@ -62,6 +64,14 @@ export class InstallationService {
         }
     }  
 
+    public getOAuthURL = async (clientId: string): string =>
+    {
+        // generate nonce, store it in redis, read scopes and the redirect URL from the config.
+        
+
+        //return the OAuth URL the startInstallation() function and res.redirect with a 3xx code
+    }
+
     public getAccessTokenForStore = async (shop: any, code: string): Promise<string| false>  =>
     {
         try {
@@ -70,6 +80,7 @@ export class InstallationService {
             const data =
                 {
                 'client_id': this.configService.get('shopify_api_key'),
+                //'scope': this.configService.get('accessScopes'),
                 'client_secret': this.configService.get('shopify_api_secret'),
                 'code': code
                 }
@@ -81,6 +92,7 @@ export class InstallationService {
             if ('statusCode' in response && response.statusCode === 200)
             {
 
+                console.log(response.respBody);
                     // equal to (response.respBody.hasOwnProperty('access_token'))
                 if (response.respBody['access_token'] && response.respBody['access_token'] !== null) 
                 {
@@ -163,6 +175,8 @@ export class InstallationService {
         }
 
         await this.jobsService.getProducts(result.store);
+        await this.jobsService.getOrders(result.store);
+
         const createRelation: UserStore | false = await this.createSuperAdmin(result.user.user_id, result.store.table_id);
         if (typeof createRelation == 'boolean')
         {

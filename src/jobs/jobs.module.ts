@@ -10,12 +10,14 @@ import { Store } from 'src/entities/store.entity';
 import { UtilsModule } from 'src/utils/utils.module';
 import { Product } from 'src/entities/product.entities';
 import { GetProductsConsumer } from './consumers/get-products.consumer';
+import { Order } from 'src/entities/order.entity';
+import { GetOrdersConsumer } from './consumers/get-orders.consumer';
 
 @Module({
 
   imports: [
     UtilsModule,
-    TypeOrmModule.forFeature([Store, Product]),
+    TypeOrmModule.forFeature([Store, Product, Order]),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -36,7 +38,7 @@ import { GetProductsConsumer } from './consumers/get-products.consumer';
      )
   ],
 
-  providers: [JobsService, ConfigWebhookConsumer, GetProductsConsumer],
+  providers: [JobsService, ConfigWebhookConsumer, GetProductsConsumer, GetOrdersConsumer],
   controllers: [JobsController],
   exports: [JobsService]
 })

@@ -59,9 +59,7 @@ export class GetProductsConsumer extends WorkerHost
 
     public storeProductDB = async (product: Product): Promise<Product | null> => 
     {
-        console.log(product);
         let productCreated: Product = undefined;
-        console.log(product.store_id)
         try
         {
             const payload =

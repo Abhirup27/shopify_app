@@ -106,6 +106,13 @@ export class UtilsService {
             `https://${store.myshopify_domain}/admin/api/${this.configService.get('shopify_api_version')}/${endpoint}`
     }
 
+    public getGraphQLHeadersForStore = (store: Store): AxiosHeaders =>
+    {
+        return this.checkIfStoreIsPrivate(store)
+            ? new AxiosHeaders({ 'Content-Type': 'application/json', 'X-Shopify-Access-Token': store["api_secret_key"], 'X-GraphQL-Cost-Include-Fields': true })
+            :
+            new AxiosHeaders({ 'Content-Type': 'application/json', 'X-Shopify-Access-Token': store.access_token, 'X-GraphQL-Cost-Include-Fields': true })
+    }
     public isAppEmbedded = (): boolean =>
     {
         return this.configService.get('shopify_app_embedded');
@@ -123,7 +130,7 @@ export class UtilsService {
     public async requestToShopify(method: Method,
         endpointOrOptions: string | ShopifyRequestOptions, headers?: AxiosHeaders, payload?: Record<string, any> ): Promise<ShopifyResponse>  {
    
-        console.log(endpointOrOptions)
+        //console.log(endpointOrOptions)
         const reqResult: ShopifyResponse = { status: false, respBody: null };
 
         try {

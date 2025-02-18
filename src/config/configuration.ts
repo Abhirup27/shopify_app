@@ -7,17 +7,27 @@ export default () => ({
   logging:process.env.LOGGING,
   logToFile: process.env.LOG_TO_FILE,
 
-  app_url:'https://5346-223-233-69-214.ngrok-free.app',
-  app_install_URL:'https://5346-223-233-69-214.ngrok-free.app/shopify/auth/redirect',
+  app_url:'https://3644-223-233-69-214.ngrok-free.app',
+  app_install_URL:'https://3644-223-233-69-214.ngrok-free.app/shopify/auth/redirect',
 
   shopify_api_version: '2024-01',
   shopify_api_key:process.env.API_KEY,
   shopify_api_secret:process.env.API_SECRET,
   shopify_api_scopes: 'read_products,write_products,read_orders,write_orders',
   shopify_embedded_app: false,
+
+  accessScopes: [
+    'read_products',
+    'write_products',
+    'read_orders',
+    'write_orders',
+    'read_customers',
+    'write_customers',
+    
+  ].join(','),
   
   jwt_secret: process.env.JWT_SECRET ?? 'randomstring',
-  jwt_token_audience: process.env.JWT_TOKEN_AUDIENCE ?? 'https://5346-223-233-69-214.ngrok-free.app',
+  jwt_token_audience: process.env.JWT_TOKEN_AUDIENCE ?? 'https://3644-223-233-69-214.ngrok-free.app',
   jwt_token_issuer: process.env.JWT_TOKEN_ISSUER,
   jwt_access_token_ttl: parseInt(process.env.JWT_ACCESS_TOKEN_TTL ?? '3600', 10),
 
@@ -37,11 +47,16 @@ export default () => ({
     port: parseInt(process.env.REDIS_PORT ?? '6379', 10) 
   },
 
+
   webhooks: [
   'orders/create',   
   'orders/updated',    
   'products/create',
+  "products/update",
+  "products/delete",
+  "app_subscriptions/update",
   'app/uninstalled',
-  'shop/update'
+  'shop/update',
+  "customers/create"
   ]
 });

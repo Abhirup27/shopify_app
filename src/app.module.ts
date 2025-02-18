@@ -25,6 +25,7 @@ import { CsrfMiddleware } from './middlewares/csrf.middleware';
 import { CsrfExceptionFilter } from './filters/csrf.exception.filter';
 import { JobsModule } from './jobs/jobs.module';
 import { Product } from './entities/product.entities';
+import { Order } from './entities/order.entity';
 
 //we pass this value through the command line/system variables
 const ENV = process.env.NODE_ENV;
@@ -60,7 +61,7 @@ const ENV = process.env.NODE_ENV;
         username: configService.get<string>('database.username'),
         password: configService.get<string>('database.password'),
 
-        entities: [Store, User, UserStore, Product],
+        entities: [Store, User, UserStore, Product, Order],
         
         synchronize: configService.get<boolean>('database.synchronize'),
         autoLoadEntities: configService.get<boolean>('database.autoload')

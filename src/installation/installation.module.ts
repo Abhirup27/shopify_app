@@ -10,13 +10,24 @@ import { CreateStoreProvider } from './providers/create-store.provider';
 import { UserStore } from 'src/entities/userstore.entity';
 import { CreateSuperAdmin } from './providers/create-super-admin';
 import { JobsModule } from 'src/jobs/jobs.module';
+import { RedisModule } from '@nestjs-modules/ioredis';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
     UtilsModule,
     AuthModule,
     TypeOrmModule.forFeature([Store, User, UserStore]),
-    JobsModule
+    JobsModule,
+      RedisModule.forRootAsync({
+        imports: [ConfigModule],
+        inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        type: 'single',
+        //url: configService.get<string>('REDIS_URL'), 
+        url: `redis://${configService.get('REDIS_HOST')}:${configService.get('REDIS_PORT')}`
+      }),
+    }),
   ],
   providers: [InstallationService, CreateStoreProvider, CreateSuperAdmin],
   controllers: [InstallationController]
