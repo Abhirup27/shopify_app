@@ -12,6 +12,7 @@ import { CreateSuperAdmin } from './providers/create-super-admin';
 import { JobsModule } from 'src/jobs/jobs.module';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { NonceProvider } from './providers/nonce.provider';
 
 @Module({
   imports: [
@@ -29,7 +30,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       }),
     }),
   ],
-  providers: [InstallationService, CreateStoreProvider, CreateSuperAdmin],
+  providers: [InstallationService, CreateStoreProvider, CreateSuperAdmin, NonceProvider],
   controllers: [InstallationController]
 
 })

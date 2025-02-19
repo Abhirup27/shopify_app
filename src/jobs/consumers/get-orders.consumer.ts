@@ -162,9 +162,14 @@ export class GetOrdersConsumer extends WorkerHost
 
                 if (response.statusCode == 200)
                 {
-                    console.log(response.respBody["data"]);
+                    console.log(response.respBody["data"]['orders']['edges']);
+                    await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
                 }
-                console.log(response.respBody);
+                console.log(response.statusCode);
+
+                  console.log(response.respBody["data"]['orders']['edges']);
+                // await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
+                //console.log(response.respBody);
                 cursor = this.getCursorFromResponse(response.respBody['data']['orders']['pageInfo']);
 
             } while (cursor !== null);
@@ -172,12 +177,134 @@ export class GetOrdersConsumer extends WorkerHost
         }
         catch (error)
         {
-            console.log("======================= \n","This is running!")
+        
             this.logger.error(error.message);
         }
 
     }
 
+    private async saveOrdersInDB(storeId: number,orders: any[]): Promise<void> {
+        try {
+            if (!orders || !Array.isArray(orders) || orders.length === 0) {
+                return;
+            }
+
+            const formattedOrders = orders.map(order => {
+                const node = order.node;
+                return {
+                    email: node.email,
+                    name: node.name,
+                    processed_at: node.processedAt,
+                    taxes_included: node.taxesIncluded,
+                    id: this.extractIdFromGraphQLId(node.legacyResourceId),
+                    financial_status: node.displayFinancialStatus,
+                    closed_at: node.closedAt,
+                    cancel_reason: node.cancelReason,
+                    cancelled_at: node.cancelledAt,
+                    created_at: node.createdAt,
+                    updated_at: node.updatedAt,
+                    tags: Array.isArray(node.tags) ? JSON.stringify(node.tags) : node.tags,
+                    phone: node.phone,
+                    store_id: storeId, 
+                    line_items: this.formatLineItems(node.lineItems),
+                    shipping_address: this.formatAddress(node.shippingAddress),
+                    billing_address: this.formatAddress(node.billingAddress),
+                    fulfillments: node.fulfillments,
+                    ship_country: node.shippingAddress?.country || null,
+                    ship_province: node.shippingAddress?.province || null
+                };
+            });
+
+            // Using TypeORM's upsert functionality
+            await this.ordersRepository.createQueryBuilder()
+                .insert()
+                .into(Order)
+                .values(formattedOrders)
+                .orUpdate([
+                    "email", "name", "processed_at", "taxes_included",
+                    "financial_status", "closed_at", "cancel_reason",
+                    "cancelled_at", "updated_at", "tags", "phone",
+                    "line_items", "shipping_address", "billing_address",
+                    "fulfillments", "ship_country", "ship_province"
+                ], ["id", "store_id"])
+                .execute();
+
+        } catch (error) {
+            this.logger.error(`Failed to save orders: ${error.message}`, error.stack);
+            throw error;
+        }
+    }
+    private formatLineItems(lineItems: any): string {
+        try {
+            if (!lineItems?.edges) {
+                return null;
+            }
+
+            const formattedItems = lineItems.edges.map(({ node: item }) => ({
+                id: this.extractIdFromGraphQLId(item.id, 'LineItem'),
+                admin_graphql_api_id: item.id,
+                fulfillable_quantity: item.unfulfilledQuantity,
+                name: item.title,
+                variant_title: item.variantTitle,
+                vendor: item.vendor,
+                sku: item.sku,
+                quantity: item.quantity,
+                price: item.variant?.price,
+                price_set: item.originalTotalSet,
+                product_id: this.extractIdFromGraphQLId(item.product?.id, 'Product'),
+                variant_id: this.extractIdFromGraphQLId(item.variant?.id, 'ProductVariant'),
+                //variant_title: item.variant?.title
+            }));
+
+            return JSON.stringify(formattedItems);
+        } catch (error) {
+            this.logger.error(`Failed to format line items: ${error.message}`);
+            return null;
+        }
+    }
+
+    private formatAddress(address: any): string {
+        try {
+            if (!address) {
+                return null;
+            }
+
+            const formattedAddress = {
+                first_name: address.firstName,
+                address1: address.address1,
+                phone: address.phone,
+                city: address.city,
+                zip: address.zip,
+                province: address.province,
+                country: address.country,
+                last_name: address.lastName,
+                address2: address.address2,
+                name: `${address.firstName} ${address.lastName}`
+            };
+
+            return JSON.stringify(formattedAddress);
+        } catch (error) {
+            this.logger.error(`Failed to format address: ${error.message}`);
+            return null;
+        }
+    }
+
+    private extractIdFromGraphQLId(graphqlId: string, prefix?: string): number | null {
+        try {
+            if (!graphqlId) {
+                return null;
+            }
+            
+            const idPart = prefix 
+                ? graphqlId.replace(`gid://shopify/${prefix}/`, '')
+                : graphqlId;
+                
+            return parseInt(idPart, 10);
+        } catch (error) {
+            this.logger.error(`Failed to extract ID from ${graphqlId}: ${error.message}`);
+            return null;
+        }
+    }
     public getCursorFromResponse = (pageInfo: PageInfo) : string | null =>
     {
         try {

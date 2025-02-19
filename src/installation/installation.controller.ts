@@ -69,7 +69,20 @@ export class InstallationController {
                 else {
                     
                     //console.log(endpoint)
-                    return response.redirect(303, endpoint); //There are other ways to redirect, need to understand them.
+                    const url = await this.installationService.getOAuthURL(this.clientId, shop)
+                    const urlObj = new URL(url);
+                    const nonce = urlObj.searchParams.get('state');
+                    
+                    // Set signed cookie with nonce
+                    response.cookie('shopify.oauth.state', nonce, {
+                        httpOnly: true,
+                        secure: true,
+                        sameSite: 'lax',
+                        signed: true,
+                        maxAge: 60 * 60 * 1000, // 1 hour expiry
+                    });
+
+                    return response.redirect(303, url);
                 }
             }
             else
@@ -104,15 +117,15 @@ export class InstallationController {
 
         try
         {
-            const validRequest = await this.utilsService.validateRequestFromShopify(query);
-
-            if (validRequest)
+            const validateHMAC = await this.utilsService.validateRequestFromShopify(query);
+            const validateNonce = await this.installationService.validateNonce(query.state, query.shop);
+            if (validateHMAC && validateNonce)
             {
                 const shop = query.shop; const code = query.code;
 
                 const accessToken = await this.installationService.getAccessTokenForStore(shop, code);
             
-                // console.log(query);
+                 console.log(query);
                 // console.log("THIS IS THE ACESS TOKEN", accessToken)
                 
                 if (accessToken != false  && accessToken.length > 0)

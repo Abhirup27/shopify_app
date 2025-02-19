@@ -8,6 +8,9 @@ export class GetInstallCodeDto extends GetInstallInitQueryDto
     @IsString()
     code: string;
 
+    @IsString()
+    state: string;
+
 }
 
 /**

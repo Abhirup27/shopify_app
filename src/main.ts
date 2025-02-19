@@ -47,7 +47,7 @@ async function bootstrap() {
   const logger = new CustomLogger(configService);
   app.useLogger(logger);
   
-  app.use(cookieParser());
+  app.use(cookieParser(configService.get('app_secret')));
  
   app.useStaticAssets(join(__dirname, '..', 'public'));
   app.setBaseViewsDir(join(__dirname, '..', 'views'));

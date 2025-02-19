@@ -45,7 +45,18 @@ export class CsrfMiddleware implements NestMiddleware {
     {
       return next();
     }
-
+    else if (req.baseUrl == '/webhook/orders/updated')
+    {
+      return next();
+    }
+    else if (req.baseUrl == '/webhook/orders/create')
+    {
+      return next();
+    }
+    else if (req.baseUrl == '/webhook/products/update')
+    {
+      return next();
+    }
     this.doubleCsrfProtection(req, res, next);
   }
 }

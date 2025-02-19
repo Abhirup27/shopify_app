@@ -28,8 +28,8 @@ export class Order {
     @Column({ type: 'varchar', nullable: true })
     cancel_reason: string;
 
-    @Column({ type: 'varchar', nullable: true })
-    cancelled_at: string;
+    @Column({ type: 'datetime', nullable: true })
+    cancelled_at: Date;
 
     @Column({ type: 'varchar', nullable: true })
     cart_token: string;
@@ -43,13 +43,13 @@ export class Order {
     @Column({ type: 'varchar', nullable: true })
     contact_email: string;
 
-    @Column({ type: 'varchar', nullable: true })
-    created_at: string;
+    @Column({ type: 'datetime', nullable: true })
+    created_at: Date;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'varchar', length: 3, nullable: true })
     currency: string;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'json', nullable: true })
     discount_codes: string;
 
     @Column({ type: 'varchar', nullable: true })
@@ -67,7 +67,7 @@ export class Order {
     @Column({ type: 'varchar', nullable: true })
     name: string;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'text', nullable: true })
     note: string;
 
     @Column({ type: 'varchar', nullable: true })
@@ -79,65 +79,81 @@ export class Order {
     @Column({ type: 'varchar', nullable: true })
     phone: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'json', nullable: true })
     tax_lines: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'json', nullable: true })
     subtotal_price_set: string;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
     subtotal_price: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
     total_line_items_price: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'json', nullable: true })
     total_discounts_set: string;
 
-    @Column({ type: 'varchar', nullable: true })
-    taxes_included: string;
+    @Column({ type: 'boolean', nullable: true })
+    taxes_included: boolean;
 
-    @Column({ type: 'varchar', nullable: true })
-    test: string;
+    @Column({ type: 'boolean', nullable: true })
+    test: boolean;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'json', nullable: true })
+    tags: string;
+    
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
     total_discounts: string;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
     total_price: string;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
     total_price_usd: string;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
     total_tax: string;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
     total_tip_received: string;
 
-    @Column({ type: 'varchar', nullable: true })
-    updated_at: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'datetime', nullable: true })
+    updated_at: Date;
+
+    @Column({ type: 'datetime', nullable: true })
+    processed_at: Date;
+
+    @Column({ type: 'datetime', nullable: true })
+    closed_at: Date;
+
+    @Column({ type: 'json', nullable: true })
     billing_address: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'json', nullable: true })
     customer: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'json', nullable: true })
     fulfillments: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'json', nullable: true })
     line_items: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'json', nullable: true })
     shipping_address: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'json', nullable: true })
     shipping_lines: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'json', nullable: true })
     payment_details: string;
+
+    @Column({ type: 'varchar', nullable: true })
+    ship_country: string;
+
+    @Column({ type: 'varchar', nullable: true })
+    ship_province: string;
 
     @Column({
         type: 'timestamp',

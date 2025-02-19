@@ -15,7 +15,7 @@ import { User } from 'src/entities/user.entity';
 import { Store } from 'src/entities/store.entity';
 import { JobsService } from 'src/jobs/jobs.service';
 import { NonceProvider } from './providers/nonce.provider';
-
+import * as crypto from 'crypto';
 @Injectable()
 export class InstallationService {
     private readonly logger = new Logger(InstallationService.name);
@@ -64,14 +64,30 @@ export class InstallationService {
         }
     }  
 
-    public getOAuthURL = async (clientId: string): string =>
+    public getOAuthURL = async (clientId: string, shopDomain: string): Promise<string> =>
     {
         // generate nonce, store it in redis, read scopes and the redirect URL from the config.
         
+        const nonce = crypto.randomBytes(16).toString('hex');
+        await this.nonceProvider.storeNonce(nonce, shopDomain);
+        
+        const scopes: string = this.configService.get('accessScopes');
+        const redirect: string = this.configService.get('app_install_URL');
+
+        /**
+         * https://{shop}.myshopify.com/admin/oauth/authorize?client_id={client_id}&scope={scopes}&redirect_uri={redirect_uri}&state={nonce}&grant_options[]={access_mode}
+         */
+        const url = `https://${shopDomain}/admin/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${redirect}&state=${nonce}&grant_options[]=per-user`
 
         //return the OAuth URL the startInstallation() function and res.redirect with a 3xx code
+
+        return url;
     }
 
+    public validateNonce = async (nonce:string , shopDomain:string): Promise<boolean> =>
+    {
+        return await this.nonceProvider.validateAndRemoveNonce(nonce, shopDomain);
+    }
     public getAccessTokenForStore = async (shop: any, code: string): Promise<string| false>  =>
     {
         try {
@@ -96,7 +112,7 @@ export class InstallationService {
                     // equal to (response.respBody.hasOwnProperty('access_token'))
                 if (response.respBody['access_token'] && response.respBody['access_token'] !== null) 
                 {
-                    console.log(response.respBody)
+                    //console.log(response.respBody)
                     return response.respBody['access_token'].toString();
                 }
                 
@@ -125,7 +141,7 @@ export class InstallationService {
 
             options.headers = new AxiosHeaders().set('Content-Type', 'application/json').set('X-Shopify-Access-Token', accessToken);
             
-            console.log(options.url)
+            //console.log(options.url)
 
             const shopDetails: ShopifyResponse = await this.utilsService.requestToShopify('get', options);
 
