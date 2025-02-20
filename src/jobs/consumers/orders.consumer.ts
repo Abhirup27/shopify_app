@@ -1,5 +1,5 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
-import { ORDERS_QUEUE } from "../constants/jobs.constants";
+import { GET_ORDERS, ORDERS_QUEUE, SYNC_ORDERS } from "../constants/jobs.constants";
 import { Logger } from "@nestjs/common";
 import { Job } from "bullmq";
 import { ConfigService } from "@nestjs/config";
@@ -146,8 +146,34 @@ export class GetOrdersConsumer extends WorkerHost
 
     public process = async (job: Job<Store>): Promise<any> => {
         try {
-            const store: Store = job.data;
+            //const store: Store = job.data;
 
+            switch (job.name)
+            {
+                case SYNC_ORDERS:
+                    return await this.syncOrders(job); 
+                case GET_ORDERS:
+                    return await this.retrieveOrders(job);
+                default:
+                     throw new Error('Invalid job name');
+
+            }
+
+
+        }
+        catch (error)
+        {
+        
+            this.logger.error(error.message);
+        }
+
+    }
+
+    private syncOrders = async(job: Job<Store>): Promise<any> =>
+    {
+        const store: Store = job.data;
+        try {
+            
             const options: ShopifyRequestOptions =
             {
                 url: await this.utilsService.getShopifyURLForStore('graphql.json', store),
@@ -173,16 +199,11 @@ export class GetOrdersConsumer extends WorkerHost
                 cursor = this.getCursorFromResponse(response.respBody['data']['orders']['pageInfo']);
 
             } while (cursor !== null);
-
-        }
-        catch (error)
+        } catch (error)
         {
-        
-            this.logger.error(error.message);
+            this.logger.error(error.message, this.syncOrders.name);
         }
-
     }
-
     private async saveOrdersInDB(storeId: number,orders: any[]): Promise<void> {
         try {
             if (!orders || !Array.isArray(orders) || orders.length === 0) {
@@ -301,7 +322,7 @@ export class GetOrdersConsumer extends WorkerHost
                 
             return parseInt(idPart, 10);
         } catch (error) {
-            this.logger.error(`Failed to extract ID from ${graphqlId}: ${error.message}`);
+            this.logger.error(`Failed to extract ID from ${graphqlId}: ${error.message}`, this.extractIdFromGraphQLId.name);
             return null;
         }
     }
@@ -312,10 +333,33 @@ export class GetOrdersConsumer extends WorkerHost
         }
         catch (error)
         {
-            this.logger.debug(error.message);
+            this.logger.debug(error.message, this.getCursorFromResponse.name);
             return null;
         }
     }
+
+    private retrieveOrders = async (job: Job<Store>): Promise<Order[]| Order | null> =>
+    {
+        let orders: Order[];
+        try {
+            const store: Store = job.data;
+            orders = await this.ordersRepository.findBy({
+                store_id: store.table_id
+            })
+
+
+        } catch (error)
+        {
+            this.logger.error(error.message, this.retrieveOrders.name);
+        }
+        
+        if (orders.length > 0)
+        {
+            return orders;
+        }
+        return null;
+    }
+
     public getQueryObjectForOrders = (cursor: string | null):  { query: string } | null => {
         try {
             const filter = `(first: 5${cursor ? `, after: "${cursor}"` : ''})`;

@@ -9,9 +9,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Store } from 'src/entities/store.entity';
 import { UtilsModule } from 'src/utils/utils.module';
 import { Product } from 'src/entities/product.entities';
-import { GetProductsConsumer } from './consumers/get-products.consumer';
+import { ProductsConsumer } from './consumers/products.consumer';
 import { Order } from 'src/entities/order.entity';
-import { GetOrdersConsumer } from './consumers/get-orders.consumer';
+import { GetOrdersConsumer } from './consumers/orders.consumer';
 
 @Module({
 
@@ -38,7 +38,7 @@ import { GetOrdersConsumer } from './consumers/get-orders.consumer';
      )
   ],
 
-  providers: [JobsService, ConfigWebhookConsumer, GetProductsConsumer, GetOrdersConsumer],
+  providers: [JobsService, ConfigWebhookConsumer, ProductsConsumer, GetOrdersConsumer],
   controllers: [JobsController],
   exports: [JobsService]
 })

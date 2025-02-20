@@ -1,7 +1,7 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { Queue } from 'bullmq';
-import { CONFIGURE_QUEUE, ORDERS_QUEUE, PRODUCTS_QUEUE } from './constants/jobs.constants';
+import { CONFIGURE_QUEUE, GET_ORDERS, GET_PRODUCTS, ORDERS_QUEUE, PRODUCTS_QUEUE, SYNC_ORDERS, SYNC_PRODUCTS } from './constants/jobs.constants';
 import { Store } from 'src/entities/store.entity';
 
 @Injectable()
@@ -19,13 +19,28 @@ export class JobsService {
         await this.configQueue.add(CONFIGURE_QUEUE, storeId)
     }
 
-    public getProducts = async (store: Store): Promise<any> =>
-    {
-        await this.productQueue.add(PRODUCTS_QUEUE, store);
+    /**
+     * All jobs regarding products
+     * @param store 
+     */
+    public syncProducts = async (store: Store): Promise<any> => {
+        await this.productQueue.add(SYNC_PRODUCTS, store);
     }
 
-    public getOrders = async (store: Store): Promise<any> =>
+    public getProducts = async (store: Store): Promise<any> => {
+    await this.productQueue.add(GET_PRODUCTS, store);
+    }
+
+    /**
+     * All jobs regarding orders
+     * @param store 
+     */
+    public syncOrders = async (store: Store): Promise<any> =>
     {
-        await this.ordersQueue.add(ORDERS_QUEUE, store);
+        await this.ordersQueue.add(SYNC_ORDERS, store);
+    }
+        public getOrders = async (store: Store): Promise<any> =>
+    {
+        await this.ordersQueue.add(GET_ORDERS, store);
     }
 }

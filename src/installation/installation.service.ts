@@ -190,8 +190,8 @@ export class InstallationService {
             return {table_id: null, success: false};
         }
 
-        await this.jobsService.getProducts(result.store);
-        await this.jobsService.getOrders(result.store);
+        await this.jobsService.syncProducts(result.store);
+        await this.jobsService.syncOrders(result.store);
 
         const createRelation: UserStore | false = await this.createSuperAdmin(result.user.user_id, result.store.table_id);
         if (typeof createRelation == 'boolean')

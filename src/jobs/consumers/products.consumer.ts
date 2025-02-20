@@ -1,5 +1,5 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
-import { PRODUCTS_QUEUE } from "../constants/jobs.constants";
+import { GET_PRODUCTS, PRODUCTS_QUEUE, SYNC_PRODUCTS } from "../constants/jobs.constants";
 import { InjectRepository } from "@nestjs/typeorm";
 import { ConfigService } from "@nestjs/config";
 import { UtilsService } from "src/utils/utils.service";
@@ -15,9 +15,9 @@ import { Logger } from "@nestjs/common";
 
 
 @Processor(PRODUCTS_QUEUE)
-export class GetProductsConsumer extends WorkerHost
+export class ProductsConsumer extends WorkerHost
 {
-    private readonly logger = new Logger(GetProductsConsumer.name)
+    private readonly logger = new Logger(ProductsConsumer.name)
 
     constructor(
         private readonly configService: ConfigService,
@@ -28,10 +28,30 @@ export class GetProductsConsumer extends WorkerHost
     )
     { super() }
 
-    public process = async (job: Job<unknown>): Promise<any> => {
+    public process = async (job: Job<Store>): Promise<any> => {
         try
         {        
-            const store = job.data ?? null;
+            switch (job.name)
+            {
+                case SYNC_PRODUCTS:
+                    return await this.syncProducts(job);
+                case GET_PRODUCTS:
+                    return await this.retrieveProducts(job);
+                default:
+                    throw new Error('Invalid job name');
+                    break;
+            }
+            
+        }
+        catch (error)
+        {
+            this.logger.error(error.message);
+        }
+    }
+
+    private syncProducts =  async (job: Job<Store>): Promise<void> => {
+        try {
+             const store = job.data ?? null;
             
             let since_id: number = 0;
             let products = new Array();
@@ -49,10 +69,7 @@ export class GetProductsConsumer extends WorkerHost
                     since_id = product.id;
                 });
             
-
-        }
-        catch (error)
-        {
+        } catch (error) {
             this.logger.error(error.message);
         }
     }
@@ -90,5 +107,20 @@ export class GetProductsConsumer extends WorkerHost
         }
 
         return productCreated;
+    }
+
+    private retrieveProducts = async (job: Job<Store>): Promise<Product[] | Product | null> => {
+        let products: Product[] | Product;
+        try {
+            const store = job.data;
+            products = await this.productsRepository.findBy({
+                store_id: store.table_id
+            })
+        } catch (error) {
+            this.logger.error(error.message);
+        }
+
+
+        return null;
     }
 }
