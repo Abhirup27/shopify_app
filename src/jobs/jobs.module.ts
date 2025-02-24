@@ -12,6 +12,8 @@ import { Product } from 'src/entities/product.entities';
 import { ProductsConsumer } from './consumers/products.consumer';
 import { Order } from 'src/entities/order.entity';
 import { GetOrdersConsumer } from './consumers/orders.consumer';
+import { OrderQueueEvents } from './providers/retrieve-order-listener.provider';
+import { ProductQueueEvents } from './providers/retrieve-products-listener.provider';
 
 @Module({
 
@@ -38,7 +40,14 @@ import { GetOrdersConsumer } from './consumers/orders.consumer';
      )
   ],
 
-  providers: [JobsService, ConfigWebhookConsumer, ProductsConsumer, GetOrdersConsumer],
+  providers: [
+    JobsService,
+    ConfigWebhookConsumer,
+    ProductsConsumer,
+    GetOrdersConsumer,
+    OrderQueueEvents,
+    ProductQueueEvents
+  ],
   controllers: [JobsController],
   exports: [JobsService]
 })

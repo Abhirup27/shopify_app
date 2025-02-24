@@ -3,6 +3,8 @@ import { doubleCsrf, DoubleCsrfConfigOptions } from 'csrf-csrf';
 import { Request, Response} from 'express';
 import { AuthService } from 'src/auth/auth.service';
 import { AccessTokenGuard, Public } from 'src/auth/guards/access-token.guard';
+import { Order } from 'src/entities/order.entity';
+import { JobsService } from 'src/jobs/jobs.service';
 import { UtilsService } from 'src/utils/utils.service';
 
 @UseGuards(AccessTokenGuard)
@@ -11,6 +13,7 @@ export class WebAppController {
   constructor(
 
     private readonly utilsService: UtilsService,
+    private readonly jobsService: JobsService,
 
     @Inject(forwardRef(()=> AuthService))
     private readonly authService: AuthService
@@ -56,10 +59,13 @@ export class WebAppController {
     @Render('home')
     public async getDashboard(@Req() req: Request, @Res() res)
     {
-      console.log(req.headers.authorization)
-      console.log(req["user"],req["roles"]);
+      //console.log(req.headers.authorization)
+     // console.log(req["user"],req["roles"]);
       const token = this.utilsService.generateToken(req, res)
 
+      const recentOrders = await this.jobsService.getOrders(req["roles"].store_id);
+
+     console.log(recentOrders);
       return {
         user: {
           name: req["user"].name,
@@ -94,6 +100,13 @@ export class WebAppController {
             product: "Headphones",
             price: 199.99,
             status: "Rejected"
+          },
+                    {
+            id: 4,
+            customer: "Mike2 Johnson2",
+            product: "He2adphone2s",
+            price: 1299.99,
+            status: "Approved"
           }
         ],
         topSelling: [

@@ -36,11 +36,11 @@ export class UtilsService {
 
     public getStoreByDomain = async (shop: string): Promise<Store> =>
     {
-        console.log(shop);
+        //console.log(shop);
         const existingStore =  await this.storeRepository.findOneBy({
             myshopify_domain:shop
            })
-        console.log(existingStore);
+        //console.log(existingStore);
         
         return existingStore
     }

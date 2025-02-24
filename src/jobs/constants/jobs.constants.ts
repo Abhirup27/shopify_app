@@ -7,8 +7,11 @@ export const SYNC_ = 'sync-';
 
 export const SYNC_PRODUCTS = 'sync-products';
 export const SYNC_ORDERS = 'sync-orders';
+export const SYNC_STORE = 'sync-store';
 
 export const GET_ = 'retrieve-';
 
 export const GET_PRODUCTS = 'retrieve-products';
 export const GET_ORDERS = 'retrieve-orders';
+export const GET_STORE = 'retrieve-store';
+export const GET_STORES = 'retrieve-stores';

@@ -38,7 +38,7 @@ export class RateLimitingGuard extends ThrottlerGuard {
 
     const JWTtracker = await this.getJWTTracker(req);
     if (JWTtracker != null) {
-      console.log('JWT found')
+      console.log('JWT found in header')
       const JWTKey = this.generateKey(requestProps.context, requestProps.throttler.name, JWTtracker);
 
       const { totalHits: totalJWTHits, timeToExpire: timeToExpireJWT } = await this.storageService.increment(JWTKey, requestProps.ttl, requestProps.limit, requestProps.blockDuration, requestProps.throttler.name);
@@ -55,7 +55,7 @@ export class RateLimitingGuard extends ThrottlerGuard {
     }
     if (totalHits > requestProps.limit)
     {
-      console.log(totalHits)
+      //console.log(totalHits)
       res.header('Retry-After', timeToExpire);
 
       res.type('text/plain');

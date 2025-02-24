@@ -125,7 +125,7 @@ export class InstallationController {
 
                 const accessToken = await this.installationService.getAccessTokenForStore(shop, code);
             
-                 console.log(query);
+                 //console.log(query);
                 // console.log("THIS IS THE ACESS TOKEN", accessToken)
                 
                 if (accessToken != false  && accessToken.length > 0)

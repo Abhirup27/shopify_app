@@ -108,7 +108,7 @@ export class InstallationService {
             if ('statusCode' in response && response.statusCode === 200)
             {
 
-                console.log(response.respBody);
+                //console.log(response.respBody);
                     // equal to (response.respBody.hasOwnProperty('access_token'))
                 if (response.respBody['access_token'] && response.respBody['access_token'] !== null) 
                 {
@@ -177,7 +177,7 @@ export class InstallationService {
            
             result = await this.createStoreProvider.createStore(shopDetails, accessToken);
 
-            console.log(result)
+            //console.log(result)
             //create a new entry with the table_id of the store table and the id of the user in another table
             //assign roles
     

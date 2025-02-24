@@ -10,14 +10,20 @@ export class WebhooksController {
     }
 
     @Post('orders/updated')
-    public async updateOrder(@Body() req, any)
+    public async updateOrder(@Body() req )
     {
         console.log(req);
     }
     @Post('orders/create')
-    public async createOrder(@Body() req, any)
+    public async createOrder(@Body() req)
     {
         console.log(req);
+    }
+
+    @Post('products/update')
+    public async updateProduct(@Body() req: any)
+    {
+        //console.log(req);
     }
 
 }

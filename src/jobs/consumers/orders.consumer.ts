@@ -144,7 +144,7 @@ export class GetOrdersConsumer extends WorkerHost
     )
     { super(); }
 
-    public process = async (job: Job<Store>): Promise<any> => {
+    public process = async (job: Job<Store>): Promise<Order[] | Order | null> => {
         try {
             //const store: Store = job.data;
 
@@ -153,6 +153,7 @@ export class GetOrdersConsumer extends WorkerHost
                 case SYNC_ORDERS:
                     return await this.syncOrders(job); 
                 case GET_ORDERS:
+                    
                     return await this.retrieveOrders(job);
                 default:
                      throw new Error('Invalid job name');
@@ -165,6 +166,7 @@ export class GetOrdersConsumer extends WorkerHost
         {
         
             this.logger.error(error.message);
+            throw error;
         }
 
     }
@@ -202,6 +204,7 @@ export class GetOrdersConsumer extends WorkerHost
         } catch (error)
         {
             this.logger.error(error.message, this.syncOrders.name);
+            throw error;
         }
     }
     private async saveOrdersInDB(storeId: number,orders: any[]): Promise<void> {
@@ -348,16 +351,13 @@ export class GetOrdersConsumer extends WorkerHost
             })
 
 
+            return orders || null;
         } catch (error)
         {
             this.logger.error(error.message, this.retrieveOrders.name);
+            return null;
         }
         
-        if (orders.length > 0)
-        {
-            return orders;
-        }
-        return null;
     }
 
     public getQueryObjectForOrders = (cursor: string | null):  { query: string } | null => {
@@ -595,6 +595,7 @@ export class GetOrdersConsumer extends WorkerHost
 
             return  {query} ;
         } catch (error) {
+            this.logger.error(error.message, this.getQueryObjectForOrders.name);
             return null;
         }
     }

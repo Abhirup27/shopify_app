@@ -60,10 +60,10 @@ export class AccessTokenGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync(token, this.jwtConfig);
 
       request[REQUEST_USER_KEY] = payload;
-      console.log('the payload is ', payload);
+      //console.log('the payload is ', payload);
 
       const { User, UserStore } = await this.userService.findOneByEmail(payload.email);
-      console.log(User, UserStore);
+      //console.log(User, UserStore);
       request.user = User;
       request.roles = UserStore;
       

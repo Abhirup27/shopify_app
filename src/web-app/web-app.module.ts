@@ -7,6 +7,7 @@ import { UtilsModule } from 'src/utils/utils.module';
 import { ConfigModule } from '@nestjs/config';
 import jwtConfig from 'src/auth/config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
+import { JobsModule } from 'src/jobs/jobs.module';
 
 
 /**
@@ -14,6 +15,7 @@ import { JwtModule } from '@nestjs/jwt';
  */
 @Module({
   imports: [
+    JobsModule,
     UtilsModule,
     UserModule,
     AuthModule,
