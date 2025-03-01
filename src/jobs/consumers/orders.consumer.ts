@@ -129,9 +129,9 @@ interface PageInfo {
 
 
 @Processor(ORDERS_QUEUE)
-export class GetOrdersConsumer extends WorkerHost
+export class OrdersConsumer extends WorkerHost
 {
-    private readonly logger = new Logger(GetOrdersConsumer.name);
+    private readonly logger = new Logger(OrdersConsumer.name);
 
     constructor
     (
@@ -190,12 +190,12 @@ export class GetOrdersConsumer extends WorkerHost
 
                 if (response.statusCode == 200)
                 {
-                    console.log(response.respBody["data"]['orders']['edges']);
+                    //console.log(response.respBody["data"]['orders']['edges']);
                     await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
                 }
                 console.log(response.statusCode);
 
-                  console.log(response.respBody["data"]['orders']['edges']);
+                 // console.log(response.respBody["data"]['orders']['edges']);
                 // await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
                 //console.log(response.respBody);
                 cursor = this.getCursorFromResponse(response.respBody['data']['orders']['pageInfo']);

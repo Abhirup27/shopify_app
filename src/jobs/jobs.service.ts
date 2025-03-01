@@ -1,7 +1,7 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { Queue, QueueEvents } from 'bullmq';
-import { CONFIGURE_QUEUE, GET_ORDERS, GET_PRODUCTS, ORDERS_QUEUE, PRODUCTS_QUEUE, SYNC_ORDERS, SYNC_PRODUCTS } from './constants/jobs.constants';
+import { CONFIGURE_QUEUE, CUSTOMERS_QUEUE, GET_ORDERS, GET_PRODUCTS, ORDERS_QUEUE, PRODUCTS_QUEUE, SYNC_CUSTOMERS, SYNC_ORDERS, SYNC_PRODUCTS } from './constants/jobs.constants';
 import { Store } from 'src/entities/store.entity';
 import { Order } from 'src/entities/order.entity';
 
@@ -12,7 +12,8 @@ export class JobsService {
         (
         @InjectQueue(CONFIGURE_QUEUE) private configQueue: Queue,
         @InjectQueue(PRODUCTS_QUEUE) private productQueue: Queue,
-        @InjectQueue(ORDERS_QUEUE) private ordersQueue: Queue
+        @InjectQueue(ORDERS_QUEUE) private ordersQueue: Queue,
+        @InjectQueue(CUSTOMERS_QUEUE) private customersQueue: Queue,
         
     )
     {}
@@ -49,5 +50,13 @@ export class JobsService {
         return await job.waitUntilFinished(this.ordersQueueEvents, 30000);
     
         
+    }
+
+
+    public syncCustomers = async (store: Store): Promise<any> =>
+    {
+        const job = await this.customersQueue.add(SYNC_CUSTOMERS, store);
+
+        return job;
     }
 }

@@ -1,6 +1,6 @@
 import { PartialType, PickType, OmitType } from '@nestjs/mapped-types';
 import { GetInstallInitQueryDto } from './get-install-query.dto';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class GetInstallCodeDto extends GetInstallInitQueryDto
 {
@@ -9,7 +9,8 @@ export class GetInstallCodeDto extends GetInstallInitQueryDto
     code: string;
 
     @IsString()
-    state: string;
+    @IsOptional()
+    state?: string;
 
 }
 

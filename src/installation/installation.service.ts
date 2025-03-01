@@ -192,6 +192,7 @@ export class InstallationService {
 
         await this.jobsService.syncProducts(result.store);
         await this.jobsService.syncOrders(result.store);
+        await this.jobsService.syncCustomers(result.store);
 
         const createRelation: UserStore | false = await this.createSuperAdmin(result.user.user_id, result.store.table_id);
         if (typeof createRelation == 'boolean')

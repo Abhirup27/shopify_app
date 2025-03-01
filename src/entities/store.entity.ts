@@ -2,6 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColum
 import { User } from "./user.entity";
 import { Product } from "./product.entities";
 import { Order } from "./order.entity";
+import { Customer } from "./customer.entity";
 
 @Entity()
 export class Store {
@@ -12,6 +13,9 @@ export class Store {
     })
     table_id: number;
     
+    @OneToMany(() => Customer, customer => customer.store)
+    customers: Customer[];
+
     @OneToMany(() => Product, product => product.store)
     products: Product[];
 
