@@ -72,7 +72,6 @@ export class AccessTokenGuard implements CanActivate {
       
       throw new UnauthorizedException();
     }
-    
     return true;
   }
 

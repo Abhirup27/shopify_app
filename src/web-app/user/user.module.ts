@@ -4,11 +4,12 @@ import { User } from 'src/entities/user.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserStore } from 'src/entities/userstore.entity';
 import { UserService } from './user.service';
+import { Store } from 'src/entities/store.entity';
 
 @Module({
     providers: [FindOneUser, UserService],
     imports: [
-    TypeOrmModule.forFeature([User, UserStore]),
+    TypeOrmModule.forFeature([User, UserStore, Store]),
     ],
     exports: [UserService]
 })

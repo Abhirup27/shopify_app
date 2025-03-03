@@ -12,10 +12,11 @@ import { Product } from 'src/entities/product.entities';
 import { ProductsConsumer } from './consumers/products.consumer';
 import { Order } from 'src/entities/order.entity';
 import { OrdersConsumer } from './consumers/orders.consumer';
-import { OrderQueueEvents } from './providers/retrieve-order-listener.provider';
-import { ProductQueueEvents } from './providers/retrieve-products-listener.provider';
+import { OrdersQueueEvents } from './providers/retrieve-order-listener.provider';
+import { ProductsQueueEvents } from './providers/retrieve-products-listener.provider';
 import { CustomersConsumer } from './consumers/customers.consumer';
 import { Customer } from 'src/entities/customer.entity';
+import { CustomersQueueEvents } from './providers/retrieve-customers-listener';
 
 @Module({
 
@@ -51,8 +52,9 @@ import { Customer } from 'src/entities/customer.entity';
     ProductsConsumer,
     OrdersConsumer,
     CustomersConsumer,
-    OrderQueueEvents,
-    ProductQueueEvents
+    OrdersQueueEvents,
+    ProductsQueueEvents,
+    CustomersQueueEvents
   ],
   controllers: [JobsController],
   exports: [JobsService]

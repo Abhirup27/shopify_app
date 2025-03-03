@@ -187,13 +187,13 @@ export class OrdersConsumer extends WorkerHost
             do {
                 options.data = this.getQueryObjectForOrders(cursor);
                 const response : ShopifyResponse = await this.utilsService.requestToShopify("post", options);
-
+                console.log(response.respBody);
                 if (response.statusCode == 200)
                 {
                     //console.log(response.respBody["data"]['orders']['edges']);
                     await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
                 }
-                console.log(response.statusCode);
+                
 
                  // console.log(response.respBody["data"]['orders']['edges']);
                 // await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
@@ -235,7 +235,13 @@ export class OrdersConsumer extends WorkerHost
                     billing_address: this.formatAddress(node.billingAddress),
                     fulfillments: node.fulfillments,
                     ship_country: node.shippingAddress?.country || null,
-                    ship_province: node.shippingAddress?.province || null
+                    ship_province: node.shippingAddress?.province || null,
+                    quantity: node.subtotalLineItemsQuantity,
+                    total_price: node.totalPriceSet.shopMoney.amount,
+                    subtotal_price: node.subtotalPriceSet.shopMoney.amount,
+                    total_discounts: node.totalDiscountsSet.shopMoney.amount,
+                    customer: node.customer
+
                 };
             });
 
@@ -387,6 +393,37 @@ export class OrdersConsumer extends WorkerHost
                     createdAt
                     updatedAt
                     tags
+                    totalPriceSet {
+                        presentmentMoney {
+                            amount
+                            currencyCode
+                        }
+                        shopMoney {
+                            amount
+                            currencyCode
+                        }
+                    }
+                    subtotalPriceSet  {
+                        presentmentMoney {
+                            amount
+                            currencyCode
+                        }
+                        shopMoney {
+                            amount
+                            currencyCode
+                        }
+                    }
+                    totalDiscountsSet  {
+                        presentmentMoney {
+                            amount
+                            currencyCode
+                        }
+                        shopMoney {
+                            amount
+                            currencyCode
+                        }
+                    }
+                    subtotalLineItemsQuantity
                     lineItems(first: 20) {
                     edges {
                         node {
@@ -544,6 +581,20 @@ export class OrdersConsumer extends WorkerHost
                     zip
                     }
                     customer {
+                    addresses(first :2){
+                    address1
+                    address2
+                    city
+                    company
+                    country
+                    countryCodeV2
+                    firstName
+                    lastName
+                    latitude
+                    longitude
+                    phone
+                    zip
+                    }
                     canDelete
                     createdAt
                     displayName

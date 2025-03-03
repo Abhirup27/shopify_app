@@ -4,7 +4,7 @@ import { Job } from "bullmq";
 
 
 @QueueEventsListener(PRODUCTS_QUEUE)
-export class ProductQueueEvents extends QueueEventsHost
+export class ProductsQueueEvents extends QueueEventsHost
 {
     @OnQueueEvent('completed')
     onCompleted(job:Job)

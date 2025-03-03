@@ -1,13 +1,17 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { Queue, QueueEvents } from 'bullmq';
-import { CONFIGURE_QUEUE, CUSTOMERS_QUEUE, GET_ORDERS, GET_PRODUCTS, ORDERS_QUEUE, PRODUCTS_QUEUE, SYNC_CUSTOMERS, SYNC_ORDERS, SYNC_PRODUCTS } from './constants/jobs.constants';
+import { CONFIGURE_QUEUE, CUSTOMERS_QUEUE, GET_CUSTOMERS, GET_ORDERS, GET_PRODUCTS, ORDERS_QUEUE, PRODUCTS_QUEUE, SYNC_CUSTOMERS, SYNC_ORDERS, SYNC_PRODUCTS } from './constants/jobs.constants';
 import { Store } from 'src/entities/store.entity';
 import { Order } from 'src/entities/order.entity';
 
 @Injectable()
 export class JobsService {
+
     private ordersQueueEvents = new QueueEvents(ORDERS_QUEUE);
+    private customersQueueEvents = new QueueEvents(CUSTOMERS_QUEUE);
+    private productsQueueEvents = new QueueEvents(PRODUCTS_QUEUE);
+
     constructor
         (
         @InjectQueue(CONFIGURE_QUEUE) private configQueue: Queue,
@@ -32,7 +36,9 @@ export class JobsService {
     }
 
     public getProducts = async (store: Store): Promise<any> => {
-    await this.productQueue.add(GET_PRODUCTS, store);
+        const job = await this.productQueue.add(GET_PRODUCTS, store, { attempts: 3 });
+        
+        return await job.waitUntilFinished(this.productsQueueEvents, 30000);
     }
 
     /**
@@ -41,12 +47,13 @@ export class JobsService {
      */
     public syncOrders = async (store: Store): Promise<any> =>
     {
-        await this.ordersQueue.add(SYNC_ORDERS, store, {attempts: 3});
+        return await this.ordersQueue.add(SYNC_ORDERS, store, { attempts: 3 });
+    
     }
     public getOrders = async (store: Store): Promise<any> =>
     {
         //const queueEvents = new QueueEvents(ORDERS_QUEUE);
-        const job = await this.ordersQueue.add(GET_ORDERS, store, { attempts: 3 });
+        const job = await this.ordersQueue.add(GET_ORDERS, store, { attempts : 3 });
         return await job.waitUntilFinished(this.ordersQueueEvents, 30000);
     
         
@@ -58,5 +65,11 @@ export class JobsService {
         const job = await this.customersQueue.add(SYNC_CUSTOMERS, store);
 
         return job;
+    }
+    public getCustomers = async (store: Store | number): Promise<any> =>
+    {
+        const job = await this.customersQueue.add(GET_CUSTOMERS, store, { attempts: 3 });
+        
+        return await job.waitUntilFinished(this.customersQueueEvents, 30000);
     }
 }

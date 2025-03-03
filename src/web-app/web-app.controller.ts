@@ -3,9 +3,13 @@ import { doubleCsrf, DoubleCsrfConfigOptions } from 'csrf-csrf';
 import { Request, Response} from 'express';
 import { AuthService } from 'src/auth/auth.service';
 import { AccessTokenGuard, Public } from 'src/auth/guards/access-token.guard';
+import { Customer } from 'src/entities/customer.entity';
 import { Order } from 'src/entities/order.entity';
+import { Store } from 'src/entities/store.entity';
 import { JobsService } from 'src/jobs/jobs.service';
 import { UtilsService } from 'src/utils/utils.service';
+import { UserService } from './user/user.service';
+import { User } from 'src/entities/user.entity';
 
 @UseGuards(AccessTokenGuard)
 @Controller()
@@ -14,7 +18,8 @@ export class WebAppController {
 
     private readonly utilsService: UtilsService,
     private readonly jobsService: JobsService,
-
+    private readonly userService: UserService,
+   
     @Inject(forwardRef(()=> AuthService))
     private readonly authService: AuthService
   )
@@ -32,7 +37,7 @@ export class WebAppController {
       return {appName: 'Shopify App', style: '',csrfToken: token, messages: ''}
   }
     @Public()
-    @Post('login')
+    @Post('/login')
     @HttpCode(HttpStatus.OK)
     public async login(@Body() body, @Req() req: Request, @Res() res : Response)
     {
@@ -50,22 +55,47 @@ export class WebAppController {
         sameSite: 'strict',
         maxAge: 1 * 60 * 60 * 1000 // 1 hour
       });
-      res.redirect('/dashboard');
+      console.log('this')
+       res.redirect('/dashboard');
 
   }
-  
+
+  /**
+   * only for testing
+   */
+  @Public()
+  @Get('/getOrders')
+  public async syncOrders()
+  {
+    const { User, UserStore } = await this.userService.findOneByEmail('27abhirup@gmail.com');
+    console.log(User)
+    const store: Store = await this.userService.findStore(User.user_id);
+    await this.jobsService.syncOrders(store);
+  }
+
     //@UseGuards(AccessTokenGuard)
     @Get('/dashboard')
     @Render('home')
-    public async getDashboard(@Req() req: Request, @Res() res)
+    public async getDashboard(@Req() req: Request, @Res() res : Response)
     {
       //console.log(req.headers.authorization)
      // console.log(req["user"],req["roles"]);
       const token = this.utilsService.generateToken(req, res)
 
-      const recentOrders = await this.jobsService.getOrders(req["roles"].store_id);
+      //console.log(req["roles"][0].store_id)
+      const recentOrders: Order[] = await this.jobsService.getOrders(req["roles"][0].store_id);
+      const customers : Customer[] = await this.jobsService.getCustomers(req["roles"][0].store_id);
 
-     console.log(recentOrders);
+      //console.log(recentOrders[0].id)
+      let totalRevenue = 0;
+      if (recentOrders && recentOrders.length > 0) {
+        totalRevenue = recentOrders.reduce((sum, order) => {
+          
+          const orderPrice = parseFloat(order.total_price as string) || 0;
+          return sum + orderPrice;
+        }, 0);
+      }
+     
       return {
         user: {
           name: req["user"].name,
@@ -76,36 +106,36 @@ export class WebAppController {
         style: '', 
         messages: '',
         isEmbedded: false,
-        orders_count: 150,
-        orders_revenue: 45678.90,
-        customers_count: 1234,
+        orders_count: recentOrders.length,
+        orders_revenue: totalRevenue,
+        customers_count: customers.length,
         recentSales: [
           {
-            id: 1,
-            customer: "John Doe",
-            product: "Laptop",
-            price: 1299.99,
-            status: "Approved"
+            id: recentOrders[0].id ,
+            customer: recentOrders[0].customer["firstName"] + " " + recentOrders[0].customer["lastName"],
+            product: recentOrders[0].line_items[0]['name']  + " , " +  recentOrders[0].line_items[1]['name'],
+            price: recentOrders[0].total_price,
+            status: recentOrders[0].financial_status
           },
           {
-            id: 2,
-            customer: "Jane Smith",
-            product: "Smartphone",
-            price: 799.50,
+            id: recentOrders[1].id,
+            customer: recentOrders[1].customer["firstName"] + " " + recentOrders[1].customer["lastName"],
+            product: recentOrders[1].line_items[0]['name'],
+            price: recentOrders[1].total_price,
             status: "Pending"
           },
           {
-            id: 3,
-            customer: "Mike Johnson",
+            id: recentOrders[2].id,
+            customer: recentOrders[1].customer["firstName"] + " " + recentOrders[1].customer["lastName"],
             product: "Headphones",
-            price: 199.99,
+            price: recentOrders[2].total_price,
             status: "Rejected"
           },
                     {
-            id: 4,
-            customer: "Mike2 Johnson2",
-            product: "He2adphone2s",
-            price: 1299.99,
+            id: recentOrders[3].id,
+            customer: recentOrders[3].customer["firstName"] + " " + recentOrders[3].customer["lastName"],
+            product: recentOrders[3].line_items[0]['name']  + " , " +  recentOrders[3].line_items[1]['name']  + " , " +  recentOrders[3].line_items[2]['name']  + " , " +  recentOrders[3].line_items[3]['name'],
+            price: recentOrders[3].total_price,
             status: "Approved"
           }
         ],

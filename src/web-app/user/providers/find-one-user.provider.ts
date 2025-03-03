@@ -1,5 +1,6 @@
 import { Injectable, Logger, RequestTimeoutException, UnauthorizedException, UseFilters } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Store } from 'src/entities/store.entity';
 import { User } from 'src/entities/user.entity';
 import { UserStore } from 'src/entities/userstore.entity';
 import { RequestExceptionFilter } from 'src/filters/timeout.exception.filter';
@@ -11,6 +12,8 @@ export class FindOneUser {
     private readonly logger = new Logger(FindOneUser.name);
     constructor(
 
+        @InjectRepository(Store)
+        private readonly storesRepository: Repository<Store>,
         @InjectRepository(User)
         private readonly usersRepository: Repository<User>,
         @InjectRepository(UserStore)
@@ -106,5 +109,28 @@ export class FindOneUser {
         }
         
         return {User: user, UserStore: userRoles}
+    }
+
+
+    public findStore = async (userid: number): Promise<Store> =>
+    {
+        let store: Store;
+        try {
+             store = await this.storesRepository.findOneBy({
+                user_id: userid
+            })
+            
+        } catch (error)
+        {
+             throw new RequestTimeoutException(error, {
+                description: 'failed to fetch store.'
+            })
+        }
+         if (store == null)
+        {
+            this.logger.debug('store does not exist.')
+        }
+
+        return store;
     }
 }

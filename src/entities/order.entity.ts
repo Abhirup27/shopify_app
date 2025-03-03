@@ -1,15 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, PrimaryColumn, DataSource } from "typeorm";
 import { Store } from "./store.entity";
 
 @Entity('orders')
 export class Order {
-    @PrimaryGeneratedColumn({
-        type: 'bigint',
-        unsigned: true
-    })
-    table_id: number;
-
-    @Column({
+    @PrimaryColumn({
         type: 'bigint',
         unsigned: true
     })
@@ -82,6 +76,9 @@ export class Order {
     @Column({ type: 'json', nullable: true })
     tax_lines: string;
 
+    @Column({ type: 'int', nullable: false })
+    quantity: string;
+        
     @Column({ type: 'json', nullable: true })
     subtotal_price_set: string;
 
@@ -167,4 +164,16 @@ export class Order {
         onUpdate: 'CURRENT_TIMESTAMP'
     })
     updated_at_date: Date;
+
+    static async getTotalPriceByStoreId(storeId: number, dataSource: DataSource): Promise<number> {
+        const orderRepository = dataSource.getRepository(Order);
+        
+        const result = await orderRepository
+            .createQueryBuilder("order")
+            .select("SUM(order.total_price)", "sum")
+            .where("order.store_id = :storeId", { storeId })
+            .getRawOne();
+            
+        return result.sum ? parseFloat(result.sum) : 0;
+    }
 }

@@ -10,43 +10,23 @@
 <script src="/assets/js/main.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
 <script>
-   document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('form');
-    
+   
     form.addEventListener('submit', function(e) {
-        e.preventDefault();
+        // Don't prevent default - let the normal form submission happen
+        // e.preventDefault();
         
+        // Add the CSRF token to the form if needed
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        const formData = new FormData(this);
-        console.log(formData.get('email'))
-        // Convert FormData to plain object
-        const data = {};
-        formData.forEach((value, key) => {
-            data[key] = value;
-        });
-
-        fetch(this.action, {
-            method: 'POST',
-            headers: {
-                'x-csrf-token': csrfToken,
-                'Content-Type': 'application/json',
-                'Accept': 'text/html'
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => {
-            if (response.redirected) {
-                window.location.href = response.url;
-            } else {
-                return response.text();
-            }
-        })
-        .then(html => {
-            if (html) {
-                document.documentElement.innerHTML = html;
-            }
-        })
-        .catch(error => console.error('Error:', error));
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrf';
+        csrfInput.value = csrfToken;
+        this.appendChild(csrfInput);
+        
+        // Let the form submit normally, which will follow the server's redirect
+        return true;
     });
 });
 </script>

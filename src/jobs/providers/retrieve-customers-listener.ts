@@ -1,10 +1,12 @@
 import { OnQueueEvent, QueueEventsHost, QueueEventsListener } from "@nestjs/bullmq";
-import { ORDERS_QUEUE } from "../constants/jobs.constants";
+import { CUSTOMERS_QUEUE } from "../constants/jobs.constants";
 import { Job } from "bullmq";
 
 
-@QueueEventsListener(ORDERS_QUEUE)
-export class OrdersQueueEvents extends QueueEventsHost
+
+
+@QueueEventsListener(CUSTOMERS_QUEUE)
+export class CustomersQueueEvents extends QueueEventsHost
 {
     @OnQueueEvent('completed')
     onCompleted(job:Job)

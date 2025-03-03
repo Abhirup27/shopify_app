@@ -23,7 +23,6 @@ export class AuthMiddleware implements NestMiddleware {
     {
       //set req.headers.authorization so that the guard can process
       req.headers.authorization ="Bearer "+token;      
-
       //add role and permissions to the request object.
     }
     next();

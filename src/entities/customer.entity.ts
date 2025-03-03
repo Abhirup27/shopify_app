@@ -28,7 +28,7 @@ export class Customer {
   email: string;
 
   @Column({ type: 'json', nullable: true })
-  accepts_marketing: JSON;
+  accepts_marketing: string;
 
   @Column({ type: 'varchar', nullable: true })
   created_at: string;
@@ -55,7 +55,7 @@ export class Customer {
   admin_graphql_api_id: string;
 
   @Column({ type: 'json', nullable: true })
-  default_address: JSON;
+  default_address: string;
 
   @Column({ type: 'varchar', nullable: true })
   tags: string;

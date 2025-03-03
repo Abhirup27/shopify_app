@@ -38,7 +38,14 @@ export class CustomersConsumer extends WorkerHost {
                 case SYNC_CUSTOMERS:
                     return await this.syncCustomers(job.data);
                 case GET_CUSTOMERS:
-                    return await this.retrieveCustomers(job.data);
+                    if (this.isStore(job.data))  // job.data instanceof Store
+                    {
+                        return await this.retrieveCustomers(job.data.table_id);
+                    }
+                    else  //'table_id' in job.data // //typeof job.data == 'number'
+                    {
+                        return await this.retrieveCustomers(job.data)
+                    }
                 
                 default:
                     throw Error("Invalid job");
@@ -51,16 +58,22 @@ export class CustomersConsumer extends WorkerHost {
         }
     }
 
-    private retrieveCustomers = async (store: Store): Promise<Customer | Customer[] | null> =>
+    private retrieveCustomers = async (store: number): Promise<Customer | Customer[] | null> =>
     {
+        let customers: Customer[] | Customer;
         try {
-            
+             
 
+            const storeId = store;
+            customers = await this.customersRepository.findBy({
+                store_id: storeId
+            })
         } catch (error)
         {
             this.logger.error(error.message, "", this.retrieveCustomers.name);
             return null;
         }
+        return customers;
     }
 
     private syncCustomers = async (store: Store): Promise<any> =>
@@ -133,7 +146,7 @@ export class CustomersConsumer extends WorkerHost {
                     created_at: customer.createdAt,
                     updated_at: customer.updatedAt,
                     default_address: customer.defaultAddress,
-                    accepts_marketing: customer.smsMarketingConsent + customer.emailMarketingConsent,
+                    accepts_marketing: customer.smsMarketingConsent, //+ customer.emailMarketingConsent,
                     
                     orders_count: 0,
                     currency: 'Rupees',
@@ -177,6 +190,12 @@ export class CustomersConsumer extends WorkerHost {
         }
         
         return null;
+    }
+                                                //type predicate guard
+    private isStore = (store: Store | number): store is Store =>
+    {
+                //typecast
+        return (store as Store).table_id !== undefined;
     }
 
     private getQueryObjectForCustomers = (cursor: string | null): { query: string } | null => {
