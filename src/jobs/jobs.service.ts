@@ -14,16 +14,14 @@ export class JobsService {
 
     constructor
         (
-        @InjectQueue(CONFIGURE_QUEUE) private configQueue: Queue,
-        @InjectQueue(PRODUCTS_QUEUE) private productQueue: Queue,
-        @InjectQueue(ORDERS_QUEUE) private ordersQueue: Queue,
-        @InjectQueue(CUSTOMERS_QUEUE) private customersQueue: Queue,
-        
-    )
-    {}
+            @InjectQueue(CONFIGURE_QUEUE) private configQueue: Queue,
+            @InjectQueue(PRODUCTS_QUEUE) private productQueue: Queue,
+            @InjectQueue(ORDERS_QUEUE) private ordersQueue: Queue,
+            @InjectQueue(CUSTOMERS_QUEUE) private customersQueue: Queue,
 
-    public configure = async (storeId: number): Promise<any> =>
-    {
+        ) { }
+
+    public configure = async (storeId: number): Promise<any> => {
         await this.configQueue.add(CONFIGURE_QUEUE, storeId)
     }
 
@@ -37,7 +35,7 @@ export class JobsService {
 
     public getProducts = async (store: Store): Promise<any> => {
         const job = await this.productQueue.add(GET_PRODUCTS, store, { attempts: 3 });
-        
+
         return await job.waitUntilFinished(this.productsQueueEvents, 30000);
     }
 
@@ -45,31 +43,27 @@ export class JobsService {
      * All jobs regarding orders
      * @param store 
      */
-    public syncOrders = async (store: Store): Promise<any> =>
-    {
+    public syncOrders = async (store: Store): Promise<any> => {
         return await this.ordersQueue.add(SYNC_ORDERS, store, { attempts: 3 });
-    
+
     }
-    public getOrders = async (store: Store): Promise<any> =>
-    {
+    public getOrders = async (store: number): Promise<any> => {
         //const queueEvents = new QueueEvents(ORDERS_QUEUE);
-        const job = await this.ordersQueue.add(GET_ORDERS, store, { attempts : 3 });
+        const job = await this.ordersQueue.add(GET_ORDERS, store, { attempts: 3 });
         return await job.waitUntilFinished(this.ordersQueueEvents, 30000);
-    
-        
+
+
     }
 
 
-    public syncCustomers = async (store: Store): Promise<any> =>
-    {
+    public syncCustomers = async (store: Store): Promise<any> => {
         const job = await this.customersQueue.add(SYNC_CUSTOMERS, store);
 
         return job;
     }
-    public getCustomers = async (store: Store | number): Promise<any> =>
-    {
+    public getCustomers = async (store: number): Promise<any> => {
         const job = await this.customersQueue.add(GET_CUSTOMERS, store, { attempts: 3 });
-        
+
         return await job.waitUntilFinished(this.customersQueueEvents, 30000);
     }
 }

@@ -13,43 +13,40 @@ import { ConfigType } from "@nestjs/config";
 export class SignInProvider {
 
     constructor(
-        @Inject(forwardRef(()=> UserService))
+        @Inject(forwardRef(() => UserService))
         private readonly usersService: UserService,
 
         private readonly hashingProvider: HashingProvider,
-         private readonly jwtSerice: JwtService,
+        private readonly jwtSerice: JwtService,
 
-         @Inject(jwtConfiguration.KEY)
-         private readonly jwtConfig: ConfigType<typeof jwtConfiguration>
+        @Inject(jwtConfiguration.KEY)
+        private readonly jwtConfig: ConfigType<typeof jwtConfiguration>
 
-    ){}
+    ) { }
 
-    public signIn = async (signInDto: SignInDto) =>
-    {
-        
+    public signIn = async (signInDto: SignInDto) => {
+
         const userDetails = await this.usersService.findOneByEmail(signInDto.email);
 
 
         let isEqual: boolean = false;
 
         try {
-            
+
             isEqual = await this.hashingProvider.comparePassword(signInDto.password, userDetails.User.password);
-        
-        } catch (error)
-        {
+
+        } catch (error) {
             throw new RequestTimeoutException(error, {
                 description: 'Could not compare passwords'
             })
         }
 
-        if (!isEqual)
-        {
+        if (!isEqual) {
             throw new UnauthorizedException('Incorrect Password');
 
         }
 
-        console.log(userDetails.User.user_id)
+        //console.log(userDetails.User.user_id)
         const accessToken = await this.jwtSerice.signAsync(
             {
                 sub: userDetails.User.user_id,
@@ -66,9 +63,9 @@ export class SignInProvider {
         return {
             accessToken
         };
-        
+
 
         //append JWT, and add the userStore, so that the controller can render the dashboard according to the role/permissions 
-        
+
     }
 }

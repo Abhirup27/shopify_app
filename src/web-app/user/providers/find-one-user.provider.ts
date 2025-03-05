@@ -6,6 +6,11 @@ import { UserStore } from 'src/entities/userstore.entity';
 import { RequestExceptionFilter } from 'src/filters/timeout.exception.filter';
 import { Repository } from 'typeorm';
 
+
+/**
+ * This entire provider will probably move under the jobs module in the future.
+ */
+
 @Injectable()
 @UseFilters(RequestExceptionFilter)
 export class FindOneUser {
@@ -132,5 +137,28 @@ export class FindOneUser {
         }
 
         return store;
+    }
+
+    public getStoreContext = async (userId: number, storeId?: number): Promise<UserStore> =>
+    {
+        if (storeId && typeof storeId != undefined) {
+            const storeContext = await this.userStoresRepository.findOne({
+                where: { user_id: userId, store_id: storeId }
+            });
+            
+            if (storeContext) return storeContext;
+        }
+        
+        // Otherwise get the primary store or the first one
+        const storeContexts = await this.userStoresRepository.find({
+            where: { user_id: userId },
+            order: { store_id: 'DESC' }  // Primary stores first
+        });
+        
+        if (!storeContexts.length) {
+            throw new Error('No store context found for user');
+        }
+        
+        return storeContexts[0];
     }
 }

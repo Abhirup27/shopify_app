@@ -5,7 +5,7 @@
     <%- include('layouts/header') %>
     
     <!-- ======= Sidebar ======= -->
-    <% if (user.roles.includes('SuperAdmin')) { %>
+    <% if (isSuperAdmin) { %>
         <%- include('superadmin/aside') %>
     <% } %>
     

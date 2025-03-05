@@ -13,14 +13,14 @@
 import { registerAs } from "@nestjs/config";
 import { JwtModuleAsyncOptions, JwtModuleOptions } from "@nestjs/jwt";
 
-export default registerAs('jwt', ():JwtModuleOptions => {
+export default registerAs('jwt', (): JwtModuleOptions => {
     return {
         secret: process.env.JWT_SECRET ?? 'randomstring',
-        signOptions:  
-        {            
-        audience: process.env.JWT_TOKEN_AUDIENCE ?? 'https://b16d-223-233-66-12.ngrok-free.app',
-        issuer: process.env.JWT_TOKEN_ISSUER,
-        expiresIn: parseInt(process.env.JWT_ACCESS_TOKEN_TTL ?? '3600', 10)
+        signOptions:
+        {
+            audience: process.env.JWT_TOKEN_AUDIENCE ?? 'https://8437-223-233-66-12.ngrok-free.app',
+            issuer: process.env.JWT_TOKEN_ISSUER,
+            expiresIn: parseInt(process.env.JWT_ACCESS_TOKEN_TTL ?? '3600', 10)
         },
 
     }

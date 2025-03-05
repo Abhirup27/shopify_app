@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 import jwtConfig from 'src/auth/config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
 import { JobsModule } from 'src/jobs/jobs.module';
+import { WebAppService } from './web-app.service';
 
 
 /**
@@ -22,7 +23,8 @@ import { JobsModule } from 'src/jobs/jobs.module';
     ConfigModule.forFeature(jwtConfig),
     JwtModule.registerAsync(jwtConfig.asProvider())
   ],
-  controllers: [WebAppController]
+  controllers: [WebAppController],
+  providers: [WebAppService]
 })
 export class WebAppModule implements NestModule {
 

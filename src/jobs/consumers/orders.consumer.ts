@@ -13,169 +13,171 @@ import { ShopifyRequestOptions } from "src/types/ShopifyRequestOptions";
 import { ShopifyResponse } from "src/types/ShopifyResponse";
 
 interface Money {
-  amount: string;
-  currencyCode: string;
+    amount: string;
+    currencyCode: string;
 }
 
 interface MoneySet {
-  presentmentMoney: Money;
-  shopMoney: Money;
+    presentmentMoney: Money;
+    shopMoney: Money;
 }
 
 interface Image {
-  id: string;
-  altText?: string;
-  url: string;
-  width?: number;
+    id: string;
+    altText?: string;
+    url: string;
+    width?: number;
 }
 
 interface Product {
-  id: string;
-  productType: string;
-  title: string;
-  vendor: string;
-  updatedAt: string;
-  tags: string[];
-  publishedAt: string;
-  handle: string;
-  descriptionHtml: string;
-  description: string;
-  createdAt: string;
+    id: string;
+    productType: string;
+    title: string;
+    vendor: string;
+    updatedAt: string;
+    tags: string[];
+    publishedAt: string;
+    handle: string;
+    descriptionHtml: string;
+    description: string;
+    createdAt: string;
 }
 
 interface Variant {
-  barcode: string;
-  compareAtPrice: string;
-  createdAt: string;
-  displayName: string;
-  id: string;
-  image: Image;
-  inventoryQuantity: number;
-  price: string;
-  title: string;
-  updatedAt: string;
+    barcode: string;
+    compareAtPrice: string;
+    createdAt: string;
+    displayName: string;
+    id: string;
+    image: Image;
+    inventoryQuantity: number;
+    price: string;
+    title: string;
+    updatedAt: string;
 }
 
 interface TaxLine {
-  priceSet: MoneySet;
-  rate: number;
-  ratePercentage: number;
-  title: string;
+    priceSet: MoneySet;
+    rate: number;
+    ratePercentage: number;
+    title: string;
 }
 
 interface Address {
-  address1: string;
-  address2?: string;
-  city: string;
-  country: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  province: string;
-  zip: string;
+    address1: string;
+    address2?: string;
+    city: string;
+    country: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    province: string;
+    zip: string;
 }
 
 interface Customer {
-  canDelete: boolean;
-  createdAt: string;
-  displayName: string;
-  email: string;
-  firstName: string;
-  hasTimelineComment: boolean;
-  locale: string;
-  note?: string;
-  updatedAt: string;
-  id: string;
-  lastName: string;
+    canDelete: boolean;
+    createdAt: string;
+    displayName: string;
+    email: string;
+    firstName: string;
+    hasTimelineComment: boolean;
+    locale: string;
+    note?: string;
+    updatedAt: string;
+    id: string;
+    lastName: string;
 }
 
 interface TrackingInfo {
-  company: string;
-  number: string;
-  url: string;
+    company: string;
+    number: string;
+    url: string;
 }
 
 interface Fulfillment {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  deliveredAt?: string;
-  displayStatus: string;
-  estimatedDeliveryAt?: string;
-  legacyResourceId: string;
-  name: string;
-  status: string;
-  trackingInfo: TrackingInfo;
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    deliveredAt?: string;
+    displayStatus: string;
+    estimatedDeliveryAt?: string;
+    legacyResourceId: string;
+    name: string;
+    status: string;
+    trackingInfo: TrackingInfo;
 }
 
 interface ShippingLine {
-  carrierIdentifier: string;
-  id: string;
-  title: string;
-  custom: boolean;
-  code: string;
-  phone: string;
-  originalPriceSet: MoneySet;
-  source: string;
-  shippingRateHandle: string;
+    carrierIdentifier: string;
+    id: string;
+    title: string;
+    custom: boolean;
+    code: string;
+    phone: string;
+    originalPriceSet: MoneySet;
+    source: string;
+    shippingRateHandle: string;
 }
 
 interface PageInfo {
-  hasNextPage: boolean;
-  endCursor: string;
-  hasPreviousPage: boolean;
-  startCursor: string;
+    hasNextPage: boolean;
+    endCursor: string;
+    hasPreviousPage: boolean;
+    startCursor: string;
 }
 
 
 @Processor(ORDERS_QUEUE)
-export class OrdersConsumer extends WorkerHost
-{
+export class OrdersConsumer extends WorkerHost {
     private readonly logger = new Logger(OrdersConsumer.name);
 
     constructor
-    (
-    private readonly configService: ConfigService,
-        private readonly utilsService: UtilsService, 
-    
-        @InjectRepository(Order)
-        private readonly ordersRepository: Repository<Order>
+        (
+            private readonly configService: ConfigService,
+            private readonly utilsService: UtilsService,
 
-    )
-    { super(); }
+            @InjectRepository(Order)
+            private readonly ordersRepository: Repository<Order>
 
-    public process = async (job: Job<Store>): Promise<Order[] | Order | null> => {
+        ) { super(); }
+
+    public process = async (job: Job<Store | number>): Promise<Order[] | Order | null> => {
         try {
             //const store: Store = job.data;
 
-            switch (job.name)
-            {
+            switch (job.name) {
                 case SYNC_ORDERS:
-                    return await this.syncOrders(job); 
+                    if (typeof job.data == "number") {
+                        throw new Error("Invalid job data, Store expected recieved number type.");
+                    }
+
+                    return await this.syncOrders(job.data);
+
                 case GET_ORDERS:
-                    
-                    return await this.retrieveOrders(job);
+                    if (job.data instanceof Object) {
+                        throw new Error("Invalid job data, number expected recieved store type.");
+                    }
+
+                    return await this.retrieveOrders(job.data);
                 default:
-                     throw new Error('Invalid job name');
+                    throw new Error('Invalid job name');
 
             }
 
 
         }
-        catch (error)
-        {
-        
+        catch (error) {
+
             this.logger.error(error.message);
             throw error;
         }
 
     }
 
-    private syncOrders = async(job: Job<Store>): Promise<any> =>
-    {
-        const store: Store = job.data;
+    private syncOrders = async (store: Store): Promise<any> => {
         try {
-            
+
             const options: ShopifyRequestOptions =
             {
                 url: await this.utilsService.getShopifyURLForStore('graphql.json', store),
@@ -183,31 +185,29 @@ export class OrdersConsumer extends WorkerHost
             };
             //const headers: AxiosHeaders = this.utilsService.getGraphQLHeadersForStore(store);
             let cursor: string | null = null;
-            
+
             do {
                 options.data = this.getQueryObjectForOrders(cursor);
-                const response : ShopifyResponse = await this.utilsService.requestToShopify("post", options);
+                const response: ShopifyResponse = await this.utilsService.requestToShopify("post", options);
                 console.log(response.respBody);
-                if (response.statusCode == 200)
-                {
+                if (response.statusCode == 200) {
                     //console.log(response.respBody["data"]['orders']['edges']);
                     await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
                 }
-                
 
-                 // console.log(response.respBody["data"]['orders']['edges']);
+
+                // console.log(response.respBody["data"]['orders']['edges']);
                 // await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
                 //console.log(response.respBody);
                 cursor = this.getCursorFromResponse(response.respBody['data']['orders']['pageInfo']);
 
             } while (cursor !== null);
-        } catch (error)
-        {
+        } catch (error) {
             this.logger.error(error.message, this.syncOrders.name);
             throw error;
         }
     }
-    private async saveOrdersInDB(storeId: number,orders: any[]): Promise<void> {
+    private async saveOrdersInDB(storeId: number, orders: any[]): Promise<void> {
         try {
             if (!orders || !Array.isArray(orders) || orders.length === 0) {
                 return;
@@ -229,7 +229,7 @@ export class OrdersConsumer extends WorkerHost
                     updated_at: node.updatedAt,
                     tags: Array.isArray(node.tags) ? JSON.stringify(node.tags) : node.tags,
                     phone: node.phone,
-                    store_id: storeId, 
+                    store_id: storeId,
                     line_items: this.formatLineItems(node.lineItems),
                     shipping_address: this.formatAddress(node.shippingAddress),
                     billing_address: this.formatAddress(node.billingAddress),
@@ -324,52 +324,48 @@ export class OrdersConsumer extends WorkerHost
             if (!graphqlId) {
                 return null;
             }
-            
-            const idPart = prefix 
+
+            const idPart = prefix
                 ? graphqlId.replace(`gid://shopify/${prefix}/`, '')
                 : graphqlId;
-                
+
             return parseInt(idPart, 10);
         } catch (error) {
             this.logger.error(`Failed to extract ID from ${graphqlId}: ${error.message}`, this.extractIdFromGraphQLId.name);
             return null;
         }
     }
-    public getCursorFromResponse = (pageInfo: PageInfo) : string | null =>
-    {
+    public getCursorFromResponse = (pageInfo: PageInfo): string | null => {
         try {
             return pageInfo.hasNextPage === true ? pageInfo.endCursor : null;
         }
-        catch (error)
-        {
+        catch (error) {
             this.logger.debug(error.message, this.getCursorFromResponse.name);
             return null;
         }
     }
 
-    private retrieveOrders = async (job: Job<Store>): Promise<Order[]| Order | null> =>
-    {
+    private retrieveOrders = async (store: number): Promise<Order[] | Order | null> => {
         let orders: Order[];
         try {
-            const store: Store = job.data;
+
             orders = await this.ordersRepository.findBy({
-                store_id: store.table_id
+                store_id: store
             })
 
 
             return orders || null;
-        } catch (error)
-        {
+        } catch (error) {
             this.logger.error(error.message, this.retrieveOrders.name);
             return null;
         }
-        
+
     }
 
-    public getQueryObjectForOrders = (cursor: string | null):  { query: string } | null => {
+    public getQueryObjectForOrders = (cursor: string | null): { query: string } | null => {
         try {
             const filter = `(first: 5${cursor ? `, after: "${cursor}"` : ''})`;
-            
+
             const query = `{
             orders${filter} {
                 edges {
@@ -644,7 +640,7 @@ export class OrdersConsumer extends WorkerHost
             }
             }`;
 
-            return  {query} ;
+            return { query };
         } catch (error) {
             this.logger.error(error.message, this.getQueryObjectForOrders.name);
             return null;

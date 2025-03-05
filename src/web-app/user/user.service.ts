@@ -10,6 +10,7 @@ export class UserService {
         private readonly findOneUserProvider : FindOneUser
     ){}
 
+    // I have to remove the UserStore promise, make a separate function to set current store context
     public async findOneByEmail(email: string): Promise<{ User: User, UserStore: UserStore[]}> 
     {
         return this.findOneUserProvider.findOneByEmail(email);
@@ -34,5 +35,10 @@ export class UserService {
     public async findStore(userId: number): Promise<Store>
     {
         return await this.findOneUserProvider.findStore(userId);
+    }
+
+    public async getStoreContext(userId: number,storeId: number | undefined): Promise<UserStore | null>
+    {
+        return await this.findOneUserProvider.getStoreContext(userId, storeId);
     }
 }
