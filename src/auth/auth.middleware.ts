@@ -3,8 +3,7 @@ import { Request } from 'express';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
-  getJWTAuthToken = (req: Request): string =>
-  {
+  getJWTAuthToken = (req: Request): string => {
     //this might be different, I might need to check the object later.
     //return (req.headers.authorization != undefined) ? req.headers.authorization?.split(' ')[1] : null;
 
@@ -15,14 +14,12 @@ export class AuthMiddleware implements NestMiddleware {
 
     const token = this.getJWTAuthToken(req);
 
-    if (token == null)
-    {
-      return res.redirect('/login');
+    if (token == null) {
+      return res.redirect('/');
     }
-    else
-    {
+    else {
       //set req.headers.authorization so that the guard can process
-      req.headers.authorization ="Bearer "+token;      
+      req.headers.authorization = "Bearer " + token;
       //add role and permissions to the request object.
     }
     next();

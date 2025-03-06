@@ -1,0 +1,14 @@
+<% if (session && session.success) { %>
+    <div class="row">
+        <div class="alert alert-primary text-center" style="color:rgb(0, 0, 0)">
+            <h5><%= session.success %></h5>
+        </div>
+    </div>
+<% } %>
+<% if (session && session.error) { %>
+    <div class="row">
+        <div class="alert alert-danger text-center" style="color:rgb(0, 0, 0)">
+            <h5><%= session.error %></h5>
+        </div>
+    </div>
+<% } %>

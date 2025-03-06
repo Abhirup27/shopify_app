@@ -1,33 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
-<%- include('layouts/head') %>
+<%- include('head') %>
 <body>
-    <%- include('layouts/header') %>
+    <%- include('header') %>
     
     <!-- ======= Sidebar ======= -->
     <% if (isSuperAdmin) { %>
-        <%- include('superadmin/aside') %>
+        <%- include('../superadmin/aside') %>
     <% } %>
     
-    <% if (user.roles.includes('Admin') || user.roles.includes('SubUser')) { %>
-        <% if (showSidebar) { %>
-            <%- include('layouts/aside') %>
-        <% } %>
-    <% } %>
+
 
     <main id="main" class="main">
         <% if (user) { %>
             <input type="hidden" name="user_id" id="user_id" value="<%= user.id %>">
         <% } %>
         
-        <%- include('layouts/success_message') %>
+        <%- include('success_message') %>
         <!-- End Sidebar-->
         <%- body %>
     </main>
 
-    <%- include('layouts/footer') %>
-    <%- include('layouts/scripts') %>
-    <%- script %>
+    <%- include('footer') %>
+    <%- include('scripts') %>
+    
 
     <% if (!showSidebar) { %>
     <script>

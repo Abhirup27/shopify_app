@@ -33,9 +33,37 @@ export class WebAppService {
                 }, 0);
             }
 
+            const isPublic: boolean = !this.utilsService.checkIfStoreIsPrivate(user);
+
             dashboard = {
+                showSidebar: true,
+                isSuperAdmin: true,
+                isStorePublic: isPublic,
+                session: {
+                    success: ''
+                },
                 user: {
                     name: user.name,
+                    id: user.user_id
+
+                },
+                body: '',
+                routes: {
+                    shopify:
+                    {
+                        home: '/dashboard?storeId=' + user.store_id,
+                        orders: '/orders?storeId=' + user.store_id,
+                        products: '/products?storeId=' + user.store_id,
+                        customers: '/customers?storeId=' + user.store_id
+                    },
+                    members:
+                    {
+                        index: '/team?storeId=' + user.store_id,
+                    },
+                    billing: { index: '' },
+                    subscriptions: { index: '' },
+                    show2FASettings: '/2FA',
+                    logout: '/logout'
 
                 },
                 csrfToken: null,
