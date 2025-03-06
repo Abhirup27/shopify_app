@@ -33,8 +33,9 @@ export class StoreContextGuard implements CanActivate {
 
         //console.log(_parsedUrl.pathname);
         //console.log('Query:', query)
+
         let storeId: number | undefined;
-        if ('storeId' in query && typeof query.storeId == 'number') {
+        if ('storeId' in query) {
             request.storeId = query.storeId;
 
             storeId = parseInt(query.storeId, 10);

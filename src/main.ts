@@ -4,29 +4,25 @@ import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { DataSourceOptions } from 'typeorm';
 import { createDatabase } from 'typeorm-extension';
-
 import { CustomLogger } from './custom-logger/CustomLogger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import { doubleCsrf } from 'csrf-csrf';
 import * as cookieParser from 'cookie-parser';
-import { CsrfExceptionFilter } from './filters/csrf.exception.filter';
-import { CsrfMiddleware } from './middlewares/csrf.middleware';
-
+import { RouteService } from './web-app/providers/routes.provider';
 async function bootstrap() {
   const options: DataSourceOptions = {
-    host:'localhost',
+    host: 'localhost',
     type: 'mysql',
     database: 'shopify_app',
     username: 'root',
     password: 'ABHIrup_27',
-    };
+  };
 
-    //This just creates the shopify_app Database
-    await createDatabase({
-      options,
-      ifNotExist:true
-    });
+  //This just creates the shopify_app Database
+  await createDatabase({
+    options,
+    ifNotExist: true
+  });
 
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -42,16 +38,28 @@ async function bootstrap() {
     })
   );
   //app.useGlobalFilters(new CsrfExceptionFilter());
-  
+
+  const routeService = app.get(RouteService);
   const configService = app.get(ConfigService);
   const logger = new CustomLogger(configService);
+
   app.useLogger(logger);
-  
+
   app.use(cookieParser(configService.get('app_secret')));
- 
+
   app.useStaticAssets(join(__dirname, '..', 'public'));
   app.setBaseViewsDir(join(__dirname, '..', 'views'));
+
   app.setViewEngine('ejs');
+  app.use((req, res, next) => {
+    res.locals.route = (
+      name: string,
+      query: Record<string, string | number | boolean | string[]> = {},
+      params: Record<string, string | number> = {},
+
+    ) => routeService.route(name, query, params);
+    next();
+  });
 
   await app.listen(configService.get('port') ?? 3000);
 

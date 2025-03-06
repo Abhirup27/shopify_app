@@ -1,7 +1,7 @@
 <aside id="sidebar" class="sidebar" <% if(isEmbedded) { %> style="background-color:#f1f2f4" <% } %>>
     <ul class="sidebar-nav" id="sidebar-nav">
       <li class="nav-item">
-        <a class="nav-link " href="<%= routes.home %>">
+        <a class="nav-link " href="<%= route('home') %>">
           <i class="bi bi-grid"></i>
           <span>Dashboard</span>
         </a>
@@ -11,21 +11,21 @@
           <i class="bi bi-menu-button-wide"></i><span>Shopify</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="components-nav" class="nav-content collapse show" data-bs-parent="#sidebar-nav">
-          <% if(isSuperAdmin || user.can(['all-access','write-orders','read-orders'])) { %>
+          <% if(isSuperAdmin || user.can(['all_access','write_orders','read_orders'])) { %>
           <li>
-            <a href="<%= routes.shopify.orders %>">
+            <a href="<%= route(`shopify.orders`,{storeId : storeId})%>">
               <i class="bi bi-circle"></i><span>Orders</span>
             </a>
           </li>
           <% } %>
-          <% if(isSuperAdmin || user.can(['all-access','write-products','read-products'])) { %>
+          <% if(isSuperAdmin || user.can(['all_access','write_products','read_products'])) { %>
           <li>
             <a href="<%= routes.shopify.products %>">
               <i class="bi bi-circle"></i><span>Products</span>
             </a>
           </li>
           <% } %>
-          <% if(isSuperAdmin || user.can(['all-access','write-customers','read-customers'])) { %>
+          <% if(isSuperAdmin || user.can(['all_access','write_customers','read_customers'])) { %>
           <li>
             <a href="<%= routes.shopify.customers %>">
               <i class="bi bi-circle"></i><span>Customers</span>

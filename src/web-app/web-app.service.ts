@@ -34,8 +34,8 @@ export class WebAppService {
             }
 
             const isPublic: boolean = !this.utilsService.checkIfStoreIsPrivate(user);
-
             dashboard = {
+                storeId: user.store_id,
                 showSidebar: true,
                 isSuperAdmin: true,
                 isStorePublic: isPublic,
@@ -44,7 +44,8 @@ export class WebAppService {
                 },
                 user: {
                     name: user.name,
-                    id: user.user_id
+                    id: user.user_id,
+                    permissions: user.permissions
 
                 },
                 body: '',
@@ -159,4 +160,6 @@ export class WebAppService {
 
         return dashboard;
     }
+
+
 }

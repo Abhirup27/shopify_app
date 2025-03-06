@@ -9,6 +9,8 @@ import jwtConfig from 'src/auth/config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
 import { JobsModule } from 'src/jobs/jobs.module';
 import { WebAppService } from './web-app.service';
+import routesConfig from './config/routes.config';
+import { RouteService } from './providers/routes.provider';
 
 
 /**
@@ -20,16 +22,18 @@ import { WebAppService } from './web-app.service';
     UtilsModule,
     UserModule,
     AuthModule,
+    ConfigModule.forRoot({ load: [routesConfig] }),
     ConfigModule.forFeature(jwtConfig),
     JwtModule.registerAsync(jwtConfig.asProvider())
   ],
   controllers: [WebAppController],
-  providers: [WebAppService]
+  providers: [WebAppService, RouteService],
+  exports: [RouteService]
 })
 export class WebAppModule implements NestModule {
 
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(AuthMiddleware)
-    .forRoutes({ path: 'dashboard', method: RequestMethod.GET })
+      .forRoutes({ path: 'dashboard', method: RequestMethod.GET })
   }
 }

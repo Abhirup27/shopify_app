@@ -1,4 +1,4 @@
-export const ALL_PERMS: string[] = [
+export const ALL_PERMS: string[] = ["all_access",
     "read_orders", "write_orders", "read_customers", "write_customers",
     "read_products", "write_products", "write_teamusers", "read_teamusers"
 ];
