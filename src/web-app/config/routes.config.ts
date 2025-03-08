@@ -8,9 +8,17 @@ export default registerAs('routes', (): Record<string, string> => {
         'stores.index': '/stores',
         'stores.create': '/stores/create',
 
+        'members.index': '/members',
+        'billing.index': '/billing',
+
+        'show2FASettings': '/auth-settings',
+
+        'shopify.order': '/order',
         'shopify.orders': '/orders',
         'shopify.products': '/products',
         'shopify.customers': '/customers',
         'real.time.notifications': '/notifications',
+
+        'orders.sync': '/syncOrders',
     };
 });

@@ -8,8 +8,8 @@ export default () => ({
   logToFile: process.env.LOG_TO_FILE,
 
   app_secret: process.env.APP_SECRET,
-  app_url: 'https://8437-223-233-66-12.ngrok-free.app',
-  app_install_URL: 'https://8437-223-233-66-12.ngrok-free.app/shopify/auth/redirect',
+  app_url: 'https://c2c5-223-233-66-12.ngrok-free.app',
+  app_install_URL: 'https://c2c5-223-233-66-12.ngrok-free.app/shopify/auth/redirect',
 
   shopify_api_version: '2024-01',
   shopify_api_key: process.env.API_KEY,

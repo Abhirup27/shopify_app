@@ -1,0 +1,81 @@
+<%
+if (typeof pagination !== 'undefined' && pagination.last_page > 1) {
+  const currentPage = pagination.current_page;
+  const lastPage = pagination.last_page;
+  const baseUrl = pagination.path + '?';
+  
+  // Calculate range of pages to show
+  const delta = 2; // Number of pages before and after current page
+  let range = [];
+  
+  // Always show first page
+  range.push(1);
+  
+  // Calculate range around current page
+  for (let i = Math.max(2, currentPage - delta); i <= Math.min(lastPage - 1, currentPage + delta); i++) {
+    range.push(i);
+  }
+  
+  // Always show last page
+  if (lastPage > 1) {
+    range.push(lastPage);
+  }
+  
+  // Add ellipses
+  let rangeWithEllipses = [];
+  let prevPage = 0;
+  
+  for (const page of range) {
+    if (prevPage && page - prevPage > 1) {
+      rangeWithEllipses.push('...');
+    }
+    rangeWithEllipses.push(page);
+    prevPage = page;
+  }
+%>
+
+<nav>
+  <ul class="pagination justify-content-center">
+    <% if (currentPage > 1) { %>
+      <li class="page-item">
+        <a class="page-link" href="<%= baseUrl %>page=<%= currentPage - 1 %>" rel="prev" aria-label="« Previous">
+          <span aria-hidden="true">«</span>
+        </a>
+      </li>
+    <% } else { %>
+      <li class="page-item disabled">
+        <span class="page-link" aria-hidden="true">«</span>
+      </li>
+    <% } %>
+
+
+    <% rangeWithEllipses.forEach(page => { %>
+      <% if (page === '...') { %>
+        <li class="page-item disabled">
+          <span class="page-link">...</span>
+        </li>
+      <% } else { %>
+        <li class="page-item <%= page === currentPage ? 'active' : '' %>">
+          <% if (page === currentPage) { %>
+            <span class="page-link"><%= page %></span>
+          <% } else { %>
+            <a class="page-link" href="<%= baseUrl %>page=<%= page %>"><%= page %></a>
+          <% } %>
+        </li>
+      <% } %>
+    <% }); %>
+
+    <% if (currentPage < lastPage) { %>
+      <li class="page-item">
+        <a class="page-link" href="<%= baseUrl %>page=<%= currentPage + 1 %>" rel="next" aria-label="Next »">
+          <span aria-hidden="true">»</span>
+        </a>
+      </li>
+    <% } else { %>
+      <li class="page-item disabled">
+        <span class="page-link" aria-hidden="true">»</span>
+      </li>
+    <% } %>
+  </ul>
+</nav>
+<% } %>

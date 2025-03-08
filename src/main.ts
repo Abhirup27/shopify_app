@@ -44,7 +44,7 @@ async function bootstrap() {
   const logger = new CustomLogger(configService);
 
   app.useLogger(logger);
-
+  //console.log(configService.get('shopify_api_secret'))
   app.use(cookieParser(configService.get('app_secret')));
 
   app.useStaticAssets(join(__dirname, '..', 'public'));

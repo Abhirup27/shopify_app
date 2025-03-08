@@ -20,13 +20,13 @@ import { WebAppModule } from './web-app/web-app.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { throttlerConfig } from './config/rate-limiting.config';
 import { RateLimitingGuard } from './guards/rate-limiting/rate-limiting.guard';
-import { CsrfController } from './csrf.controller';
 import { CsrfMiddleware } from './middlewares/csrf.middleware';
 import { CsrfExceptionFilter } from './filters/csrf.exception.filter';
 import { JobsModule } from './jobs/jobs.module';
 import { Product } from './entities/product.entities';
 import { Order } from './entities/order.entity';
 import { Customer } from './entities/customer.entity';
+import routesConfig from './web-app/config/routes.config';
 
 //we pass this value through the command line/system variables
 const ENV = process.env.NODE_ENV;
@@ -46,7 +46,7 @@ const ENV = process.env.NODE_ENV;
     RouterModule.register(
       [{
         path: '/shopify/auth',
-        module:InstallationModule
+        module: InstallationModule
       },]
     ),
     TypeOrmModule.forRootAsync({
@@ -70,21 +70,21 @@ const ENV = process.env.NODE_ENV;
           Order,
           Customer
         ],
-        
+
         synchronize: configService.get<boolean>('database.synchronize'),
         autoLoadEntities: configService.get<boolean>('database.autoload')
       }),
     }),
-    ThrottlerModule.forRoot({throttlers: [throttlerConfig]}),
+    ThrottlerModule.forRoot({ throttlers: [throttlerConfig] }),
     AuthModule,
     WebhooksModule,
     WebAppModule,
     JobsModule
   ],
-  controllers: [CsrfController],
+  controllers: [],
 
   providers: [AppService,
-   {
+    {
       provide: APP_FILTER,
       useClass: CsrfExceptionFilter
     },
@@ -96,9 +96,9 @@ const ENV = process.env.NODE_ENV;
   exports: []
 })
 export class AppModule implements NestModule {
-    configure(consumer: MiddlewareConsumer) {
+  configure(consumer: MiddlewareConsumer) {
     consumer.apply(CsrfMiddleware)
-  .forRoutes('*')
+      .forRoutes('*')
   }
 }
 

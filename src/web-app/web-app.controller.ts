@@ -1,5 +1,5 @@
-import { Body, Controller, forwardRef, Get, HttpCode, HttpStatus, Inject, Post, Render, Req, Res, UseGuards } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Body, Controller, forwardRef, Get, HttpCode, HttpStatus, Inject, Logger, Post, Query, Render, Req, Res, UseGuards } from '@nestjs/common';
+import { query, Request, Response } from 'express';
 import { AuthService } from 'src/auth/auth.service';
 import { AccessTokenGuard, Public } from 'src/auth/guards/access-token.guard';
 import { Store } from 'src/entities/store.entity';
@@ -14,6 +14,8 @@ import { SUPER_ADMIN } from 'src/entities/constants/user-roles.constants';
 @UseGuards(AccessTokenGuard, StoreContextGuard)
 @Controller()
 export class WebAppController {
+
+  private readonly logger = new Logger(WebAppController.name);
   constructor(
 
     private readonly webAppService: WebAppService,
@@ -53,17 +55,6 @@ export class WebAppController {
 
   }
 
-  /**
-   * 
-   */
-  @Public()
-  @Get('/getOrders')
-  public async syncOrders() {
-    const { User, UserStore } = await this.userService.findOneByEmail('@gmail.com');
-    console.log(User)
-    const store: Store = await this.userService.findStore(User.user_id);
-    // await this.jobsService.syncOrders(store);
-  }
 
   //@UseGuards(AccessTokenGuard)
   @Get('/dashboard')
@@ -82,13 +73,48 @@ export class WebAppController {
       const payload = await this.webAppService.getSuperDashboardPayload(user);
       payload['csrfToken'] = token;
 
-      res.render('home', payload);
+      res.render('superadmin/home', payload);
 
     }
     else {
-      const payload = this.webAppService.getDashboardPayload(user);
+      const payload = await this.webAppService.getDashboardPayload(user);
+      payload['csrfToken'] = token;
+
+      res.render('home', payload);
     }
     //console.log(recentOrders[0].id)
 
+  }
+
+
+  @Get('/orders')
+  public async getOrders(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query) {
+    let payload: Object = {};
+    const token = this.utilsService.generateToken(req, res)
+    try {
+      payload = await this.webAppService.getOrders(user);
+      payload['csrfToken'] = token;
+    } catch (error) {
+      this.logger.error(error.message);
+    }
+
+    res.render('orders/index', payload);
+
+  }
+
+  @Get('/products')
+  public async getProducts(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query) {
+
+
+  }
+
+  @Get('/syncOrders')
+  public async syncOrders(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query) {
+
+    if (user.hasRole(SUPER_ADMIN) || user.can(['write_orders'])) {
+      await this.webAppService.syncOrders(user.store_id);
+    }
+
+    res.redirect(`/orders?storeId=${user.store_id}`);
   }
 }

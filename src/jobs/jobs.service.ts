@@ -1,7 +1,7 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { Queue, QueueEvents } from 'bullmq';
-import { CONFIGURE_QUEUE, CUSTOMERS_QUEUE, GET_CUSTOMERS, GET_ORDERS, GET_PRODUCTS, ORDERS_QUEUE, PRODUCTS_QUEUE, SYNC_CUSTOMERS, SYNC_ORDERS, SYNC_PRODUCTS } from './constants/jobs.constants';
+import { CONFIGURE_QUEUE, CUSTOMERS_QUEUE, GET_CUSTOMERS, GET_ORDERS, GET_PRODUCTS, GET_STORE, ORDERS_QUEUE, PRODUCTS_QUEUE, STORES_QUEUE, SYNC_CUSTOMERS, SYNC_ORDERS, SYNC_PRODUCTS } from './constants/jobs.constants';
 import { Store } from 'src/entities/store.entity';
 import { Order } from 'src/entities/order.entity';
 
@@ -11,13 +11,14 @@ export class JobsService {
     private ordersQueueEvents = new QueueEvents(ORDERS_QUEUE);
     private customersQueueEvents = new QueueEvents(CUSTOMERS_QUEUE);
     private productsQueueEvents = new QueueEvents(PRODUCTS_QUEUE);
-
+    private storeQueueEvents = new QueueEvents(STORES_QUEUE);
     constructor
         (
             @InjectQueue(CONFIGURE_QUEUE) private configQueue: Queue,
             @InjectQueue(PRODUCTS_QUEUE) private productQueue: Queue,
             @InjectQueue(ORDERS_QUEUE) private ordersQueue: Queue,
             @InjectQueue(CUSTOMERS_QUEUE) private customersQueue: Queue,
+            @InjectQueue(STORES_QUEUE) private storesQueue: Queue,
 
         ) { }
 
@@ -65,5 +66,11 @@ export class JobsService {
         const job = await this.customersQueue.add(GET_CUSTOMERS, store, { attempts: 3 });
 
         return await job.waitUntilFinished(this.customersQueueEvents, 30000);
+    }
+
+
+    public getStore = async (storeId: number): Promise<any> => {
+        const job = await this.storesQueue.add(GET_STORE, storeId, { attempts: 3 });
+        return await job.waitUntilFinished(this.storeQueueEvents, 30000);
     }
 }

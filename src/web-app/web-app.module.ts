@@ -22,7 +22,7 @@ import { RouteService } from './providers/routes.provider';
     UtilsModule,
     UserModule,
     AuthModule,
-    ConfigModule.forRoot({ load: [routesConfig] }),
+    ConfigModule.forFeature(routesConfig),
     ConfigModule.forFeature(jwtConfig),
     JwtModule.registerAsync(jwtConfig.asProvider())
   ],
@@ -34,6 +34,10 @@ export class WebAppModule implements NestModule {
 
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(AuthMiddleware)
-      .forRoutes({ path: 'dashboard', method: RequestMethod.GET })
+      .forRoutes({ path: 'dashboard', method: RequestMethod.GET },
+        { path: 'orders', method: RequestMethod.GET },
+        { path: 'logout', method: RequestMethod.POST },
+        { path: 'syncOrders', method: RequestMethod.GET }
+      )
   }
 }

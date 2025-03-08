@@ -1,13 +1,13 @@
 // route.service.ts
 import { Injectable, Inject } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import routeConfig from '../config/routes.config';
+import routesConfig from '../config/routes.config';
 
 @Injectable()
 export class RouteService {
     constructor(
-        @Inject(routeConfig.KEY)
-        private readonly routes: ConfigType<typeof routeConfig>
+        @Inject(routesConfig.KEY)
+        private readonly routes: ConfigType<typeof routesConfig>
     ) { }
 
     /**

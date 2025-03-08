@@ -5,10 +5,14 @@
     <%- include('header') %>
     
     <!-- ======= Sidebar ======= -->
-    <% if (isSuperAdmin) { %>
+    <% if (user.hasRole('SUPER_ADMIN')) { %>
         <%- include('../superadmin/aside') %>
     <% } %>
-    
+     <% if (user.hasRole('ADMIN') || user.hasRole('SUB_USER')) { %>
+        <% if(showSidebar) { %>
+            <%- include('aside') %>
+        <% } %>
+    <% } %>
 
 
     <main id="main" class="main">

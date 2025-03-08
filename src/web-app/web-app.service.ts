@@ -5,6 +5,7 @@ import { UserDto } from './dtos/user.dto';
 import { Order } from 'src/entities/order.entity';
 import { Customer } from 'src/entities/customer.entity';
 import { JobsService } from 'src/jobs/jobs.service';
+import { Store } from 'src/entities/store.entity';
 
 @Injectable()
 export class WebAppService {
@@ -21,17 +22,8 @@ export class WebAppService {
         let dashboard: Object = {};
 
         try {
-            const recentOrders: Order[] = await this.jobsService.getOrders(user.store_id);
-            const customers: Customer[] = await this.jobsService.getCustomers(user.store_id);
 
-            let totalRevenue = 0;
-            if (recentOrders && recentOrders.length > 0) {
-                totalRevenue = recentOrders.reduce((sum, order) => {
 
-                    const orderPrice = parseFloat(order.total_price as string) || 0;
-                    return sum + orderPrice;
-                }, 0);
-            }
 
             const isPublic: boolean = !this.utilsService.checkIfStoreIsPrivate(user);
             dashboard = {
@@ -45,7 +37,9 @@ export class WebAppService {
                 user: {
                     name: user.name,
                     id: user.user_id,
-                    permissions: user.permissions
+                    permissions: user.permissions,
+                    can: (permissions: string[]) => user.can(permissions),
+                    hasRole: (role: string) => user.hasRole(role),
 
                 },
                 body: '',
@@ -67,6 +61,56 @@ export class WebAppService {
                     logout: '/logout'
 
                 },
+                csrfToken: null,
+                appName: 'Shopify App',
+                style: '',
+                messages: '',
+                isEmbedded: false,
+
+            }
+        } catch (error) {
+            this.logger.error(error.message, this.getSuperDashboardPayload.name);
+        }
+
+
+        return dashboard;
+    }
+
+    public getDashboardPayload = async (user: UserDto): Promise<Object> => {
+        let dashboard: Object = {};
+
+        try {
+            const recentOrders: Order[] = await this.jobsService.getOrders(user.store_id);
+            const customers: Customer[] = await this.jobsService.getCustomers(user.store_id);
+
+            let totalRevenue = 0;
+            if (recentOrders && recentOrders.length > 0) {
+                totalRevenue = recentOrders.reduce((sum, order) => {
+
+                    const orderPrice = parseFloat(order.total_price as string) || 0;
+                    return sum + orderPrice;
+                }, 0);
+            }
+
+            const isPublic: boolean = !this.utilsService.checkIfStoreIsPrivate(user);
+
+            dashboard = {
+                storeId: user.store_id,
+                showSidebar: true,
+                isSuperAdmin: false,
+                isStorePublic: isPublic,
+                session: {
+                    success: ''
+                },
+                user: {
+                    name: user.name,
+                    id: user.user_id,
+                    permissions: user.permissions,
+                    can: (permissions: string[]) => user.can(permissions),
+                    hasRole: (role: string) => user.hasRole(role),
+
+                },
+                body: '',
                 csrfToken: null,
                 appName: 'Shopify App',
                 style: '',
@@ -146,20 +190,54 @@ export class WebAppService {
                     }
                 ]
             }
-        } catch (error) {
-            this.logger.error(error.message, this.getSuperDashboardPayload.name);
+        }
+        catch (error) {
+            this.logger.error(error.message, this.getDashboardPayload.name);
         }
 
 
         return dashboard;
     }
 
-    public getDashboardPayload = async (user: UserDto): Promise<Object> => {
-        let dashboard: Object = {};
+    public getOrders = async (user: UserDto): Promise<Object> => {
+        let payload: Object = {};
+        let orders: Order[];
+        try {
+            payload =
+            {
 
+                storeId: user.store_id,
+                orders: await this.jobsService.getOrders(user.store_id),
+                isEmbedded: false,
+                showSidebar: true,
+                isStorePublic: !this.utilsService.checkIfStoreIsPrivate(user),
+                style: '',
+                appName: 'Shopify App',
+                user: {
+                    name: user.name,
+                    id: user.user_id,
+                    permissions: user.permissions,
+                    can: (permissions: string[]) => user.can(permissions),
+                    hasRole: (role: string) => user.hasRole(role),
 
-        return dashboard;
+                },
+                session: {
+                    success: ''
+                },
+                body: ''
+            }
+
+        }
+        catch (error) {
+            this.logger.error(error.message);
+        }
+
+        return payload;
     }
-
+    public syncOrders = async (storeId: number): Promise<any> => {
+        const store: Store = await this.jobsService.getStore(storeId);
+        console.log(store);
+        await this.jobsService.syncOrders(store);
+    }
 
 }

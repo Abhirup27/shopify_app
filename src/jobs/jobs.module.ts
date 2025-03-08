@@ -17,6 +17,8 @@ import { ProductsQueueEvents } from './providers/retrieve-products-listener.prov
 import { CustomersConsumer } from './consumers/customers.consumer';
 import { Customer } from 'src/entities/customer.entity';
 import { CustomersQueueEvents } from './providers/retrieve-customers-listener';
+import { StoresQueueEvents } from './providers/store-listener.provider';
+import { StoresConsumer } from './consumers/store.consumer';
 
 @Module({
 
@@ -24,26 +26,26 @@ import { CustomersQueueEvents } from './providers/retrieve-customers-listener';
     UtilsModule,
 
     TypeOrmModule.forFeature([Store, Product, Order, Customer]),
-    
+
     BullModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      
-      useFactory: async (configService : ConfigService) => ({
-      connection: {
-        host: configService.get<string>('redis.host'),
-        port:  configService.get<number>('redis.port'),
+
+      useFactory: async (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('redis.host'),
+          port: configService.get<number>('redis.port'),
         }
       })
 
     }),
-     BullModule.registerQueueAsync(
-       { name: CONFIGURE_QUEUE },
-       { name: PRODUCTS_QUEUE },
-       { name: ORDERS_QUEUE },
-       { name: STORES_QUEUE },
-       { name : CUSTOMERS_QUEUE}
-     )
+    BullModule.registerQueueAsync(
+      { name: CONFIGURE_QUEUE },
+      { name: PRODUCTS_QUEUE },
+      { name: ORDERS_QUEUE },
+      { name: STORES_QUEUE },
+      { name: CUSTOMERS_QUEUE }
+    )
   ],
 
   providers: [
@@ -52,11 +54,14 @@ import { CustomersQueueEvents } from './providers/retrieve-customers-listener';
     ProductsConsumer,
     OrdersConsumer,
     CustomersConsumer,
+    StoresConsumer,
+
     OrdersQueueEvents,
     ProductsQueueEvents,
-    CustomersQueueEvents
+    CustomersQueueEvents,
+    StoresQueueEvents,
   ],
   controllers: [JobsController],
   exports: [JobsService]
 })
-export class JobsModule {}
+export class JobsModule { }
