@@ -37,7 +37,11 @@ export class WebAppModule implements NestModule {
       .forRoutes({ path: 'dashboard', method: RequestMethod.GET },
         { path: 'orders', method: RequestMethod.GET },
         { path: 'logout', method: RequestMethod.POST },
-        { path: 'syncOrders', method: RequestMethod.GET }
+        { path: 'syncOrders', method: RequestMethod.GET },
+        { path: 'order', method: RequestMethod.GET },
+        { path: 'members', method: RequestMethod.GET },
+        { path: 'memberRegister', method: RequestMethod.GET },
+        { path: 'createMember', method: RequestMethod.POST },
       )
   }
 }

@@ -1,6 +1,4 @@
-
 export default () => ({
-
   environment: process.env.NODE_ENV || 'production',
 
   port: parseInt(process.env.PORT, 10) || 3000,
@@ -8,8 +6,9 @@ export default () => ({
   logToFile: process.env.LOG_TO_FILE,
 
   app_secret: process.env.APP_SECRET,
-  app_url: 'https://c2c5-223-233-66-12.ngrok-free.app',
-  app_install_URL: 'https://c2c5-223-233-66-12.ngrok-free.app/shopify/auth/redirect',
+  app_url: 'https://795d-223-233-73-41.ngrok-free.app',
+  app_install_URL:
+    'https://795d-223-233-73-41.ngrok-free.app/shopify/auth/redirect',
 
   shopify_api_version: '2024-01',
   shopify_api_key: process.env.API_KEY,
@@ -24,13 +23,22 @@ export default () => ({
     'write_orders',
     'read_customers',
     'write_customers',
-
+    'read_returns',
+    //'read_marketplace_fulfillment_orders',
+    'read_fulfillments',
+    'write_fulfillments',
+    'read_assigned_fulfillment_orders',
+    'read_merchant_managed_fulfillment_orders',
+    'read_third_party_fulfillment_orders',
   ].join(','),
 
   jwt_secret: process.env.JWT_SECRET ?? 'randomstring',
-  jwt_token_audience: process.env.JWT_TOKEN_AUDIENCE ?? 'https://8437-223-233-66-12.ngrok-free.app',
+  jwt_token_audience: process.env.JWT_TOKEN_AUDIENCE ?? 'https://795d-223-233-73-41.ngrok-free.app',
   jwt_token_issuer: process.env.JWT_TOKEN_ISSUER,
-  jwt_access_token_ttl: parseInt(process.env.JWT_ACCESS_TOKEN_TTL ?? '3600', 10),
+  jwt_access_token_ttl: parseInt(
+    process.env.JWT_ACCESS_TOKEN_TTL ?? '3600',
+    10,
+  ),
 
   database: {
     host: process.env.DB_HOST,
@@ -45,19 +53,18 @@ export default () => ({
 
   redis: {
     host: process.env.REDIS_HOST.toString() ?? 'localhost',
-    port: parseInt(process.env.REDIS_PORT ?? '6379', 10)
+    port: parseInt(process.env.REDIS_PORT ?? '6379', 10),
   },
-
 
   webhooks: [
     'orders/create',
     'orders/updated',
     'products/create',
-    "products/update",
-    "products/delete",
-    "app_subscriptions/update",
+    'products/update',
+    'products/delete',
+    'app_subscriptions/update',
     'app/uninstalled',
     'shop/update',
-    "customers/create"
-  ]
+    'customers/create',
+  ],
 });

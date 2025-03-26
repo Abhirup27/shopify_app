@@ -78,7 +78,6 @@ export class UtilsService {
                 .createHmac("sha256", this.configService.get('shopify_api_secret'))
                 .update(str)
                 .digest("hex");
-
             return verHmac === hmac;
         } catch (error) {
             // Use custom logging
@@ -120,10 +119,8 @@ export class UtilsService {
     public async requestToShopify(method: Method, endpoint: string, headers: AxiosHeaders, payload?: Record<string, any>): Promise<ShopifyResponse>;
 
     //one implementation handles all the overloads
-    public async requestToShopify(method: Method,
-        endpointOrOptions: string | ShopifyRequestOptions, headers?: AxiosHeaders, payload?: Record<string, any>): Promise<ShopifyResponse> {
+    public async requestToShopify(method: Method, endpointOrOptions: string | ShopifyRequestOptions, headers?: AxiosHeaders, payload?: Record<string, any>): Promise<ShopifyResponse> {
 
-        //console.log(endpointOrOptions)
         const reqResult: ShopifyResponse = { status: false, respBody: null };
 
         try {
@@ -143,7 +140,7 @@ export class UtilsService {
                 //     })
                 // );
             }
-            // Handle the calls with where the second arguement is not an object, that is, the call includes endpoint, headers, payload as separate values, not an object. 
+            // Handle the calls with where the second arguement is not an object, that is, the call includes endpoint, headers, payload as separate values, not an object.
             else {
                 response = await firstValueFrom(
                     this.httpService.request({

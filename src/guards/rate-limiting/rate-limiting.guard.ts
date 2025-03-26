@@ -13,7 +13,6 @@ import { Observable } from 'rxjs';
 export class RateLimitingGuard extends ThrottlerGuard {
   getJWTTracker = async (req): Promise<string> =>
   {
-    //this might be different, I might need to check the object later.
     return (req.headers.authorization != undefined) ? req.headers.authorization?.split(' ')[1] : null;
   }
 

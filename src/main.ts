@@ -18,33 +18,32 @@ async function bootstrap() {
     password: 'ABHIrup_27',
   };
 
-  //This just creates the shopify_app Database
   await createDatabase({
     options,
-    ifNotExist: true
+    ifNotExist: true,
   });
-
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     //bufferLogs: true,
-    logger: ['log', 'error', 'fatal', 'debug', 'warn']
+    logger: ['log', 'error', 'fatal', 'debug', 'warn'],
   });
 
   app.useGlobalPipes(
     new ValidationPipe({
+      transformOptions: { enableImplicitConversion: true },
       whitelist: true,
       forbidNonWhitelisted: true,
-      transform: true
-    })
+      transform: true,
+    }),
   );
   //app.useGlobalFilters(new CsrfExceptionFilter());
 
-  const routeService = app.get(RouteService);
+  const routeService: RouteService = app.get(RouteService);
   const configService = app.get(ConfigService);
   const logger = new CustomLogger(configService);
 
   app.useLogger(logger);
-  //console.log(configService.get('shopify_api_secret'))
+  console.log(configService.get('shopify_api_secret'));
   app.use(cookieParser(configService.get('app_secret')));
 
   app.useStaticAssets(join(__dirname, '..', 'public'));
@@ -56,14 +55,11 @@ async function bootstrap() {
       name: string,
       query: Record<string, string | number | boolean | string[]> = {},
       params: Record<string, string | number> = {},
-
     ) => routeService.route(name, query, params);
     next();
   });
 
   await app.listen(configService.get('port') ?? 3000);
-
-
 
   process.on('SIGINT', async () => {
     try {
@@ -86,6 +82,5 @@ async function bootstrap() {
       process.exit(1);
     }
   });
-
 }
 bootstrap();

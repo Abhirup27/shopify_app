@@ -8,7 +8,6 @@ export default registerAs('routes', (): Record<string, string> => {
         'stores.index': '/stores',
         'stores.create': '/stores/create',
 
-        'members.index': '/members',
         'billing.index': '/billing',
 
         'show2FASettings': '/auth-settings',
@@ -20,5 +19,10 @@ export default registerAs('routes', (): Record<string, string> => {
         'real.time.notifications': '/notifications',
 
         'orders.sync': '/syncOrders',
+
+
+        'members.index': '/members',
+        'members.create': '/createMember',
+        'members.register': '/memberRegister',
     };
 });

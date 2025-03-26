@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { JobsService } from './jobs.service';
-import { CONFIGURE_QUEUE, CUSTOMERS_QUEUE, ORDERS_QUEUE, PRODUCTS_QUEUE, STORES_QUEUE } from './constants/jobs.constants';
+import { CONFIGURE_QUEUE, CUSTOMERS_QUEUE, ORDERS_QUEUE, PRODUCTS_QUEUE, STORES_QUEUE, USERS_QUEUE } from './constants/jobs.constants';
 import { ConfigWebhookConsumer } from './consumers/config-webhoook.consumer';
 import { JobsController } from './jobs.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -19,13 +19,18 @@ import { Customer } from 'src/entities/customer.entity';
 import { CustomersQueueEvents } from './providers/retrieve-customers-listener';
 import { StoresQueueEvents } from './providers/store-listener.provider';
 import { StoresConsumer } from './consumers/store.consumer';
+import { UserStore } from 'src/entities/userstore.entity';
+import { User } from 'src/entities/user.entity';
+import { UsersConsumer } from './consumers/users.consumer';
+import { UsersQueueEvents } from './providers/user-listener.provider';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
 
   imports: [
     UtilsModule,
-
-    TypeOrmModule.forFeature([Store, Product, Order, Customer]),
+    AuthModule,
+    TypeOrmModule.forFeature([Store, Product, Order, Customer, UserStore, User]),
 
     BullModule.forRootAsync({
       imports: [ConfigModule],
@@ -44,7 +49,8 @@ import { StoresConsumer } from './consumers/store.consumer';
       { name: PRODUCTS_QUEUE },
       { name: ORDERS_QUEUE },
       { name: STORES_QUEUE },
-      { name: CUSTOMERS_QUEUE }
+      { name: CUSTOMERS_QUEUE },
+      { name: USERS_QUEUE },
     )
   ],
 
@@ -55,11 +61,12 @@ import { StoresConsumer } from './consumers/store.consumer';
     OrdersConsumer,
     CustomersConsumer,
     StoresConsumer,
+    UsersConsumer,
 
     OrdersQueueEvents,
-    ProductsQueueEvents,
     CustomersQueueEvents,
     StoresQueueEvents,
+    UsersQueueEvents,
   ],
   controllers: [JobsController],
   exports: [JobsService]

@@ -21,13 +21,13 @@ export class ConfigWebhookConsumer extends WorkerHost {
         private readonly utilsService: UtilsService,
         @InjectRepository(Store)
         private readonly storesRepository: Repository<Store>
-    ) { 
+    ) {
         super()
     }
 
     private readonly logger = new Logger(ConfigWebhookConsumer.name);
 
-    public process = async(job : Job<unknown>): Promise<any> => {
+    public process = async (job: Job<unknown>): Promise<any> => {
 
         const storeId = job.data['storeId'];
 
@@ -35,16 +35,15 @@ export class ConfigWebhookConsumer extends WorkerHost {
 
         let requestOptions: ShopifyRequestOptions = { url: null, headers: null };
         //console.log(store.access_token)
-        requestOptions.headers =  new AxiosHeaders().set('Content-Type', 'application/json').set('X-Shopify-Access-Token', store.access_token);
+        requestOptions.headers = new AxiosHeaders().set('Content-Type', 'application/json').set('X-Shopify-Access-Token', store.access_token);
 
         requestOptions.url = await this.utilsService.getShopifyURLForStore('webhooks.json', store);
 
         //const endpoint = this.utilsService.getShopifyURLForStore('webhooks.json', store);
         //const headers = new AxiosHeaders().set('Content-Type', 'application/json').set('X-Shopify-Access-Token', store.access_token);
         const webhooks_config: string[] = this.configService.get('webhooks');
-        console.log(webhooks_config)
         webhooks_config.forEach(async (element) => {
-            
+
             const body = {
                 webhook: {
                     topic: element,
@@ -56,7 +55,7 @@ export class ConfigWebhookConsumer extends WorkerHost {
             requestOptions.data = body;
 
             const response: ShopifyResponse = await this.utilsService.requestToShopify('post', requestOptions);
-            this.logger.debug(`Response for topic ${element} : ${JSON.stringify( response.respBody)}`)
+            this.logger.debug(`Response for topic ${element} : ${JSON.stringify(response.respBody)}`)
 
         });
 

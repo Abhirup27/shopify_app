@@ -40,7 +40,6 @@ export class StoreContextGuard implements CanActivate {
 
             storeId = parseInt(query.storeId, 10);
         }
-
         //console.log(request.user);
         request.userStore = await this.userService.getStoreContext(request.user.user_id, storeId);
         //console.log(request.userStore)

@@ -1,64 +1,89 @@
-import { Body, Controller, forwardRef, Get, HttpCode, HttpStatus, Inject, Logger, Post, Query, Render, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  forwardRef,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Logger,
+  Post,
+  Query,
+  Render,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { query, Request, Response } from 'express';
 import { AuthService } from 'src/auth/auth.service';
 import { AccessTokenGuard, Public } from 'src/auth/guards/access-token.guard';
-import { Store } from 'src/entities/store.entity';
 import { UtilsService } from 'src/utils/utils.service';
 import { UserService } from './user/user.service';
 import { StoreContextGuard } from './store-context.guard';
 import { WebAppService } from './web-app.service';
 import { CurrentUser } from './decorators/user.decorator';
 import { UserDto } from './dtos/user.dto';
-import { SUPER_ADMIN } from 'src/entities/constants/user-roles.constants';
+import {
+  ADMIN,
+  SUPER_ADMIN,
+} from 'src/entities/constants/user-roles.constants';
+import { RegisterUserDto } from './dtos/register-member.dto';
+import { UserStore } from 'src/entities/userstore.entity';
+import { getTsBuildInfoEmitOutputFilePath } from 'typescript';
 
 @UseGuards(AccessTokenGuard, StoreContextGuard)
 @Controller()
 export class WebAppController {
-
   private readonly logger = new Logger(WebAppController.name);
   constructor(
-
     private readonly webAppService: WebAppService,
     private readonly utilsService: UtilsService,
 
     private readonly userService: UserService,
 
     @Inject(forwardRef(() => AuthService))
-    private readonly authService: AuthService
+    private readonly authService: AuthService,
   ) { }
 
   @Public()
   @Get()
   @Render('login')
   public async loginPage(@Req() req: Request, @Res() res: Response) {
-
-
-    const token = this.utilsService.generateToken(req, res)
+    const token: string = this.utilsService.generateToken(req, res);
     //console.log(token);
-    return { appName: 'Shopify App', style: '', csrfToken: token, messages: '' }
+    return {
+      appName: 'Shopify App',
+      style: '',
+      csrfToken: token,
+      messages: '',
+    };
   }
   @Public()
   @Post('/login')
   @HttpCode(HttpStatus.OK)
   public async login(@Body() body, @Req() req: Request, @Res() res: Response) {
+    const accessToken: string = await this.authService.login({
+      email: body.email,
+      password: body.password,
+    });
 
-    const response = await this.authService.login({ email: body.email, password: body.password });
-
-    res.cookie('access_token', response.accessToken, {
+    res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 1 * 60 * 60 * 1000 // 1 hour
+      maxAge: 1 * 60 * 60 * 1000, // 1 hour
     });
 
     res.redirect('/dashboard');
-
   }
-
 
   //@UseGuards(AccessTokenGuard)
   @Get('/dashboard')
-  public async getDashboard(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response) {
+  public async getDashboard(
+    @CurrentUser() user: UserDto,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     // console.log(req["user"],req["roles"]);
 
     //console.log(req['userStore'].hasRole('Super Admin'))
@@ -67,30 +92,31 @@ export class WebAppController {
     // const customers: Customer[] = await this.jobsService.getCustomers(user.store_id);
     //console.log("by using the dto,", user.hasRole('Super Admin'));
 
-    const token = this.utilsService.generateToken(req, res)
+    const token = this.utilsService.generateToken(req, res);
 
     if (user.hasRole(SUPER_ADMIN)) {
       const payload = await this.webAppService.getSuperDashboardPayload(user);
       payload['csrfToken'] = token;
 
       res.render('superadmin/home', payload);
-
-    }
-    else {
+    } else {
       const payload = await this.webAppService.getDashboardPayload(user);
-      payload['csrfToken'] = token;
 
+      payload['csrfToken'] = token;
       res.render('home', payload);
     }
     //console.log(recentOrders[0].id)
-
   }
 
-
   @Get('/orders')
-  public async getOrders(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query) {
+  public async getOrders(
+    @CurrentUser() user: UserDto,
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query() query,
+  ) {
     let payload: Object = {};
-    const token = this.utilsService.generateToken(req, res)
+    const token = this.utilsService.generateToken(req, res);
     try {
       payload = await this.webAppService.getOrders(user);
       payload['csrfToken'] = token;
@@ -99,22 +125,113 @@ export class WebAppController {
     }
 
     res.render('orders/index', payload);
+  }
 
+  @Get('/order')
+  public async getOrderDetails(
+    @CurrentUser() user: UserDto,
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query() query,
+  ) {
+    try {
+      let payload: Object = {};
+      const orderId: number = query.order_id;
+      if (orderId == undefined) {
+        throw new Error('no order ID provided.');
+      }
+      if (user.hasRole(ADMIN) || user.can(['read_orders', 'all_access'])) {
+        payload = await this.webAppService.getOrderDetails(user, orderId);
+        payload['csrfToken'] = this.utilsService.generateToken(req, res);
+        res.render('orders/show', payload);
+      } else {
+        throw new Error('User not authorized to view order details.');
+      }
+    } catch (error) {
+      this.logger.error(error.message, this.getOrderDetails.name);
+      res.redirect('/dashboard');
+    }
   }
 
   @Get('/products')
-  public async getProducts(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query) {
+  public async getProducts(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query,) {
+    const payload: Object = await this.webAppService.getProducts(user);
 
-
+    res.render('products/index', payload);
   }
 
   @Get('/syncOrders')
-  public async syncOrders(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query) {
-
-    if (user.hasRole(SUPER_ADMIN) || user.can(['write_orders'])) {
+  public async syncOrders(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query,) {
+    if (user.hasRole(SUPER_ADMIN) || user.hasRole(ADMIN) || user.can(['write_orders'])) {
       await this.webAppService.syncOrders(user.store_id);
     }
 
     res.redirect(`/orders?storeId=${user.store_id}`);
   }
+
+  @Get('/members')
+  public async getMembers(@CurrentUser() user: UserDto, @Res() res: Response, @Req() req: Request) {
+    let payload: Object = {};
+    try {
+      if (user.can(['all_access', 'read_members'])) {
+        payload['members'] = await this.webAppService.getMembers(user.store_id);
+        payload['csrfToken'] = this.utilsService.generateToken(req, res);
+        payload['user'] = user;
+        payload['appName'] = 'Shopify app';
+        payload['style'] = '';
+        payload['isEmbedded'] = false;
+        payload['showSidebar'] = true;
+        payload['storeId'] = user.store_id;
+        payload['isStorePublic'] = true;
+        payload['body'] = '';
+
+      } else {
+        throw new Error('User does not have permission to view members of the current store.');
+      }
+    } catch (error) {
+      this.logger.error(error.message, this.getMembers.name);
+
+    }
+    res.render('members/index', payload);
+
+  }
+
+  @Get('/memberRegister')
+  public async registerMember(@CurrentUser() user: UserDto, @Res() res: Response, @Req() req: Request) {
+
+    try {
+      if (user.can(['write_members'])) {
+        const payload: Object = {};
+        payload['previousUrl'] = req.headers.origin;
+        payload['user'] = user;
+        payload['csrfToken'] = this.utilsService.generateToken(req, res);
+        payload['appName'] = 'SHopify App';
+        payload['style'] = '';
+        payload['isEmbedded'] = false;
+        payload['showSidebar'] = true;
+        payload['body'] = '';
+        payload['isStorePublic'] = true;
+        payload['storeId'] = user.store_id;
+
+
+        res.render('members/create', payload);
+      } else {
+        throw new Error('User has no permission to create new members.');
+      }
+    } catch (error) { this.logger.error(error.messsage, this.registerMember.name); }
+
+  }
+  @Post('/createMember')
+  public async createMember(@CurrentUser() user: UserDto, @Body() newMember: RegisterUserDto, @Res() res: Response) {
+    try {
+      if (user.can(['all_access', 'write_members'])) {
+        await this.webAppService.createMember(newMember, user.store_id);
+
+      }
+    } catch (error) {
+      this.logger.error(error.message, this.createMember.name);
+    }
+    res.redirect('/members');
+  }
+
 }

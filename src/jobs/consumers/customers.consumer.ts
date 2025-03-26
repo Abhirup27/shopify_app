@@ -93,12 +93,10 @@ export class CustomersConsumer extends WorkerHost {
                 const response: ShopifyResponse = await this.utilsService.requestToShopify("post", options);
 
                 if (response.statusCode == 200) {
-                    //console.log(response.respBody["data"]['orders']['edges']);
                     await this.storeCustomersDB(store.table_id, response.respBody["data"]['customers']['edges']);
                 }
-                console.log(response.statusCode);
 
-                console.log(response.respBody['data']['customers']['edges']);
+                // console.log(response.respBody['data']['customers']['edges']);
                 // await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
                 //console.log(response.respBody);
                 cursor = this.getCursorFromResponse(response.respBody['data']['customers']['pageInfo']);

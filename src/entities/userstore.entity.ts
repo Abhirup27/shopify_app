@@ -37,6 +37,11 @@ export class UserStore {
     @IsString({ each: true })
     permissions?: string[];
 
+    @Column({
+        type: 'timestamp',
+        default: () => 'CURRENT_TIMESTAMP'
+    })
+    created_at: Date;
     // public hasRole(reqRole: string): boolean {
     //     return this.role === reqRole;
     // }

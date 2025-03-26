@@ -2,9 +2,8 @@ import { Catch, ArgumentsHost, HttpException, UnauthorizedException, ExceptionFi
 import { BaseExceptionFilter } from '@nestjs/core';
 import { Response } from 'express';
 @Catch(HttpException)
-export class CsrfExceptionFilter extends BaseExceptionFilter  {
+export class CsrfExceptionFilter extends BaseExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
-    //console.log('hello123')
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
@@ -15,8 +14,7 @@ export class CsrfExceptionFilter extends BaseExceptionFilter  {
         error: 'Forbidden'
       });
     }
-    else if(exception.message === "Cannot read properties of undefined (reading 'x-csrf-token')")
-    {
+    else if (exception.message === "Cannot read properties of undefined (reading 'x-csrf-token')") {
 
       return response.status(403).json({
         statusCode: 403,
@@ -26,6 +24,6 @@ export class CsrfExceptionFilter extends BaseExceptionFilter  {
     }
 
     //console.log(exception)
-   super.catch(exception, host);
+    super.catch(exception, host);
   }
 }

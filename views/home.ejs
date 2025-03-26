@@ -190,6 +190,7 @@
                   </tr>
                 </thead>
                 <tbody>
+                <% if(locals.recentSales ){%>
                   <% recentSales.forEach(function(sale) { %>
                     <tr>
                       <th scope="row"><a href="#"><%= sale.id %></a></th>
@@ -199,6 +200,7 @@
                       <td><span class="badge bg-<%= sale.status.toLowerCase() === 'approved' ? 'success' : (sale.status.toLowerCase() === 'pending' ? 'warning' : 'danger') %>"><%= sale.status %></span></td>
                     </tr>
                   <% }); %>
+                <% }%>
                 </tbody>
               </table>
             </div>

@@ -39,8 +39,8 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td><%= order.getPaymentStatus() %></td>
-                                        <td class="text-center"><%= order.getFulfillmentStatus() %></td>
+                                        <td><%= order.financial_status %></td>
+                                        <td class="text-center"><%= order.fulfillment_status %></td>
                                         <td style="float: right;"><%= new Date(order.created_at_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %></td>
                                     </tr>
                                 </tbody>
@@ -54,7 +54,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Items</h5>
-                    <input type="hidden" id="order_id" value="<%= order.table_id %>">
+                    <input type="hidden" id="order_id" value="<%= order.id %>">
                     <% if(order.line_items && Array.isArray(order.line_items) && order.line_items.length > 0) { %>
                     <div class="card">
                         <div class="card-content">
@@ -84,10 +84,10 @@
                                                 <small class="text-muted">SKU: <%= item.sku || '' %></small> |
                                                 <small class="text-muted">Variant: <%= item.variant_title || '' %></small> <br>
                                             </td>
-                                            <td> <%= order_currency %> <%= parseFloat(item.price).toFixed(2) %> <span>x</span> <%= item.quantity %> </td>
+                                            <td> <%= order.currency %> <%= parseFloat(item.price).toFixed(2) %> <span>x</span> <%= item.quantity %> </td>
                                             <td>
                                                 <% var sub_price = (parseFloat(item.price) * parseFloat(item.quantity)).toFixed(2); %>
-                                                <%= order_currency %> <%= sub_price %>
+                                                <%= order.currency %> <%= sub_price %>
                                             </td>
                                             <td style="display: none;" class="fulfill-th">
                                                 <% if(item.fulfillable_quantity > 0) { %>

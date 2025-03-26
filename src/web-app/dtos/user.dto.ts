@@ -63,7 +63,7 @@ export class UserDto extends IntersectionType(UserDetailsDto, UserStoreDetailsDt
     };
 
     can(reqPermissions: string[]): boolean {
-        if (this.hasRole('all-access')) {
+        if (this.hasRole('all_access')) {
             return true;
         }
 

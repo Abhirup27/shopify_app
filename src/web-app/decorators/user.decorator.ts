@@ -24,7 +24,7 @@ export const CurrentUser = createParamDecorator(
         if (errors.length > 0) {
             throw new BadRequestException(errors);
         }
-
+        //console.log(userDto)
         return data ? userDto[data] : userDto;
     }
 );
