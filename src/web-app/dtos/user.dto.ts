@@ -8,8 +8,8 @@ import {
     IsDate,
 } from 'class-validator';
 import { Expose } from 'class-transformer';
-import { User } from 'src/entities/user.entity';
-import { UserStore } from 'src/entities/userstore.entity';
+import { User } from 'src/database/entities/user.entity';
+import { UserStore } from 'src/database/entities/userstore.entity';
 
 // Create separate DTOs for each entity
 class UserDetailsDto extends PartialType(User) {

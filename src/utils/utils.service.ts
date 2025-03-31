@@ -6,7 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { ExceptionFilter, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosHeaders, AxiosRequestConfig, AxiosResponse, Method } from 'axios';
-import { Store } from 'src/entities/store.entity';
+import { Store } from 'src/database/entities/store.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CsrfProvider } from './providers/csrf.provider';

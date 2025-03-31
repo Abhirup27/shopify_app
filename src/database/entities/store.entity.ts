@@ -1,8 +1,9 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./user.entity";
-import { Product } from "./product.entities";
+import { Product } from "./product.entity";
 import { Order } from "./order.entity";
 import { Customer } from "./customer.entity";
+import { StoreLocations } from "./storeLocations.entity";
 
 @Entity()
 export class Store {
@@ -12,7 +13,7 @@ export class Store {
         unsigned: true
     })
     table_id: number;
-    
+
     @OneToMany(() => Customer, customer => customer.store)
     customers: Customer[];
 
@@ -22,29 +23,32 @@ export class Store {
     @OneToMany(() => Order, order => order.store)
     orders: Order[];
 
+    @OneToMany(() => StoreLocations, location => location.store)
+    storeLocations: StoreLocations[];
+
     @Column({
         type: 'bigint',
-        unsigned:true,
+        unsigned: true,
         nullable: false
     })
     id: number;
-    
+
     @Column({
-    type: 'bigint',
-    unsigned: true,
-    nullable: false
+        type: 'bigint',
+        unsigned: true,
+        nullable: false
     })
     user_id: number;
 
     @ManyToOne(() => User, { nullable: false })
     @JoinColumn({ name: 'user_id', referencedColumnName: 'user_id' })
     user: User;
-    
+
     @Column(
         {
             type: 'varchar',
             length: 96,
-            nullable:false
+            nullable: false
         }
     )
     name: string;
@@ -53,7 +57,7 @@ export class Store {
         {
             type: 'varchar',
             length: 254,
-            nullable:false
+            nullable: false
         }
     )
     email: string;
@@ -75,17 +79,17 @@ export class Store {
     @Column({
         type: 'varchar',
         length: 20,
-        nullable:true
+        nullable: true
     })
     phone: string;
-    
-    @Column({type: 'text',nullable:true})
+
+    @Column({ type: 'text', nullable: true })
     address1: string;
 
-    @Column({type: 'text',nullable:true})
+    @Column({ type: 'text', nullable: true })
     address2: string;
 
-    @Column({type: 'tinytext',nullable:true})
+    @Column({ type: 'tinytext', nullable: true })
     zip: string;
 
 }

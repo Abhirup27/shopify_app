@@ -3,7 +3,7 @@ import { UtilsService } from './utils.service';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Store } from 'src/entities/store.entity';
+import { Store } from 'src/database/entities/store.entity';
 import { RequestToShopifyProvider } from './providers/request-to-shopify.provider';
 import { CsrfProvider } from './providers/csrf.provider';
 
@@ -17,4 +17,4 @@ import { CsrfProvider } from './providers/csrf.provider';
   ],
   exports: [UtilsService]
 })
-export class UtilsModule {}
+export class UtilsModule { }

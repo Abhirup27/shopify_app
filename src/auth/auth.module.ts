@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { HashingProvider } from './providers/hashing.provider';
 import { BcryptProvider } from './providers/bcrypt.provider';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from 'src/entities/user.entity';
+import { User } from 'src/database/entities/user.entity';
 import { UserModule } from 'src/web-app/user/user.module';
 import { AuthMiddleware } from './auth.middleware';
 import { SignInProvider } from './providers/sign-in.provider';
@@ -19,8 +19,8 @@ import jwtConfig from './config/jwt.config';
     AuthMiddleware,
     AuthService,
     {
-    provide: HashingProvider,
-    useClass: BcryptProvider //we can replace Bcrypt with other algorithms. This provider implements the methods of the HashingProvider abstract class. We can use argon2
+      provide: HashingProvider,
+      useClass: BcryptProvider //we can replace Bcrypt with other algorithms. This provider implements the methods of the HashingProvider abstract class. We can use argon2
     },
     SignInProvider
   ],
@@ -31,6 +31,6 @@ import jwtConfig from './config/jwt.config';
     JwtModule.registerAsync(jwtConfig.asProvider())
   ],
   exports: [AuthService, HashingProvider, AuthMiddleware]
-  
+
 })
-export class AuthModule {}
+export class AuthModule { }

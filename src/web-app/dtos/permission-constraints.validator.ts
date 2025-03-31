@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { ValidationArguments, ValidatorConstraint, ValidatorConstraintInterface } from "class-validator";
-import { ALL_PERMS } from "src/entities/constants/user-roles.constants";
+import { ALL_PERMS } from "src/database/entities/constants/user-roles.constants";
 
 
 

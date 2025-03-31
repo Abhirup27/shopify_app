@@ -1,6 +1,6 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
-import { Queue, QueueEvents } from 'bullmq';
+import { Job, Queue, QueueEvents } from 'bullmq';
 import {
   CONFIGURE_QUEUE,
   CREATE_USER,
@@ -10,6 +10,7 @@ import {
   GET_ORDERS,
   GET_PRODUCTS,
   GET_STORE,
+  GET_STORE_LOCATIONS,
   GET_USERS,
   ORDERS_QUEUE,
   PRODUCTS_QUEUE,
@@ -19,10 +20,11 @@ import {
   SYNC_PRODUCTS,
   USERS_QUEUE,
 } from './constants/jobs.constants';
-import { Store } from 'src/entities/store.entity';
-import { Order } from 'src/entities/order.entity';
-import { UserStore } from 'src/entities/userstore.entity';
+import { Store } from 'src/database/entities/store.entity';
+import { Order } from 'src/database/entities/order.entity';
+import { UserStore } from 'src/database/entities/userstore.entity';
 import { RegisterUserDto } from 'src/web-app/dtos/register-member.dto';
+import { Product } from 'src/database/entities/product.entity';
 
 @Injectable()
 export class JobsService {
@@ -52,12 +54,13 @@ export class JobsService {
     await this.productQueue.add(SYNC_PRODUCTS, store);
   };
 
-  public getProducts = async (store: Store): Promise<any> => {
-    const job = await this.productQueue.add(GET_PRODUCTS, store, {
-      attempts: 3,
-    });
+  public getProducts = async (store: Store | number): Promise<Product[]> => {
 
-    return await job.waitUntilFinished(this.productsQueueEvents, 30000);
+    const job: Job<Store | number, Product[]> = await this.productQueue.add(GET_PRODUCTS, store, { attempts: 3 });
+
+    const data: Product[] = await job.waitUntilFinished(this.productsQueueEvents, 30000);
+    //console.log(data);
+    return data;
   };
 
   /**
@@ -95,7 +98,11 @@ export class JobsService {
     const job = await this.storesQueue.add(GET_STORE, storeId, { attempts: 3 });
     return await job.waitUntilFinished(this.storeQueueEvents, 30000);
   };
+  public getStoreLocations = async (storeId: number): Promise<any> => {
+    const job = await this.storesQueue.add(GET_STORE_LOCATIONS, storeId, { attempts: 3 });
 
+    return await job.waitUntilFinished(this.storeQueueEvents, 30000);
+  };
   public getMembers = async (storeId: number): Promise<UserStore[]> => {
     const job = await this.usersQueue.add(GET_USERS, storeId, { attempts: 3 });
     return await job.waitUntilFinished(this.userQueueEvents, 30000);

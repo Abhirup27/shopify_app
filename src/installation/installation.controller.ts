@@ -19,7 +19,7 @@ import { GetInstallInitQueryDto } from './dtos/get-install-query.dto';
 import { GetInstallCodeDto } from './dtos/get-code-query.dto';
 import { UnauthorizedExceptionFilter } from '../filters/hmac.exception.filter';
 import { JobsService } from 'src/jobs/jobs.service';
-import { Store } from '../entities/store.entity';
+import { Store } from '../database/entities/store.entity';
 
 @Controller() //@Controller('/shopify/auth')
 @UseFilters(UnauthorizedExceptionFilter)

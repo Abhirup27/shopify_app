@@ -3,7 +3,7 @@ import { CONFIGURE_QUEUE } from "../constants/jobs.constants";
 import { Job } from "bullmq";
 import { Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Store } from "src/entities/store.entity";
+import { Store } from "src/database/entities/store.entity";
 import { Repository } from "typeorm";
 import { UtilsService } from "src/utils/utils.service";
 import { AxiosHeaders } from "axios";

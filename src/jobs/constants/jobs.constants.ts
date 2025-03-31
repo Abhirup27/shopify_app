@@ -22,7 +22,7 @@ export const GET_ORDER = 'retrieve-order-details'
 
 export const GET_STORE = 'retrieve-store';
 export const GET_STORES = 'retrieve-stores';
-
+export const GET_STORE_LOCATIONS = 'retrieve-store-locations';
 export const GET_CUSTOMERS = 'retrieve-customers';
 
 export const GET_USERS = 'retrieve-users';

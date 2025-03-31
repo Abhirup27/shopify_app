@@ -2,15 +2,16 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UtilsService } from 'src/utils/utils.service';
 import { UserDto } from './dtos/user.dto';
-import { Order } from 'src/entities/order.entity';
-import { Customer } from 'src/entities/customer.entity';
+import { Order } from 'src/database/entities/order.entity';
+import { Customer } from 'src/database/entities/customer.entity';
 import { JobsService } from 'src/jobs/jobs.service';
-import { Store } from 'src/entities/store.entity';
+import { Store } from 'src/database/entities/store.entity';
 import { RouteService } from './providers/routes.provider';
-import { UserStore } from 'src/entities/userstore.entity';
+import { UserStore } from 'src/database/entities/userstore.entity';
 import { RegisterUserDto } from './dtos/register-member.dto';
-import { ADMIN, SUPER_ADMIN } from 'src/entities/constants/user-roles.constants';
-import { Product } from 'src/entities/product.entities';
+import { ADMIN, SUPER_ADMIN } from 'src/database/entities/constants/user-roles.constants';
+import { Product } from 'src/database/entities/product.entity';
+import { StoreLocations } from 'src/database/entities/storeLocations.entity';
 
 @Injectable()
 export class WebAppService {
@@ -264,8 +265,23 @@ export class WebAppService {
 
     try {
       if (user.hasRole(SUPER_ADMIN) || user.hasRole(ADMIN) || user.can(['read_products'])) {
-        const products: Product[] = await this.jobsService.getProducts(user.store);
-        payload['products'] = products;
+
+        const products: Product[] = await this.jobsService.getProducts(user.store_id);
+        //console.log(products);
+        payload = {
+          storeId: user.store_id,
+          products: products,
+          user: user,
+          isEmbedded: false,
+          showSidebar: true,
+          isStorePublic: !this.utilsService.checkIfStoreIsPrivate(user),
+          style: '',
+          appName: 'Shopify App',
+          body: ''
+
+        };
+
+
 
       }
 
@@ -275,6 +291,15 @@ export class WebAppService {
     return payload;
 
   };
+  public createProductPagePayload = async (user: UserDto): Promise<Object> => {
+    try {
+
+      const locations: StoreLocations[] = this.jobsService.getStoreLocations(user.store_id);
+    } catch (error) {
+      this.logger.error(error.message, this.createProductPagePayload.name);
+    }
+  }
+
   public getMembers = async (storeId: number): Promise<UserStore[]> => {
     let members: UserStore[];
     try {

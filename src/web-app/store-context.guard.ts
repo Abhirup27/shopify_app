@@ -3,7 +3,7 @@ import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import jwtConfig from "src/auth/config/jwt.config";
 import { UserService } from "./user/user.service";
-import { UserStore } from "src/entities/userstore.entity";
+import { UserStore } from "src/database/entities/userstore.entity";
 
 export const Public = () => SetMetadata('isPublic', true);
 

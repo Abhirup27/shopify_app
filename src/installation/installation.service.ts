@@ -9,10 +9,10 @@ import { UtilsService } from 'src/utils/utils.service';
 import { Repository } from 'typeorm';
 import { CreateShopDTO } from './dtos/create-store.dto';
 import { CreateStoreProvider } from './providers/create-store.provider';
-import { UserStore } from 'src/entities/userstore.entity';
+import { UserStore } from 'src/database/entities/userstore.entity';
 import { CreateSuperAdmin } from './providers/create-super-admin';
-import { User } from 'src/entities/user.entity';
-import { Store } from 'src/entities/store.entity';
+import { User } from 'src/database/entities/user.entity';
+import { Store } from 'src/database/entities/store.entity';
 import { JobsService } from 'src/jobs/jobs.service';
 import { NonceProvider } from './providers/nonce.provider';
 import * as crypto from 'crypto';
@@ -34,7 +34,7 @@ export class InstallationService {
     // private storesRepository: Repository<Store>,
     // @InjectRepository(User)
     // private usersRepository:Repository<User>
-  ) {}
+  ) { }
 
   public isAccessTokenValid = async (storeDetails: any): Promise<boolean> => {
     try {

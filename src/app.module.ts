@@ -1,5 +1,4 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
-import { AppController } from './app.controller';
 
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/configuration';
@@ -10,9 +9,6 @@ import { InstallationModule } from './installation/installation.module';
 import { APP_FILTER, APP_GUARD, RouterModule } from '@nestjs/core';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Store } from './entities/store.entity';
-import { User } from './entities/user.entity';
-import { UserStore } from './entities/userstore.entity';
 import { AuthModule } from './auth/auth.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { WebAppModule } from './web-app/web-app.module';
@@ -23,10 +19,7 @@ import { RateLimitingGuard } from './guards/rate-limiting/rate-limiting.guard';
 import { CsrfMiddleware } from './middlewares/csrf.middleware';
 import { CsrfExceptionFilter } from './filters/csrf.exception.filter';
 import { JobsModule } from './jobs/jobs.module';
-import { Product } from './entities/product.entities';
-import { Order } from './entities/order.entity';
-import { Customer } from './entities/customer.entity';
-import routesConfig from './web-app/config/routes.config';
+import { moduleOptions } from './database/typeorm.config';
 
 //we pass this value through the command line/system variables
 const ENV = process.env.NODE_ENV;
@@ -53,27 +46,30 @@ const ENV = process.env.NODE_ENV;
       imports: [ConfigModule],
       inject: [ConfigService],
 
-      useFactory: async (configService: ConfigService) => ({
-
-        host: configService.get('database.host'),
-        type: configService.get('database.type').toString(),
-        port: parseInt(configService.get('database.port'), 10),
-        database: configService.get<string>('database.name'),
-        username: configService.get<string>('database.username'),
-        password: configService.get<string>('database.password'),
-
-        entities: [
-          Store,
-          User,
-          UserStore,
-          Product,
-          Order,
-          Customer
-        ],
-
-        synchronize: configService.get<boolean>('database.synchronize'),
-        autoLoadEntities: configService.get<boolean>('database.autoload')
-      }),
+      useFactory: moduleOptions,
+      /** useFactory: async (configService: ConfigService) => ({
+ 
+         host: configService.get('database.host'),
+         type: configService.get('database.type').toString(),
+         port: parseInt(configService.get('database.port'), 10),
+         database: configService.get<string>('database.name'),
+         username: configService.get<string>('database.username'),
+         password: configService.get<string>('database.password'),
+ 
+         entities: [
+           Store,
+           User,
+           UserStore,
+           Product,
+           Order,
+           Customer
+         ],
+ 
+         synchronize: configService.get<boolean>('database.synchronize'),
+         autoLoadEntities: configService.get<boolean>('database.autoload'),
+         migrations: ['src/database/migrations/*-migration.ts'],
+         migrationsRun: false
+       }), **/
     }),
     ThrottlerModule.forRoot({ throttlers: [throttlerConfig] }),
     AuthModule,

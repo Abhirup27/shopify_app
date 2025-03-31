@@ -1,8 +1,8 @@
 import { Injectable, Logger, RequestTimeoutException, UnauthorizedException, UseFilters } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Store } from 'src/entities/store.entity';
-import { User } from 'src/entities/user.entity';
-import { UserStore } from 'src/entities/userstore.entity';
+import { Store } from 'src/database/entities/store.entity';
+import { User } from 'src/database/entities/user.entity';
+import { UserStore } from 'src/database/entities/userstore.entity';
 import { RequestExceptionFilter } from 'src/filters/timeout.exception.filter';
 import { Repository } from 'typeorm';
 

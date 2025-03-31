@@ -21,6 +21,10 @@ export default registerAs('routes', (): Record<string, string> => {
         'orders.sync': '/syncOrders',
 
 
+        'shopify.product.create': '/productCreate',
+        'shopify.products.sync': '/syncProducts',
+        'change.product.addToCart': '/product/cart',
+
         'members.index': '/members',
         'members.create': '/createMember',
         'members.register': '/memberRegister',

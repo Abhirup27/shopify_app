@@ -1,8 +1,8 @@
-import { UserStore } from "src/entities/userstore.entity";
+import { UserStore } from "src/database/entities/userstore.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Injectable, Logger } from "@nestjs/common";
-import { ROLE_PERMISSIONS, SUPER_ADMIN } from "src/entities/constants/user-roles.constants";
+import { ROLE_PERMISSIONS, SUPER_ADMIN } from "src/database/entities/constants/user-roles.constants";
 
 @Injectable()
 export class CreateSuperAdmin {

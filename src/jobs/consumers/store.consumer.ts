@@ -1,6 +1,6 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { GET_STORE, STORES_QUEUE, SYNC_STORE } from "../constants/jobs.constants";
-import { Store } from "src/entities/store.entity";
+import { Store } from "src/database/entities/store.entity";
 import { Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";

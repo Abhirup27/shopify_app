@@ -3,12 +3,12 @@ import { GET_PRODUCTS, PRODUCTS_QUEUE, SYNC_PRODUCTS } from "../constants/jobs.c
 import { InjectRepository } from "@nestjs/typeorm";
 import { ConfigService } from "@nestjs/config";
 import { UtilsService } from "src/utils/utils.service";
-import { Store } from "src/entities/store.entity";
+import { Store } from "src/database/entities/store.entity";
 import { Repository } from "typeorm";
 import { Job } from "bullmq";
 import { ShopifyRequestOptions } from "src/types/ShopifyRequestOptions";
 import { AxiosHeaders } from "axios";
-import { Product } from "src/entities/product.entities";
+import { Product } from "src/database/entities/product.entity";
 import { ShopifyResponse } from "src/types/ShopifyResponse";
 import { Logger } from "@nestjs/common";
 
@@ -26,7 +26,7 @@ export class ProductsConsumer extends WorkerHost {
         private readonly productsRepository: Repository<Product>
     ) { super() }
 
-    public process = async (job: Job<Store>): Promise<any> => {
+    public process = async (job: Job<Store | number, Product[]>): Promise<any> => {
         try {
             switch (job.name) {
                 case SYNC_PRODUCTS:
@@ -44,7 +44,7 @@ export class ProductsConsumer extends WorkerHost {
         }
     }
 
-    private syncProducts = async (job: Job<Store>): Promise<void> => {
+    private syncProducts = async (job: Job<Store | number>): Promise<void> => {
         try {
             const store = job.data ?? null;
 
@@ -100,18 +100,57 @@ export class ProductsConsumer extends WorkerHost {
         return productCreated;
     }
 
-    private retrieveProducts = async (job: Job<Store>): Promise<Product[] | Product | null> => {
-        let products: Product[] | Product;
+    private isStore = (data: unknown): data is Store => {
+        return data instanceof Store || (typeof data === 'object' && data !== null && 'table_id' in data);
+    }
+    private retrieveProducts = async (job: Job<Store | number, Product[]>): Promise<Product[]> => {
+        let products: Product[];
         try {
             const store = job.data;
             products = await this.productsRepository.findBy({
-                store_id: store.table_id
+                store_id: (this.isStore(store)) ? store.table_id : store
             })
+
         } catch (error) {
             this.logger.error(error.message);
         }
+        //console.log(await products[0].getAddToCartStatus())
+        //return Promise.resolve(products);
+
+        return Promise.resolve(products.map(entity => {
+            //console.log(entity);
+            const targetTag: string = this.configService.get<string>('AddToCartTagProduct') ?? 'buy-now';
+            let status: boolean = false; let message: string = 'Remove Add to Cart';
+            if (entity.tags.length > 0) {
+                const tags: Array<string> = entity.tags.split(',');
+
+                if (tags !== null && this.isArray(tags)) {
+                    if (tags.includes(targetTag)) {
+
+                        status = true,
+                            message = 'Enable Add to Cart'
+
+                    }
+
+                }
+            }
+
+            return {
+                ...entity,
 
 
-        return null;
+                getAddToCartStatus: {
+                    status: status,
+                    message: message
+                }
+            }
+
+        }));
+
     }
+    private isArray(array: unknown): array is string[] {
+
+        return Array.isArray(array) && array.every(item => typeof item === 'string');
+    }
+
 }

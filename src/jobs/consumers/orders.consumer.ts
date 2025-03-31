@@ -10,10 +10,10 @@ import { Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { UtilsService } from 'src/utils/utils.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Order } from 'src/entities/order.entity';
+import { Order } from 'src/database/entities/order.entity';
 import { Repository } from 'typeorm';
 import { AxiosHeaders } from 'axios';
-import { Store } from 'src/entities/store.entity';
+import { Store } from 'src/database/entities/store.entity';
 import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 import { ShopifyResponse } from 'src/types/ShopifyResponse';
 

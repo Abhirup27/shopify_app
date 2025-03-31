@@ -2,13 +2,13 @@ import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { CREATE_USER, GET_USERS, USERS_QUEUE } from "../constants/jobs.constants";
 import { Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { User } from "src/entities/user.entity";
+import { User } from "src/database/entities/user.entity";
 import { Repository } from "typeorm";
-import { UserStore } from "src/entities/userstore.entity";
+import { UserStore } from "src/database/entities/userstore.entity";
 import { Job } from "bullmq";
 import { RegisterUserDto } from "src/web-app/dtos/register-member.dto";
 import { HashingProvider } from "src/auth/providers/hashing.provider";
-import { ADMIN, ADMIN_PERMS, ALL_PERMS, SUB_USER } from "src/entities/constants/user-roles.constants";
+import { ADMIN, ADMIN_PERMS, ALL_PERMS, SUB_USER } from "src/database/entities/constants/user-roles.constants";
 
 
 

@@ -6,9 +6,9 @@ export default () => ({
   logToFile: process.env.LOG_TO_FILE,
 
   app_secret: process.env.APP_SECRET,
-  app_url: 'https://795d-223-233-73-41.ngrok-free.app',
+  app_url: 'https://d93c-223-233-73-41.ngrok-free.app',
   app_install_URL:
-    'https://795d-223-233-73-41.ngrok-free.app/shopify/auth/redirect',
+    'https://d93c-223-233-73-41.ngrok-free.app/shopify/auth/redirect',
 
   shopify_api_version: '2024-01',
   shopify_api_key: process.env.API_KEY,
@@ -33,7 +33,7 @@ export default () => ({
   ].join(','),
 
   jwt_secret: process.env.JWT_SECRET ?? 'randomstring',
-  jwt_token_audience: process.env.JWT_TOKEN_AUDIENCE ?? 'https://795d-223-233-73-41.ngrok-free.app',
+  jwt_token_audience: process.env.JWT_TOKEN_AUDIENCE ?? 'https://d93c-223-233-73-41.ngrok-free.app',
   jwt_token_issuer: process.env.JWT_TOKEN_ISSUER,
   jwt_access_token_ttl: parseInt(
     process.env.JWT_ACCESS_TOKEN_TTL ?? '3600',

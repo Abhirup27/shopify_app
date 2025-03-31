@@ -1,8 +1,11 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
 import { Store } from "./store.entity";
+import { isArray } from "class-validator";
+import { ConfigService } from "@nestjs/config";
 
 @Entity()
 export class Product {
+    // constructor(private readonly configService: ConfigService) { }
     @PrimaryColumn({
         type: 'bigint',
         unsigned: true
@@ -74,22 +77,22 @@ export class Product {
     tags: string;
 
     @Column({
-        type: 'longtext',
+        type: 'json',
         nullable: true
     })
-    variants: string;
+    variants: string[];
 
     @Column({
-        type: 'longtext',
+        type: 'json',
         nullable: true
     })
-    options: string;
+    options: string[];
 
     @Column({
-        type: 'longtext',
+        type: 'json',
         nullable: true
     })
-    images: string;
+    images: string[];
 
     @Column({
         type: 'varchar',
@@ -108,4 +111,32 @@ export class Product {
         // onUpdate: 'CURRENT_TIMESTAMP'
     })
     updated_at_date: Date;
+
+    /**
+        public getAddToCartStatus = async (): Promise<{ status: boolean, message: string }> => {
+            const targetTag: string = 'buy-now'//this.configService.get<string>('AddToCartTagProduct') ?? 'buy-now';
+            if (this.tags.length > 0) {
+                const tags: Array<string> = this.tags.split(',');
+    
+                if (tags !== null && this.isArray(tags)) {
+                    if (tags.includes(targetTag)) {
+                        return Promise.resolve({
+                            status: true,
+                            message: 'Enable Add to Cart'
+                        });
+                    }
+    
+                }
+            }
+            return Promise.resolve({ status: false, message: 'Remove add to cart.' });
+        }
+    
+    
+    
+    
+        isArray(array: unknown): array is string[] {
+    
+            return Array.isArray(array) && array.every(item => typeof item === 'string');
+        }
+    **/
 }

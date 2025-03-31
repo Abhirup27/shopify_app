@@ -12,6 +12,7 @@ import {
   Render,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { query, Request, Response } from 'express';
@@ -26,9 +27,9 @@ import { UserDto } from './dtos/user.dto';
 import {
   ADMIN,
   SUPER_ADMIN,
-} from 'src/entities/constants/user-roles.constants';
+} from 'src/database/entities/constants/user-roles.constants';
 import { RegisterUserDto } from './dtos/register-member.dto';
-import { UserStore } from 'src/entities/userstore.entity';
+import { UserStore } from 'src/database/entities/userstore.entity';
 import { getTsBuildInfoEmitOutputFilePath } from 'typescript';
 
 @UseGuards(AccessTokenGuard, StoreContextGuard)
@@ -156,10 +157,24 @@ export class WebAppController {
   @Get('/products')
   public async getProducts(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query,) {
     const payload: Object = await this.webAppService.getProducts(user);
-
+    payload['csrfToken'] = this.utilsService.generateToken(req, res);
     res.render('products/index', payload);
   }
+  @Get('/productCreate')
+  public async createProductPage(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response) {
 
+    try {
+      if (user.can(['all_access', 'write_products'])) {
+        const payload = this.webAppService.createProductPagePayload(user);
+        res.render('products/create', payload);
+      }
+      else {
+        throw new UnauthorizedException();
+      }
+    } catch (error) {
+      this.logger.error(error.mesage, this.createProductPage.name);
+    }
+  }
   @Get('/syncOrders')
   public async syncOrders(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query,) {
     if (user.hasRole(SUPER_ADMIN) || user.hasRole(ADMIN) || user.can(['write_orders'])) {
