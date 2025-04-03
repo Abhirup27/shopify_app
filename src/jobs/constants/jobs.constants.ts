@@ -10,6 +10,7 @@ export const SYNC_ = 'sync-';
 export const SYNC_PRODUCTS = 'sync-products';
 export const SYNC_ORDERS = 'sync-orders';
 export const SYNC_STORE = 'sync-store';
+export const SYNC_STORE_LOCATIONS = 'sync-store-locations';
 export const SYNC_CUSTOMERS = 'sync-customers';
 
 
@@ -27,3 +28,6 @@ export const GET_CUSTOMERS = 'retrieve-customers';
 
 export const GET_USERS = 'retrieve-users';
 export const CREATE_USER = 'create-user';
+
+
+export const UPDATE_STORE_TOKEN = 'update-store-token';

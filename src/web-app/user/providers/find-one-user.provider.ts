@@ -131,7 +131,8 @@ export class FindOneUser {
     public getStoreContext = async (userId: number, storeId?: number): Promise<UserStore> => {
         if (storeId && typeof storeId != undefined) {
             const storeContext = await this.userStoresRepository.findOne({
-                where: { user_id: userId, store_id: storeId }
+                where: { user_id: userId, store_id: storeId },
+                relations: ['store']
             });
 
             if (storeContext) return storeContext;
@@ -140,7 +141,8 @@ export class FindOneUser {
         // Otherwise get the primary store or the first one
         const storeContexts = await this.userStoresRepository.find({
             where: { user_id: userId },
-            order: { store_id: 'DESC' }  // Primary stores first
+            order: { store_id: 'DESC' },  // Primary stores first
+            relations: ['store']
         });
 
         if (!storeContexts.length) {

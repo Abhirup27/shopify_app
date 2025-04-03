@@ -95,10 +95,7 @@ export class InstallationService {
   ): Promise<boolean> => {
     return await this.nonceProvider.validateAndRemoveNonce(nonce, shopDomain);
   };
-  public getAccessTokenForStore = async (
-    shop: any,
-    code: string,
-  ): Promise<string | false> => {
+  public getAccessTokenForStore = async (shop: any, code: string,): Promise<string | false> => {
     try {
       const endpoint = `https://${shop}/admin/oauth/access_token`;
       const headers = new AxiosHeaders().set(
@@ -124,7 +121,7 @@ export class InstallationService {
           response.respBody['access_token'] &&
           response.respBody['access_token'] !== null
         ) {
-          //console.log(response.respBody)
+          console.log(response.respBody)
           return response.respBody['access_token'].toString();
         }
 
@@ -195,10 +192,7 @@ export class InstallationService {
   /**
    * Saves store details to the database, in store_table. CreateShopDTO has all the key value pairs that the shopify server returns for requesting the shop.json
    */
-  public saveStoreDetails = async (
-    shopDetails: CreateShopDTO,
-    accessToken: string,
-  ): Promise<{ table_id: number | null; success: boolean }> => {
+  public saveStoreDetails = async (shopDetails: CreateShopDTO, accessToken: string,): Promise<{ table_id: number | null; success: boolean }> => {
     let result: { success?: boolean; user: User; store: Store };
     try {
       result = await this.createStoreProvider.createStore(
@@ -248,4 +242,9 @@ export class InstallationService {
 
     return result;
   };
+
+  public updateAccessToken = async (store: Store, accessToken: string): Promise<boolean> => {
+
+    return await this.jobsService.updateStoreToken(store, accessToken);
+  }
 }

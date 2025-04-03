@@ -12,6 +12,8 @@ import { RegisterUserDto } from './dtos/register-member.dto';
 import { ADMIN, SUPER_ADMIN } from 'src/database/entities/constants/user-roles.constants';
 import { Product } from 'src/database/entities/product.entity';
 import { StoreLocations } from 'src/database/entities/storeLocations.entity';
+import * as crypto from 'crypto';
+import { Response } from 'express';
 
 @Injectable()
 export class WebAppService {
@@ -233,12 +235,24 @@ export class WebAppService {
 
     return payload;
   };
-  public syncOrders = async (storeId: number): Promise<any> => {
+  public syncOrders = async (storeId: number, res: Response): Promise<any> => {
     const store: Store = await this.jobsService.getStore(storeId);
 
-    await this.jobsService.syncOrders(store);
+    const result = await this.jobsService.syncOrders(store);
+    if (result != null && result.status && result.status == 'AUTH_REQUIRED') {
+      console.log(result.status);
+      const url = await this.getOAuthURL(store.myshopify_domain, `/orders?storeId=${store.id}`);
+      console.log(url);
+      res.redirect(url);
+    }
+    else {
+      res.redirect(`/orders?storeId=${store.id}`);
+    }
   };
-
+  public syncLocations = async (user: UserDto): Promise<StoreLocations[]> => {
+    console.log(user);
+    return await this.jobsService.syncStoreLocations(user.store);
+  }
   public getOrderDetails = async (user: UserDto, orderId: number,): Promise<Object> => {
     let payload: Object = {};
 
@@ -292,12 +306,26 @@ export class WebAppService {
 
   };
   public createProductPagePayload = async (user: UserDto): Promise<Object> => {
+    let payload: Object = {};
     try {
 
-      const locations: StoreLocations[] = this.jobsService.getStoreLocations(user.store_id);
+      const locations: StoreLocations[] = await this.jobsService.getStoreLocations(user.store_id);
+      payload = {
+        storeId: user.store_id,
+        locations: locations,
+        user: user,
+        isEmbedded: false,
+        showSidebar: true,
+        isStorePublic: !this.utilsService.checkIfStoreIsPrivate(user),
+        style: '',
+        appName: 'Shopify App',
+        body: ''
+      };
+
     } catch (error) {
       this.logger.error(error.message, this.createProductPagePayload.name);
     }
+    return payload;
   }
 
   public getMembers = async (storeId: number): Promise<UserStore[]> => {
@@ -320,4 +348,19 @@ export class WebAppService {
     }
     return newUser;
   }
+  private getOAuthURL = async (shopDomain: string, endpoint: string): Promise<string> => {
+    const nonce: string = await this.utilsService.createNonce(shopDomain);
+
+    const clientId: string = this.configService.get<string>('shopify_api_key');
+    const scopes: string = this.configService.get('accessScopes');
+    const redirect: string = this.configService.get('refresh_token_URL') + '?endpoint?=' + endpoint;
+
+    /**
+     * https://{shop}.myshopify.com/admin/oauth/authorize?client_id={client_id}&scope={scopes}&redirect_uri={redirect_uri}&state={nonce}&grant_options[]={access_mode}
+     */
+    const url = `https://${shopDomain}/admin/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${redirect}&state=${nonce}&grant_options[]=per-user`;
+
+    return url;
+  };
+
 }

@@ -43,6 +43,8 @@ export class WebAppModule implements NestModule {
         { path: 'memberRegister', method: RequestMethod.GET },
         { path: 'createMember', method: RequestMethod.POST },
         { path: 'products', method: RequestMethod.GET },
+        { path: 'productCreate', method: RequestMethod.GET },
+        { path: 'syncStoreLocations', method: RequestMethod.GET }
       )
   }
 }

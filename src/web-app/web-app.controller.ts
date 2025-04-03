@@ -165,7 +165,8 @@ export class WebAppController {
 
     try {
       if (user.can(['all_access', 'write_products'])) {
-        const payload = this.webAppService.createProductPagePayload(user);
+        const payload = await this.webAppService.createProductPagePayload(user);
+        payload['csrfToken'] = this.utilsService.generateToken(req, res);
         res.render('products/create', payload);
       }
       else {
@@ -178,10 +179,9 @@ export class WebAppController {
   @Get('/syncOrders')
   public async syncOrders(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query,) {
     if (user.hasRole(SUPER_ADMIN) || user.hasRole(ADMIN) || user.can(['write_orders'])) {
-      await this.webAppService.syncOrders(user.store_id);
+      await this.webAppService.syncOrders(user.store_id, res);
     }
 
-    res.redirect(`/orders?storeId=${user.store_id}`);
   }
 
   @Get('/members')
@@ -249,4 +249,14 @@ export class WebAppController {
     res.redirect('/members');
   }
 
+  @Get('/syncStoreLocations')
+  public async syncLocations(@CurrentUser() user: UserDto, @Res() res: Response) {
+    try {
+      if (user.can(['all_access', 'write_locations'])) {
+        await this.webAppService.syncLocations(user);
+      }
+    } catch (error) {
+      this.logger.error(error.message, this.syncLocations.name);
+    }
+  }
 }

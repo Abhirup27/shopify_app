@@ -19,7 +19,7 @@ export default registerAs('jwt', (): JwtModuleOptions => {
     signOptions: {
       audience:
         process.env.JWT_TOKEN_AUDIENCE ??
-        'https://2f56-223-233-66-12.ngrok-free.app',
+        'https://1c0e-223-233-73-41.ngrok-free.app',
       issuer: process.env.JWT_TOKEN_ISSUER,
       expiresIn: parseInt(process.env.JWT_ACCESS_TOKEN_TTL ?? '3600', 10),
     },

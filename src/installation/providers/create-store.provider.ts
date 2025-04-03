@@ -20,12 +20,8 @@ export class CreateStoreProvider {
 
     }
 
-    public createStore = async (createStoreDto: CreateShopDTO, accessToken: string): Promise<{
-        success: boolean;
-        store: Store;
-        user: User;
-    }> => {
-        let existingStore = undefined;
+    public createStore = async (createStoreDto: CreateShopDTO, accessToken: string): Promise<{ success: boolean; store: Store; user: User; }> => {
+        let existingStore: Store = undefined;
 
         let newUser: User = undefined;
         let newStore: Store = undefined;
@@ -42,7 +38,7 @@ export class CreateStoreProvider {
 
         try {
             if (existingUser == null) {
-                console.log('user not found, creating it')
+                // console.log('user not found, creating it')
                 const user_payload = {
                     'email': createStoreDto.email,
                     'password': await this.hashingProvider.hashPassword(default_password),
@@ -69,7 +65,10 @@ export class CreateStoreProvider {
                 newStore = this.storesRepository.create(payload);
                 newStore = await this.storesRepository.save(newStore);
             }
-            return { success: true, store: newStore, user: newUser ?? existingUser };
+            if (existingStore) {
+                await this.storesRepository.update({ id: existingStore.id }, { access_token: accessToken });
+            }
+            return { success: true, store: newStore ?? existingStore, user: newUser ?? existingUser };
         }
         catch (error) {
             console.error(error);

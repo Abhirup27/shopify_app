@@ -9,4 +9,16 @@ export class StoresQueueEvents extends QueueEventsHost {
     onCompleted(job: Job) {
         return job;
     }
+
+    @OnQueueEvent('error')
+    onError(job: Job, err: Error) {
+        console.log(err);
+        job.moveToFailed(err, job.token);
+    }
+
+    @OnQueueEvent('failed')
+    onFail(job: Job) {
+        job.remove();
+        return job;
+    }
 }

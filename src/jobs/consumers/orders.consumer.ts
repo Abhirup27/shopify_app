@@ -146,9 +146,7 @@ export class OrdersConsumer extends WorkerHost {
     super();
   }
 
-  public process = async (
-    job: Job<Store | number>,
-  ): Promise<Order[] | Order | null> => {
+  public process = async (job: Job<Store | number>,): Promise<Order[] | Order | null> => {
     try {
       //const store: Store = job.data;
 
@@ -160,7 +158,7 @@ export class OrdersConsumer extends WorkerHost {
             );
           }
 
-          return await this.syncOrders(job.data);
+          return await this.syncOrders(job.data, job);
 
         case GET_ORDERS:
           if (job.data instanceof Object) {
@@ -180,12 +178,16 @@ export class OrdersConsumer extends WorkerHost {
           throw new Error('Invalid job name');
       }
     } catch (error) {
-      this.logger.error(error.message);
+      if (error.message == '401') {
+        // job.moveToCompleted(error, undefined);
+        //job.moveToFailed(error, job.token);
+
+      }
       throw error;
     }
   };
 
-  private syncOrders = async (store: Store): Promise<any> => {
+  private syncOrders = async (store: Store, job: Job): Promise<any> => {
     try {
       const options: ShopifyRequestOptions = {
         url: await this.utilsService.getShopifyURLForStore(
@@ -199,8 +201,15 @@ export class OrdersConsumer extends WorkerHost {
 
       do {
         options.data = this.getQueryObjectForOrders(cursor);
-        const response: ShopifyResponse =
-          await this.utilsService.requestToShopify('post', options);
+        const response: ShopifyResponse = await this.utilsService.requestToShopify('post', options);
+        if (response.statusCode == 401) {
+          // job.moveToFailed(Error('401'), job.token)
+          //job.moveToCompleted(Error('401'), job.token);
+          //job.remove()
+          throw Error('401')
+        }
+        console.log(response.respBody);
+        //throw Error('401');
         if (response.statusCode == 200) {
           //console.log(response.respBody["data"]['orders']['edges']);
           await this.saveOrdersInDB(
@@ -208,7 +217,7 @@ export class OrdersConsumer extends WorkerHost {
             response.respBody['data']['orders']['edges'],
           );
         }
-
+        console.log(response);
         // console.log(response.respBody["data"]['orders']['edges']);
         // await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
         //console.log(response.respBody);
@@ -409,9 +418,7 @@ export class OrdersConsumer extends WorkerHost {
     return order;
   };
 
-  public getQueryObjectForOrders = (
-    cursor: string | null,
-  ): { query: string } | null => {
+  public getQueryObjectForOrders = (cursor: string | null,): { query: string } | null => {
     try {
       const filter = `(first: 5${cursor ? `, after: "${cursor}"` : ''})`;
 

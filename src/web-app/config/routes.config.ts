@@ -19,9 +19,11 @@ export default registerAs('routes', (): Record<string, string> => {
         'real.time.notifications': '/notifications',
 
         'orders.sync': '/syncOrders',
+        'locations.sync': '/syncStoreLocations',
 
-
+        'product.add.variant': 'productAddVariant',
         'shopify.product.create': '/productCreate',
+        'shopify.product.publish': '/productPublish',
         'shopify.products.sync': '/syncProducts',
         'change.product.addToCart': '/product/cart',
 

@@ -40,9 +40,11 @@ export const moduleOptions = async (configService: ConfigService): Promise<TypeO
     username: configService.get<string>('database.username'),
     password: configService.get('database.password'),
     database: configService.get<string>('database.name'),
-    entities: ['dist/database/entities/*.entity.js', 'src/database/entities/*.entity.ts'],
+    entities: [path.join(__dirname, '..', 'database', 'entities', '*.entity.{ts,js}')],
+
     autoLoadEntities: configService.get<boolean>('database.autoload'),
-    migrations: ['src/database/migrations/*-migration.ts', 'dist/database/migration/*-migration.ts'],
+    migrations: [path.join(__dirname, '..', 'database', 'migrations', '*-migration.{ts,js}')],
+
     synchronize: configService.get<boolean>('database.synchronize'),
     logging: configService.get<boolean>('database.logging') === true,
     migrationsRun: configService.get<boolean>('database.runMigrationsOnStart') === true,

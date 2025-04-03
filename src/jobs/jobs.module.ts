@@ -24,13 +24,14 @@ import { User } from 'src/database/entities/user.entity';
 import { UsersConsumer } from './consumers/users.consumer';
 import { UsersQueueEvents } from './providers/user-listener.provider';
 import { AuthModule } from 'src/auth/auth.module';
+import { StoreLocations } from 'src/database/entities/storeLocations.entity';
 
 @Module({
 
   imports: [
     UtilsModule,
     AuthModule,
-    TypeOrmModule.forFeature([Store, Product, Order, Customer, UserStore, User]),
+    TypeOrmModule.forFeature([Store, Product, Order, Customer, UserStore, User, StoreLocations]),
 
     BullModule.forRootAsync({
       imports: [ConfigModule],

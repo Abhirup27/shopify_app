@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CsrfProvider } from './providers/csrf.provider';
 import { Request, Response } from 'express';
+import { NonceProvider } from './providers/nonce.provider';
 
 
 
@@ -25,7 +26,7 @@ export class UtilsService {
         private readonly httpService: HttpService,
 
         private readonly csrfProvider: CsrfProvider,
-
+        private readonly nonceProvider: NonceProvider,
         @InjectRepository(Store)
         private storeRepository: Repository<Store>
     ) {
@@ -41,6 +42,13 @@ export class UtilsService {
         //console.log(existingStore);
 
         return existingStore
+    }
+    public getAllStoresByDomain = async (shop: string): Promise<Store[]> => {
+        let stores: Store[];
+        try {
+            stores = await this.storeRepository.findBy(({ myshopify_domain: shop }))
+        } catch (error) { this.logger.error(error.message, this.getAllStoresByDomain.name) }
+        return stores;
     }
 
     public getShopifyURLForStore = async (endpoint: string, store: any): Promise<any> => {
@@ -181,5 +189,13 @@ export class UtilsService {
         return this.csrfProvider.generateToken(req, res);
 
 
+    }
+
+    public createNonce = async (shopDomain: string): Promise<string> => {
+        return await this.nonceProvider.createNonce(shopDomain);
+    }
+
+    public validateNonce = async (nonce: string, shopDomain: string): Promise<boolean> => {
+        return await this.nonceProvider.validateAndRemoveNonce(nonce, shopDomain);
     }
 }

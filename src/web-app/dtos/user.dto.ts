@@ -6,10 +6,12 @@ import {
     IsOptional,
     IsArray,
     IsDate,
+    IsObject,
 } from 'class-validator';
 import { Expose } from 'class-transformer';
 import { User } from 'src/database/entities/user.entity';
 import { UserStore } from 'src/database/entities/userstore.entity';
+import { Store } from 'src/database/entities/store.entity';
 
 // Create separate DTOs for each entity
 class UserDetailsDto extends PartialType(User) {
@@ -39,6 +41,11 @@ class UserStoreDetailsDto extends PartialType(UserStore) {
     @Expose()
     @IsNumber()
     store_id: number;
+
+    @Expose()
+    @IsObject()
+    @IsOptional()
+    store?: Store;
 
     @Expose()
     @IsString()
