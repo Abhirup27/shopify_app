@@ -15,7 +15,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { query, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { AuthService } from 'src/auth/auth.service';
 import { AccessTokenGuard, Public } from 'src/auth/guards/access-token.guard';
 import { UtilsService } from 'src/utils/utils.service';
@@ -24,10 +24,7 @@ import { StoreContextGuard } from './store-context.guard';
 import { WebAppService } from './web-app.service';
 import { CurrentUser } from './decorators/user.decorator';
 import { UserDto } from './dtos/user.dto';
-import {
-  ADMIN,
-  SUPER_ADMIN,
-} from 'src/database/entities/constants/user-roles.constants';
+import { ADMIN, SUPER_ADMIN } from 'src/database/entities/constants/user-roles.constants';
 import { RegisterUserDto } from './dtos/register-member.dto';
 import { UserStore } from 'src/database/entities/userstore.entity';
 import { getTsBuildInfoEmitOutputFilePath } from 'typescript';
@@ -44,7 +41,7 @@ export class WebAppController {
 
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,
-  ) { }
+  ) {}
 
   @Public()
   @Get()
@@ -80,11 +77,7 @@ export class WebAppController {
 
   //@UseGuards(AccessTokenGuard)
   @Get('/dashboard')
-  public async getDashboard(
-    @CurrentUser() user: UserDto,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
+  public async getDashboard(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response) {
     // console.log(req["user"],req["roles"]);
 
     //console.log(req['userStore'].hasRole('Super Admin'))
@@ -110,12 +103,7 @@ export class WebAppController {
   }
 
   @Get('/orders')
-  public async getOrders(
-    @CurrentUser() user: UserDto,
-    @Req() req: Request,
-    @Res() res: Response,
-    @Query() query,
-  ) {
+  public async getOrders(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query) {
     let payload: Object = {};
     const token = this.utilsService.generateToken(req, res);
     try {
@@ -155,21 +143,19 @@ export class WebAppController {
   }
 
   @Get('/products')
-  public async getProducts(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query,) {
+  public async getProducts(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query) {
     const payload: Object = await this.webAppService.getProducts(user);
     payload['csrfToken'] = this.utilsService.generateToken(req, res);
     res.render('products/index', payload);
   }
   @Get('/productCreate')
   public async createProductPage(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response) {
-
     try {
       if (user.can(['all_access', 'write_products'])) {
         const payload = await this.webAppService.createProductPagePayload(user);
         payload['csrfToken'] = this.utilsService.generateToken(req, res);
         res.render('products/create', payload);
-      }
-      else {
+      } else {
         throw new UnauthorizedException();
       }
     } catch (error) {
@@ -177,11 +163,10 @@ export class WebAppController {
     }
   }
   @Get('/syncOrders')
-  public async syncOrders(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query,) {
+  public async syncOrders(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query) {
     if (user.hasRole(SUPER_ADMIN) || user.hasRole(ADMIN) || user.can(['write_orders'])) {
       await this.webAppService.syncOrders(user.store_id, res);
     }
-
   }
 
   @Get('/members')
@@ -199,21 +184,17 @@ export class WebAppController {
         payload['storeId'] = user.store_id;
         payload['isStorePublic'] = true;
         payload['body'] = '';
-
       } else {
         throw new Error('User does not have permission to view members of the current store.');
       }
     } catch (error) {
       this.logger.error(error.message, this.getMembers.name);
-
     }
     res.render('members/index', payload);
-
   }
 
   @Get('/memberRegister')
   public async registerMember(@CurrentUser() user: UserDto, @Res() res: Response, @Req() req: Request) {
-
     try {
       if (user.can(['write_members'])) {
         const payload: Object = {};
@@ -228,20 +209,19 @@ export class WebAppController {
         payload['isStorePublic'] = true;
         payload['storeId'] = user.store_id;
 
-
         res.render('members/create', payload);
       } else {
         throw new Error('User has no permission to create new members.');
       }
-    } catch (error) { this.logger.error(error.messsage, this.registerMember.name); }
-
+    } catch (error) {
+      this.logger.error(error.messsage, this.registerMember.name);
+    }
   }
   @Post('/createMember')
   public async createMember(@CurrentUser() user: UserDto, @Body() newMember: RegisterUserDto, @Res() res: Response) {
     try {
       if (user.can(['all_access', 'write_members'])) {
         await this.webAppService.createMember(newMember, user.store_id);
-
       }
     } catch (error) {
       this.logger.error(error.message, this.createMember.name);
@@ -250,10 +230,13 @@ export class WebAppController {
   }
 
   @Get('/syncStoreLocations')
-  public async syncLocations(@CurrentUser() user: UserDto, @Res() res: Response) {
+  public async syncLocations(@Req() req: Request, @CurrentUser() user: UserDto, @Res() res: Response) {
+    //console.log(req['user']);// console.log(user);
     try {
       if (user.can(['all_access', 'write_locations'])) {
-        await this.webAppService.syncLocations(user);
+        const result = await this.webAppService.syncLocations(user);
+        console.log(result);
+        res.json(result);
       }
     } catch (error) {
       this.logger.error(error.message, this.syncLocations.name);

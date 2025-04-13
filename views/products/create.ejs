@@ -16,7 +16,7 @@
         <table class="table table-borderless">
             <tbody>
             <tr>
-                <td><a href="<%= route('locations.sync') %>" style="float: right;" class="btn btn-success">Sync Locations</a></td>
+                <td><a href="<%= route('locations.sync') %>" style="float: right;" class="btn btn-success" id="syncLocations">Sync Locations</a></td>
                 <td><a href="<%= route('shopify.products') %>" style="float: right" class="btn btn-primary">Back</a></td>
             </tr>
             </tbody>
@@ -88,24 +88,151 @@
 </section>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelector('.add_variant').addEventListener('click', function (e) {
-            e.preventDefault();
-            var count = document.querySelectorAll('#variantsRow .variant_info').length;
-            var url = "<%= route('product.add.variant') %>";
+   document.addEventListener('DOMContentLoaded', function () {
+    // Function to add a new variant row
+    function addVariantRow() {
+        // Get the current number of variants
+        const count = document.querySelectorAll('#variantsRow .variant_info').length + 1;
+        
+        // Find the first variant to clone its inventory structure
+        const firstVariant = document.querySelector('#variantsRow .pb-4');
+        const hasInventorySection = firstVariant.querySelector('.row:nth-child(2)');
+        
+        // Create the HTML for the new variant row
+        let variantHtml = `
+        <div class="pb-4" style="border: 1px dotted black">
+            <div class="row col-md-12 mt-2 variant_info">
+                <label for="" class="mt-2 mb-2"><b>Variant #${count}</b>
+                <a class="btn btn-danger remove_variant" style="margin-left:50px">X</a></label>    
+                <div class="col-md-4">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="floatingVariantTitle" name="variant_title[]" placeholder="Title" required>
+                        <label for="floatingVariantTitle">Title</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="floatingSKU" name="sku[]" placeholder="SKU" required>
+                        <label for="floatingSKU">SKU</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-floating">
+                        <input type="number" class="form-control" id="floatingVariantPrice" name="variant_price[]" placeholder="Price" required>
+                        <label for="floatingVariantPrice">Price</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <input type="number" class="form-control" id="floatingCompareAtVariantPrice" name="variant_caprice[]" placeholder="Compare At Price" required>
+                        <label for="floatingCompareAtVariantPrice">Compare At Price</label>
+                    </div>
+                </div>
+            </div>`;
+        
+        // If there's an inventory section in the first variant, clone its structure
+        if (hasInventorySection) {
+            const inventorySection = hasInventorySection.cloneNode(true);
             
-            fetch(url + '?count=' + (parseInt(count) + 1))
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('variantsRow').insertAdjacentHTML('beforeend', data.html);
-                });
-        });
+            // Update the inventory input names to match the new count
+            const inputs = inventorySection.querySelectorAll('input');
+            inputs.forEach(input => {
+                // Replace the count number in the name attribute
+                input.name = input.name.replace(/_\d+$/, `_${count}`);
+                input.value = ''; // Clear the value
+            });
+            
+            variantHtml += inventorySection.outerHTML;
+        }
+        
+        variantHtml += `</div>`;
+        
+        document.getElementById('variantsRow').insertAdjacentHTML('beforeend', variantHtml);
+    }
 
-        document.addEventListener('click', function(e) {
-            if (e.target && e.target.classList.contains('remove_variant')) {
-                e.preventDefault();
-                e.target.closest('.variant_info').remove();
+    document.querySelector('.add_variant').addEventListener('click', function (e) {
+        e.preventDefault();
+        addVariantRow();
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('remove_variant')) {
+            e.preventDefault();
+            e.target.closest('.pb-4').remove();
+        }
+    });
+const syncLocationsBtn = document.querySelector('#syncLocations');
+    if (syncLocationsBtn) {
+        syncLocationsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            syncLocationsBtn.innerHTML = 'Syncing...';
+            syncLocationsBtn.disabled = true;
+           console.log(this.href); 
+            
+            fetch( this.href , {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data && Array.isArray(data)) {
+                    updateVariantRowsWithLocations(data);
+                    
+                    alert('Locations synced successfully!');
+                } else {
+                    throw new Error('Invalid response format');
+                }
+            })
+            .catch(error => {
+                console.error('Error syncing locations:', error);
+                alert('Failed to sync locations. Please try again.');
+            })
+            .finally(() => {
+                syncLocationsBtn.innerHTML = 'Sync Locations';
+                syncLocationsBtn.disabled = false;
+            });
+        });
+    }
+
+    // Function to update all variant rows with new location data
+    function updateVariantRowsWithLocations(locations) {
+        const variantContainers = document.querySelectorAll('#variantsRow .pb-4');
+        
+        variantContainers.forEach((container, index) => {
+            const variantNum = index + 1;
+            const existingInventorySection = container.querySelector('.row:nth-child(2)');
+            
+            // Create new inventory section HTML
+            let inventoryHtml = `
+            <div class="row col-md-12 mt-2">
+                <label for="" class="mt-2 mb-2"><b>Inventory Info</b></label>`;
+                
+            locations.forEach(location => {
+                inventoryHtml += `
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <input type="number" class="form-control" id="floatingVariantPrice" 
+                               name="${location.id}_inventory_${variantNum}" 
+                               placeholder="Price" required>
+                        <label for="floatingVariantPrice">${location.name}</label>
+                    </div>
+                </div>`;
+            });
+            
+            inventoryHtml += `</div>`;
+            
+            // If there's an existing inventory section, replace it
+            if (existingInventorySection) {
+                existingInventorySection.outerHTML = inventoryHtml;
+            } else {
+                // Otherwise, append the new inventory section
+                container.insertAdjacentHTML('beforeend', inventoryHtml);
             }
         });
-    });
+        
+    }
+}); 
 </script>

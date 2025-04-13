@@ -14,10 +14,10 @@ export class Customer {
   @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
   table_id: number;
 
-  @Column({ type: 'bigint', unsigned: true, nullable: false })
+  @Column({ type: 'bigint', nullable: false, unsigned: true })
   id: number;
 
-  @Column({ type: 'bigint', unsigned: true, nullable: false })
+  @Column({})
   store_id: number;
 
   @ManyToOne(() => Store)
@@ -27,7 +27,7 @@ export class Customer {
   @Column({ type: 'varchar', nullable: true })
   email: string;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   accepts_marketing: string;
 
   @Column({ type: 'varchar', nullable: true })
@@ -54,21 +54,19 @@ export class Customer {
   @Column({ type: 'varchar', nullable: true })
   admin_graphql_api_id: string;
 
-  @Column({ type: 'json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   default_address: string;
 
   @Column({ type: 'varchar', nullable: true })
   tags: string;
-@CreateDateColumn({
-        type: 'timestamp',
-        //default: () => 'CURRENT_TIMESTAMP'
-    })
-    created_at_date: Date;
 
-    @UpdateDateColumn({
-        type: 'timestamp',
-        // default: () => 'CURRENT_TIMESTAMP',
-        // onUpdate: 'CURRENT_TIMESTAMP'
-    })
-    updated_at_date: Date;
+  @CreateDateColumn({
+    type: 'timestamp with time zone',
+  })
+  created_at_date: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamp with time zone',
+  })
+  updated_at_date: Date;
 }

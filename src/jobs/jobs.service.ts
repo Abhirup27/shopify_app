@@ -127,6 +127,7 @@ export class JobsService {
     return await job.waitUntilFinished(this.storeQueueEvents, 30000);
   }
   public syncStoreLocations = async (store: number | Store): Promise<StoreLocations[]> => {
+
     const job: Job<number | Store, StoreLocations[]> = await this.storesQueue.add(SYNC_STORE_LOCATIONS, store, { attempts: 3 });
     return await job.waitUntilFinished(this.storeQueueEvents, 30000);
   }
@@ -154,4 +155,10 @@ export class JobsService {
   }
 
 
+  private handleMutationOrSyncJobs = async (job: Job, result: any): Promise<any> => {
+
+    if (result?.status === 'AUTH_REQUIRED') {
+
+    }
+  }
 }

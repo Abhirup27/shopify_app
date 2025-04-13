@@ -43,9 +43,9 @@ class UserStoreDetailsDto extends PartialType(UserStore) {
     store_id: number;
 
     @Expose()
-    @IsObject()
-    @IsOptional()
-    store?: Store;
+    //@IsObject()
+    //@IsOptional()
+    store: Store;
 
     @Expose()
     @IsString()

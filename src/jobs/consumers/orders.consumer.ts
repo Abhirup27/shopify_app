@@ -1,10 +1,5 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import {
-  GET_ORDER,
-  GET_ORDERS,
-  ORDERS_QUEUE,
-  SYNC_ORDERS,
-} from '../constants/jobs.constants';
+import { GET_ORDER, GET_ORDERS, ORDERS_QUEUE, SYNC_ORDERS } from '../constants/jobs.constants';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
@@ -146,32 +141,26 @@ export class OrdersConsumer extends WorkerHost {
     super();
   }
 
-  public process = async (job: Job<Store | number>,): Promise<Order[] | Order | null> => {
+  public process = async (job: Job<Store | number>): Promise<Order[] | Order | null> => {
     try {
       //const store: Store = job.data;
 
       switch (job.name) {
         case SYNC_ORDERS:
           if (typeof job.data == 'number') {
-            throw new Error(
-              'Invalid job data, Store expected recieved number type.',
-            );
+            throw new Error('Invalid job data, Store expected recieved number type.');
           }
 
           return await this.syncOrders(job.data, job);
 
         case GET_ORDERS:
           if (job.data instanceof Object) {
-            throw new Error(
-              'Invalid job data, number expected recieved store type.',
-            );
+            throw new Error('Invalid job data, number expected recieved store type.');
           }
           return await this.retrieveOrders(job.data);
         case GET_ORDER:
           if (job.data instanceof Object) {
-            throw new Error(
-              'Invalid job data, orderID(number) expected recieved store type.',
-            );
+            throw new Error('Invalid job data, orderID(number) expected recieved store type.');
           }
           return await this.retrieveOrder(job.data);
         default:
@@ -181,7 +170,6 @@ export class OrdersConsumer extends WorkerHost {
       if (error.message == '401') {
         // job.moveToCompleted(error, undefined);
         //job.moveToFailed(error, job.token);
-
       }
       throw error;
     }
@@ -190,10 +178,7 @@ export class OrdersConsumer extends WorkerHost {
   private syncOrders = async (store: Store, job: Job): Promise<any> => {
     try {
       const options: ShopifyRequestOptions = {
-        url: await this.utilsService.getShopifyURLForStore(
-          'graphql.json',
-          store,
-        ),
+        url: await this.utilsService.getShopifyURLForStore('graphql.json', store),
         headers: this.utilsService.getGraphQLHeadersForStore(store),
       };
       //const headers: AxiosHeaders = this.utilsService.getGraphQLHeadersForStore(store);
@@ -206,24 +191,19 @@ export class OrdersConsumer extends WorkerHost {
           // job.moveToFailed(Error('401'), job.token)
           //job.moveToCompleted(Error('401'), job.token);
           //job.remove()
-          throw Error('401')
+          throw Error('401');
         }
         console.log(response.respBody);
         //throw Error('401');
         if (response.statusCode == 200) {
           //console.log(response.respBody["data"]['orders']['edges']);
-          await this.saveOrdersInDB(
-            store.table_id,
-            response.respBody['data']['orders']['edges'],
-          );
+          await this.saveOrdersInDB(store.table_id, response.respBody['data']['orders']['edges']);
         }
         console.log(response);
         // console.log(response.respBody["data"]['orders']['edges']);
         // await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
         //console.log(response.respBody);
-        cursor = this.getCursorFromResponse(
-          response.respBody['data']['orders']['pageInfo'],
-        );
+        cursor = this.getCursorFromResponse(response.respBody['data']['orders']['pageInfo']);
       } while (cursor !== null);
     } catch (error) {
       this.logger.error(error.message, this.syncOrders.name);
@@ -236,7 +216,7 @@ export class OrdersConsumer extends WorkerHost {
         return;
       }
 
-      const formattedOrders = orders.map((order) => {
+      const formattedOrders = orders.map(order => {
         const node = order.node;
         //console.log(node.fulfillments);
         return {
@@ -251,9 +231,7 @@ export class OrdersConsumer extends WorkerHost {
           cancelled_at: node.cancelledAt,
           created_at: node.createdAt,
           updated_at: node.updatedAt,
-          tags: Array.isArray(node.tags)
-            ? JSON.stringify(node.tags)
-            : node.tags,
+          tags: Array.isArray(node.tags) ? JSON.stringify(node.tags) : node.tags,
           phone: node.phone,
           store_id: storeId,
           line_items: this.formatLineItems(node.lineItems),
@@ -271,7 +249,7 @@ export class OrdersConsumer extends WorkerHost {
       });
 
       // Using TypeORM's upsert functionality
-      await this.ordersRepository
+      /**await this.ordersRepository
         .createQueryBuilder()
         .insert()
         .into(Order)
@@ -298,7 +276,10 @@ export class OrdersConsumer extends WorkerHost {
           ],
           ['id', 'store_id'],
         )
-        .execute();
+        .execute(); 
+      */
+      const query = this.ordersRepository.create(formattedOrders);
+      const result: Order[] = await this.ordersRepository.save(query);
     } catch (error) {
       this.logger.error(`Failed to save orders: ${error.message}`, error.stack);
       throw error;
@@ -322,10 +303,7 @@ export class OrdersConsumer extends WorkerHost {
         price: item.variant?.price,
         price_set: item.originalTotalSet,
         product_id: this.extractIdFromGraphQLId(item.product?.id, 'Product'),
-        variant_id: this.extractIdFromGraphQLId(
-          item.variant?.id,
-          'ProductVariant',
-        ),
+        variant_id: this.extractIdFromGraphQLId(item.variant?.id, 'ProductVariant'),
         //variant_title: item.variant?.title
       }));
 
@@ -362,25 +340,17 @@ export class OrdersConsumer extends WorkerHost {
     }
   }
 
-  private extractIdFromGraphQLId(
-    graphqlId: string,
-    prefix?: string,
-  ): number | null {
+  private extractIdFromGraphQLId(graphqlId: string, prefix?: string): number | null {
     try {
       if (!graphqlId) {
         return null;
       }
 
-      const idPart = prefix
-        ? graphqlId.replace(`gid://shopify/${prefix}/`, '')
-        : graphqlId;
+      const idPart = prefix ? graphqlId.replace(`gid://shopify/${prefix}/`, '') : graphqlId;
 
       return parseInt(idPart, 10);
     } catch (error) {
-      this.logger.error(
-        `Failed to extract ID from ${graphqlId}: ${error.message}`,
-        this.extractIdFromGraphQLId.name,
-      );
+      this.logger.error(`Failed to extract ID from ${graphqlId}: ${error.message}`, this.extractIdFromGraphQLId.name);
       return null;
     }
   }
@@ -393,9 +363,7 @@ export class OrdersConsumer extends WorkerHost {
     }
   };
 
-  private retrieveOrders = async (
-    store: number,
-  ): Promise<Order[] | Order | null> => {
+  private retrieveOrders = async (store: number): Promise<Order[] | Order | null> => {
     let orders: Order[];
     try {
       orders = await this.ordersRepository.findBy({
@@ -418,7 +386,7 @@ export class OrdersConsumer extends WorkerHost {
     return order;
   };
 
-  public getQueryObjectForOrders = (cursor: string | null,): { query: string } | null => {
+  public getQueryObjectForOrders = (cursor: string | null): { query: string } | null => {
     try {
       const filter = `(first: 5${cursor ? `, after: "${cursor}"` : ''})`;
 

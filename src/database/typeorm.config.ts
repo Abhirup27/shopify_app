@@ -1,16 +1,19 @@
-import { ConfigService } from "@nestjs/config";
-import { DataSource, DataSourceOptions } from "typeorm";
-import configuration from "../config/configuration"
+import { ConfigService } from '@nestjs/config';
+import { DataSource, DataSourceOptions } from 'typeorm';
+import configuration from '../config/configuration';
 import * as path from 'path';
 import { config } from 'dotenv';
-import { TypeOrmModuleOptions } from "@nestjs/typeorm";
+import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 // Load environment variables from the appropriate .env file
 const nodeEnv = process.env.NODE_ENV ?? '';
-const envPath = path.resolve(process.cwd(), `.env${(nodeEnv == 'production' || nodeEnv == '') ? '' : '.'}${nodeEnv != 'production' ? nodeEnv : ''}`);
+console.log(nodeEnv);
+const envPath = path.resolve(
+  process.cwd(),
+  `.env${nodeEnv == 'production' || nodeEnv == '' ? '' : '.'}${nodeEnv != 'production' ? nodeEnv : ''}`,
+);
 console.log(envPath);
 config({ path: envPath });
-
 
 const configObject = configuration();
 
@@ -33,7 +36,7 @@ export default AppDataSource;
 
 // For App Module
 export const moduleOptions = async (configService: ConfigService): Promise<TypeOrmModuleOptions> => {
-  return ({
+  return {
     type: configService.get('database.type') as any,
     host: configService.get<string>('database.host'),
     port: configService.get<number>('database.port'),
@@ -48,9 +51,5 @@ export const moduleOptions = async (configService: ConfigService): Promise<TypeO
     synchronize: configService.get<boolean>('database.synchronize'),
     logging: configService.get<boolean>('database.logging') === true,
     migrationsRun: configService.get<boolean>('database.runMigrationsOnStart') === true,
-
-  });
+  };
 };
-
-
-

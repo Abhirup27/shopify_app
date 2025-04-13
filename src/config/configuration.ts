@@ -6,9 +6,9 @@ export default () => ({
   logToFile: process.env.LOG_TO_FILE,
 
   app_secret: process.env.APP_SECRET,
-  app_url: 'https://0f4e-223-233-73-41.ngrok-free.app/',
-  app_install_URL: 'https://0f4e-223-233-73-41.ngrok-free.app/shopify/auth/redirect',
-  refresh_token_URL: 'https://0f4e-223-233-73-41.ngrok-free.app/shopify/auth/updateStoreToken',
+  app_url: 'https://198e-223-233-73-41.ngrok-free.app',
+  app_install_URL: 'https://198e-223-233-73-41.ngrok-free.app/shopify/auth/redirect',
+  refresh_token_URL: 'https://198e-223-233-73-41.ngrok-free.app/shopify/auth/updateStoreToken',
   shopify_api_version: '2024-07',
   shopify_api_key: process.env.API_KEY,
   shopify_api_secret: process.env.API_SECRET,
@@ -33,12 +33,9 @@ export default () => ({
   ].join(','),
 
   jwt_secret: process.env.JWT_SECRET ?? 'randomstring',
-  jwt_token_audience: process.env.JWT_TOKEN_AUDIENCE ?? 'https://1c0e-223-233-73-41.ngrok-free.app',
+  jwt_token_audience: process.env.JWT_TOKEN_AUDIENCE ?? 'https://198e-223-233-73-41.ngrok-free.ap',
   jwt_token_issuer: process.env.JWT_TOKEN_ISSUER,
-  jwt_access_token_ttl: parseInt(
-    process.env.JWT_ACCESS_TOKEN_TTL ?? '3600',
-    10,
-  ),
+  jwt_access_token_ttl: parseInt(process.env.JWT_ACCESS_TOKEN_TTL ?? '3600', 10),
 
   database: {
     host: process.env.DB_HOST,

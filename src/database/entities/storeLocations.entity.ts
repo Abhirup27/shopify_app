@@ -1,11 +1,8 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn, UpdateDateColumn } from "typeorm";
-import { Store } from "./store.entity";
-
-
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { Store } from './store.entity';
 
 @Entity()
 export class StoreLocations {
-
   @PrimaryColumn({
     type: 'bigint',
     unsigned: true,
@@ -14,7 +11,7 @@ export class StoreLocations {
 
   @Column({
     type: 'bigint',
-    unsigned: true
+    unsigned: true,
   })
   store_id: number;
 
@@ -30,7 +27,7 @@ export class StoreLocations {
 
   @Column({
     type: 'varchar',
-    nullable: false,
+    nullable: true,
   })
   address1: string;
 
@@ -40,10 +37,9 @@ export class StoreLocations {
   })
   address2?: string;
 
-
   @Column({
-    type: 'tinytext',
-    nullable: false,
+    type: 'varchar',
+    nullable: true,
   })
   city: string;
 
@@ -55,78 +51,69 @@ export class StoreLocations {
 
   @Column({
     type: 'varchar',
-    nullable: false,
+    nullable: true,
   })
-
   province: string;
 
   @Column({
     type: 'varchar',
     nullable: false,
   })
-
   country: string;
 
   @Column({
     type: 'varchar',
-    nullable: true
+    nullable: true,
   })
   phone: string;
 
   @Column({
-    type: 'datetime',
+    type: 'timestamp',
     nullable: true,
   })
   created_at: Date;
 
   @Column({
-    type: 'datetime',
+    type: 'timestamp',
     nullable: true,
   })
-
   updated_at: Date;
 
   @Column({
     type: 'varchar',
     nullable: true,
   })
-
   country_code: string;
 
   @Column({
     type: 'varchar',
     nullable: true,
   })
-
   province_code: string;
 
   @Column({
     type: 'varchar',
     nullable: true,
   })
-
   country_name: string;
 
   @Column({
     type: 'varchar',
     nullable: true,
   })
-
-  legacy: string;
+  legacy?: string;
 
   @Column({
     type: 'varchar',
     nullable: true,
   })
-
   active: string;
 
   @Column({
     type: 'varchar',
     nullable: true,
   })
-
-  admin_graphql_api_id: string;
+  admin_graphql_api_id?: string;
 
   @Column({
     type: 'varchar',
@@ -138,21 +125,15 @@ export class StoreLocations {
     type: 'varchar',
     nullable: true,
   })
-
-
   localized_province_name: string;
+
   @CreateDateColumn({
-    type: 'timestamp',
-    //default: () => 'CURRENT_TIMESTAMP'
+    type: 'timestamp with time zone',
   })
-  created_at_date: Date;
+  created_at_date?: Date;
 
   @UpdateDateColumn({
-    type: 'timestamp',
-    // default: () => 'CURRENT_TIMESTAMP',
-    // onUpdate: 'CURRENT_TIMESTAMP'
+    type: 'timestamp with time zone',
   })
-  updated_at_date: Date;
-
+  updated_at_datei?: Date;
 }
-

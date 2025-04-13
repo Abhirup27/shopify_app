@@ -10,19 +10,19 @@ import { join } from 'path';
 import * as cookieParser from 'cookie-parser';
 import { RouteService } from './web-app/providers/routes.provider';
 async function bootstrap() {
-  const options: DataSourceOptions = {
-    host: 'localhost',
-    type: 'mysql',
-    database: 'shopify_app',
-    username: 'root',
-    password: 'ABHIrup_27',
-  };
-
-  await createDatabase({
-    options,
-    ifNotExist: true,
-  });
-
+  /**  const options: DataSourceOptions = {
+      host: 'localhost',
+      type: 'mysql',
+      database: 'shopify_app',
+      username: 'root',
+      password: 'ABHIrup_27',
+    };
+  
+    await createDatabase({
+      options,
+      ifNotExist: true,
+    });
+  **/
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     //bufferLogs: true,
     logger: ['log', 'error', 'fatal', 'debug', 'warn'],

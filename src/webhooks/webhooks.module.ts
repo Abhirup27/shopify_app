@@ -1,11 +1,8 @@
-import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
-import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
 import { WebhooksController } from './webhooks.controller';
 
 @Module({
-
     imports: [
         // GraphQLModule.forRoot<ApolloDriverConfig>({
         //     driver: ApolloDriver,
@@ -14,6 +11,6 @@ import { WebhooksController } from './webhooks.controller';
         // })
     ],
 
-    controllers: [WebhooksController]
+    controllers: [WebhooksController],
 })
-export class WebhooksModule {}
+export class WebhooksModule { }

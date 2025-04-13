@@ -250,7 +250,7 @@ export class WebAppService {
     }
   };
   public syncLocations = async (user: UserDto): Promise<StoreLocations[]> => {
-    console.log(user);
+    // console.log(user);
     return await this.jobsService.syncStoreLocations(user.store);
   }
   public getOrderDetails = async (user: UserDto, orderId: number,): Promise<Object> => {
@@ -353,7 +353,7 @@ export class WebAppService {
 
     const clientId: string = this.configService.get<string>('shopify_api_key');
     const scopes: string = this.configService.get('accessScopes');
-    const redirect: string = this.configService.get('refresh_token_URL') + '?endpoint?=' + endpoint;
+    const redirect: string = this.configService.get('refresh_token_URL') // + '?endpoint=' + endpoint;
 
     /**
      * https://{shop}.myshopify.com/admin/oauth/authorize?client_id={client_id}&scope={scopes}&redirect_uri={redirect_uri}&state={nonce}&grant_options[]={access_mode}

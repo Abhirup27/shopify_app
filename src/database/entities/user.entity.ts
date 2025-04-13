@@ -1,10 +1,4 @@
-import {
-  Column,
-  Entity,
-  OneToMany,
-  PrimaryColumn,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
 import { Store } from './store.entity';
 import { UserStore } from './userstore.entity';
 
@@ -37,16 +31,16 @@ export class User {
   })
   password: string;
 
-  @Column({ type: 'tinytext', nullable: true })
+  @Column({ type: 'text', nullable: true })
   stripe_id?: string;
 
   @Column({
-    type: 'datetime',
+    type: 'timestamp',
   })
   email_verified_at: string | Date;
 
-  @OneToMany(() => Store, (store) => store.user)
+  @OneToMany(() => Store, store => store.user)
   stores: Store[];
-  @OneToMany(() => UserStore, (userstore) => userstore.user)
+  @OneToMany(() => UserStore, userstore => userstore.user)
   userStores: UserStore[];
 }

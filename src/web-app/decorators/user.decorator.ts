@@ -13,18 +13,18 @@ export const CurrentUser = createParamDecorator(
             ...user,
             ...userStore
         };
-
+        //console.log(request['roles']);
         // Transform to DTO
         const userDto = plainToClass(UserDto, combinedUserData, {
             enableImplicitConversion: true,
-            excludeExtraneousValues: true
+            //excludeExtraneousValues: true
         });
 
         const errors = await validate(userDto);
         if (errors.length > 0) {
             throw new BadRequestException(errors);
         }
-        //console.log(userDto)
+        console.log("print after validation", userDto)
         return data ? userDto[data] : userDto;
     }
 );
