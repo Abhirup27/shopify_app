@@ -14,6 +14,7 @@ import { Product } from 'src/database/entities/product.entity';
 import { StoreLocations } from 'src/database/entities/storeLocations.entity';
 import * as crypto from 'crypto';
 import { Response } from 'express';
+import { newProductDto } from './dtos/new-product.dto';
 
 @Injectable()
 export class WebAppService {
@@ -23,13 +24,13 @@ export class WebAppService {
     private readonly utilsService: UtilsService,
     private readonly configService: ConfigService,
     private readonly jobsService: JobsService,
-  ) { }
+  ) {}
 
-  public getSuperDashboardPayload = async (user: UserDto): Promise<Object> => {
-    let dashboard: Object = {};
+  public getSuperDashboardPayload = async (user: UserDto): Promise<object> => {
+    let dashboard: object = {};
 
     try {
-      const isPublic: boolean = !this.utilsService.checkIfStoreIsPrivate(user);
+      const isPublic: boolean = !this.utilsService.checkIfStoreIsPrivate(user.store);
       dashboard = {
         storeId: user.store_id,
         showSidebar: true,
@@ -59,25 +60,21 @@ export class WebAppService {
     return dashboard;
   };
 
-  public getDashboardPayload = async (user: UserDto): Promise<Object> => {
-    let dashboard: Object = {};
+  public getDashboardPayload = async (user: UserDto): Promise<object> => {
+    let dashboard: object = {};
 
     try {
-      const recentOrders: Order[] = await this.jobsService.getOrders(
-        user.store_id,
-      );
-      const customers: Customer[] = await this.jobsService.getCustomers(
-        user.store_id,
-      );
+      const recentOrders: Order[] = await this.jobsService.getOrders(user.store_id);
+      const customers: Customer[] = await this.jobsService.getCustomers(user.store_id);
       let totalRevenue = 0;
       if (recentOrders && recentOrders.length > 0) {
         totalRevenue = recentOrders.reduce((sum, order) => {
-          const orderPrice = parseFloat(order.total_price as string) || 0;
+          const orderPrice = parseFloat(order.total_price) || 0;
           return sum + orderPrice;
         }, 0);
       }
 
-      const isPublic: boolean = !this.utilsService.checkIfStoreIsPrivate(user);
+      const isPublic: boolean = !this.utilsService.checkIfStoreIsPrivate(user.store);
 
       dashboard = {
         storeId: user.store_id,
@@ -102,61 +99,46 @@ export class WebAppService {
         isEmbedded: false,
         orders_count: recentOrders.length,
         orders_revenue: totalRevenue,
-        customers_count: customers.length,
+        customers_count: 3, // customers.length,
         recentSales:
           recentOrders.length > 0
             ? [
-              {
-                id: recentOrders[0].id,
-                customer:
-                  recentOrders[0].customer['firstName'] +
-                  ' ' +
-                  recentOrders[0].customer['lastName'],
-                product:
-                  recentOrders[0].line_items[0]['name'] +
-                  ' , ' +
-                  recentOrders[0].line_items[1]['name'],
-                price: recentOrders[0].total_price,
-                status: recentOrders[0].financial_status,
-              },
-              {
-                id: recentOrders[1].id,
-                customer:
-                  recentOrders[1].customer['firstName'] +
-                  ' ' +
-                  recentOrders[1].customer['lastName'],
-                product: recentOrders[1].line_items[0]['name'],
-                price: recentOrders[1].total_price,
-                status: 'Pending',
-              },
-              {
-                id: recentOrders[2].id,
-                customer:
-                  recentOrders[1].customer['firstName'] +
-                  ' ' +
-                  recentOrders[1].customer['lastName'],
-                product: 'Headphones',
-                price: recentOrders[2].total_price,
-                status: 'Rejected',
-              },
-              {
-                id: recentOrders[3].id,
-                customer:
-                  recentOrders[3].customer['firstName'] +
-                  ' ' +
-                  recentOrders[3].customer['lastName'],
-                product:
-                  recentOrders[3].line_items[0]['name'] +
-                  ' , ' +
-                  recentOrders[3].line_items[1]['name'] +
-                  ' , ' +
-                  recentOrders[3].line_items[2]['name'] +
-                  ' , ' +
-                  recentOrders[3].line_items[3]['name'],
-                price: recentOrders[3].total_price,
-                status: 'Approved',
-              },
-            ]
+                {
+                  id: recentOrders[0].id,
+                  customer: recentOrders[0].customer['firstName'] + ' ' + recentOrders[0].customer['lastName'],
+                  product: recentOrders[0].line_items[0]['name'] + ' , ' + recentOrders[0].line_items[1]['name'],
+                  price: recentOrders[0].total_price,
+                  status: recentOrders[0].financial_status,
+                },
+                {
+                  id: recentOrders[1].id,
+                  customer: recentOrders[1].customer['firstName'] + ' ' + recentOrders[1].customer['lastName'],
+                  product: recentOrders[1].line_items[0]['name'],
+                  price: recentOrders[1].total_price,
+                  status: 'Pending',
+                },
+                {
+                  id: recentOrders[2].id,
+                  customer: recentOrders[1].customer['firstName'] + ' ' + recentOrders[1].customer['lastName'],
+                  product: 'Headphones',
+                  price: recentOrders[2].total_price,
+                  status: 'Rejected',
+                },
+                {
+                  id: recentOrders[3].id,
+                  customer: recentOrders[3].customer['firstName'] + ' ' + recentOrders[3].customer['lastName'],
+                  product:
+                    recentOrders[3].line_items[0]['name'] +
+                    ' , ' +
+                    recentOrders[3].line_items[1]['name'] +
+                    ' , ' +
+                    recentOrders[3].line_items[2]['name'] +
+                    ' , ' +
+                    recentOrders[3].line_items[3]['name'],
+                  price: recentOrders[3].total_price,
+                  status: 'Approved',
+                },
+              ]
             : '',
         topSelling: [
           {
@@ -206,15 +188,15 @@ export class WebAppService {
     return dashboard;
   };
 
-  public getOrders = async (user: UserDto): Promise<Object> => {
-    let payload: Object = {};
+  public getOrders = async (user: UserDto): Promise<object> => {
+    let payload: object = {};
     try {
       payload = {
         storeId: user.store_id,
         orders: await this.jobsService.getOrders(user.store_id),
         isEmbedded: false,
         showSidebar: true,
-        isStorePublic: !this.utilsService.checkIfStoreIsPrivate(user),
+        isStorePublic: !this.utilsService.checkIfStoreIsPrivate(user.store),
         style: '',
         appName: 'Shopify App',
         user: {
@@ -239,22 +221,21 @@ export class WebAppService {
     const store: Store = await this.jobsService.getStore(storeId);
 
     const result = await this.jobsService.syncOrders(store);
-    if (result != null && result.status && result.status == 'AUTH_REQUIRED') {
-      console.log(result.status);
+    if (typeof result != 'boolean' && result.status && result.status == 'AUTH_REQUIRED') {
+      console.log('this is the result:', result.status);
       const url = await this.getOAuthURL(store.myshopify_domain, `/orders?storeId=${store.id}`);
       console.log(url);
       res.redirect(url);
-    }
-    else {
+    } else {
       res.redirect(`/orders?storeId=${store.id}`);
     }
   };
   public syncLocations = async (user: UserDto): Promise<StoreLocations[]> => {
     // console.log(user);
     return await this.jobsService.syncStoreLocations(user.store);
-  }
-  public getOrderDetails = async (user: UserDto, orderId: number,): Promise<Object> => {
-    let payload: Object = {};
+  };
+  public getOrderDetails = async (user: UserDto, orderId: number): Promise<object> => {
+    let payload: object = {};
 
     try {
       payload = {
@@ -263,7 +244,7 @@ export class WebAppService {
         order: await this.jobsService.getOrder(orderId),
         isEmbedded: false,
         showSidebar: true,
-        isStorePublic: !this.utilsService.checkIfStoreIsPrivate(user),
+        isStorePublic: !this.utilsService.checkIfStoreIsPrivate(user.store),
         style: '',
         appName: 'Shopify App',
       };
@@ -274,12 +255,11 @@ export class WebAppService {
     return payload;
   };
 
-  public getProducts = async (user: UserDto): Promise<Object> => {
-    let payload: Object = {};
+  public getProducts = async (user: UserDto): Promise<object> => {
+    let payload: object = {};
 
     try {
       if (user.hasRole(SUPER_ADMIN) || user.hasRole(ADMIN) || user.can(['read_products'])) {
-
         const products: Product[] = await this.jobsService.getProducts(user.store_id);
         //console.log(products);
         payload = {
@@ -288,27 +268,20 @@ export class WebAppService {
           user: user,
           isEmbedded: false,
           showSidebar: true,
-          isStorePublic: !this.utilsService.checkIfStoreIsPrivate(user),
+          isStorePublic: !this.utilsService.checkIfStoreIsPrivate(user.store),
           style: '',
           appName: 'Shopify App',
-          body: ''
-
+          body: '',
         };
-
-
-
       }
-
     } catch (error) {
       this.logger.error(error.message, this.getProducts.name);
     }
     return payload;
-
   };
-  public createProductPagePayload = async (user: UserDto): Promise<Object> => {
-    let payload: Object = {};
+  public createProductPagePayload = async (user: UserDto): Promise<object> => {
+    let payload: object = {};
     try {
-
       const locations: StoreLocations[] = await this.jobsService.getStoreLocations(user.store_id);
       payload = {
         storeId: user.store_id,
@@ -316,30 +289,27 @@ export class WebAppService {
         user: user,
         isEmbedded: false,
         showSidebar: true,
-        isStorePublic: !this.utilsService.checkIfStoreIsPrivate(user),
+        isStorePublic: !this.utilsService.checkIfStoreIsPrivate(user.store),
         style: '',
         appName: 'Shopify App',
-        body: ''
+        body: '',
       };
-
     } catch (error) {
       this.logger.error(error.message, this.createProductPagePayload.name);
     }
     return payload;
-  }
+  };
 
   public getMembers = async (storeId: number): Promise<UserStore[]> => {
     let members: UserStore[];
     try {
       members = await this.jobsService.getMembers(storeId);
-
     } catch (error) {
       this.logger.error(error.message, this.getMembers.name);
     }
     return members;
-  }
+  };
   public createMember = async (newMember: RegisterUserDto, storeId: number): Promise<UserStore> => {
-
     let newUser: UserStore;
     try {
       newUser = await this.jobsService.createMember(newMember, storeId);
@@ -347,13 +317,13 @@ export class WebAppService {
       this.logger.error(error.message, this.createMember.name);
     }
     return newUser;
-  }
+  };
   private getOAuthURL = async (shopDomain: string, endpoint: string): Promise<string> => {
     const nonce: string = await this.utilsService.createNonce(shopDomain);
 
     const clientId: string = this.configService.get<string>('shopify_api_key');
     const scopes: string = this.configService.get('accessScopes');
-    const redirect: string = this.configService.get('refresh_token_URL') // + '?endpoint=' + endpoint;
+    const redirect: string = this.configService.get('refresh_token_URL'); // + '?endpoint=' + endpoint;
 
     /**
      * https://{shop}.myshopify.com/admin/oauth/authorize?client_id={client_id}&scope={scopes}&redirect_uri={redirect_uri}&state={nonce}&grant_options[]={access_mode}
@@ -363,4 +333,9 @@ export class WebAppService {
     return url;
   };
 
+  public createProduct = async (user: UserDto, product: newProductDto): Promise<boolean> => {
+    const result = await this.jobsService.createProduct(user.store.table_id, product);
+
+    return true;
+  };
 }

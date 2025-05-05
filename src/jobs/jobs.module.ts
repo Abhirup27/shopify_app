@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { JobsService } from './jobs.service';
-import { CONFIGURE_QUEUE, CUSTOMERS_QUEUE, ORDERS_QUEUE, PRODUCTS_QUEUE, STORES_QUEUE, USERS_QUEUE } from './constants/jobs.constants';
+import { QUEUES } from './constants/jobs.constants';
 import { ConfigWebhookConsumer } from './consumers/config-webhoook.consumer';
 import { JobsController } from './jobs.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -27,7 +27,6 @@ import { AuthModule } from 'src/auth/auth.module';
 import { StoreLocations } from 'src/database/entities/storeLocations.entity';
 
 @Module({
-
   imports: [
     UtilsModule,
     AuthModule,
@@ -41,18 +40,17 @@ import { StoreLocations } from 'src/database/entities/storeLocations.entity';
         connection: {
           host: configService.get<string>('redis.host'),
           port: configService.get<number>('redis.port'),
-        }
-      })
-
+        },
+      }),
     }),
     BullModule.registerQueueAsync(
-      { name: CONFIGURE_QUEUE },
-      { name: PRODUCTS_QUEUE },
-      { name: ORDERS_QUEUE },
-      { name: STORES_QUEUE },
-      { name: CUSTOMERS_QUEUE },
-      { name: USERS_QUEUE },
-    )
+      { name: QUEUES.CONFIGURE },
+      { name: QUEUES.PRODUCTS },
+      { name: QUEUES.ORDERS },
+      { name: QUEUES.STORES },
+      { name: QUEUES.CUSTOMERS },
+      { name: QUEUES.USERS },
+    ),
   ],
 
   providers: [
@@ -70,6 +68,6 @@ import { StoreLocations } from 'src/database/entities/storeLocations.entity';
     UsersQueueEvents,
   ],
   controllers: [JobsController],
-  exports: [JobsService]
+  exports: [JobsService],
 })
-export class JobsModule { }
+export class JobsModule {}

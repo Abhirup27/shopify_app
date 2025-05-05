@@ -41,7 +41,6 @@ export class InstallationController {
     this.redirectUri = configService.get('app_install_URL');
   }
 
-
   @Get('/test')
   public async test(@Res() res) {
     const shop: string = 'abhirups-store.myshopify.com';
@@ -52,23 +51,19 @@ export class InstallationController {
   // I have enabled global pipes, I may need to have custom ValidationPipes for some routes.
   //@Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
   @Get('/')
-  public async startInstallation(@Request() request: Request, @Query() query: GetInstallInitQueryDto, @Res() response,) {
+  public async startInstallation(@Request() request: Request, @Query() query: GetInstallInitQueryDto, @Res() response) {
     try {
       const shop: string = query.shop;
       const endpoint = `https://${shop}/admin/oauth/authorize?client_id=${this.clientId}&scope=${this.accessScopes}&redirect_uri=${this.redirectUri}`;
-      console.log(query)
-      const validRequest: boolean =
-        await this.utilsService.validateRequestFromShopify(query);
+      console.log(query);
+      const validRequest: boolean = await this.utilsService.validateRequestFromShopify(query);
       if (validRequest) {
         //check query.shop if it is made optional, or according to the global Validation config
-        const storeDetails: Store = await this.utilsService.getStoreByDomain(
-          query.shop,
-        );
+        const storeDetails: Store = await this.utilsService.getStoreByDomain(query.shop);
 
         if (storeDetails !== null && storeDetails.myshopify_domain == query.shop) {
           //store exists in the app's DB
-          const validToken: boolean =
-            await this.installationService.isAccessTokenValid(storeDetails);
+          const validToken: boolean = await this.installationService.isAccessTokenValid(storeDetails);
           if (validToken) {
             // const store: Store = await this.jobsService.updateStore(storeDetails);
             const isEmbedded: boolean = this.utilsService.isAppEmbedded();
@@ -83,10 +78,7 @@ export class InstallationController {
           }
         } else {
           //console.log(endpoint)
-          const url: string = await this.installationService.getOAuthURL(
-            this.clientId,
-            shop,
-          );
+          const url: string = await this.installationService.getOAuthURL(this.clientId, shop);
           const urlObj = new URL(url);
           const nonce: string = urlObj.searchParams.get('state');
 
@@ -123,7 +115,7 @@ export class InstallationController {
   }
 
   @Get('/redirect')
-  public async install(@Request() request: Request, @Query() query: GetInstallCodeDto, @Res() response,) {
+  public async install(@Request() request: Request, @Query() query: GetInstallCodeDto, @Res() response) {
     //console.log(request)
     try {
       const validateHMAC: boolean = await this.utilsService.validateRequestFromShopify(query);
@@ -132,19 +124,11 @@ export class InstallationController {
         const shop: string = query.shop;
         const code: string = query.code;
 
-        const accessToken =
-          await this.installationService.getAccessTokenForStore(shop, code);
+        const accessToken = await this.installationService.getAccessTokenForStore(shop, code);
         if (accessToken != false && accessToken.length > 0) {
-          const shopDetails =
-            await this.installationService.getShopDetailsFromShopify(
-              shop,
-              accessToken,
-            );
+          const shopDetails = await this.installationService.getShopDetailsFromShopify(shop, accessToken);
 
-          const storeToDB = await this.installationService.saveStoreDetails(
-            shopDetails.shop,
-            accessToken,
-          );
+          const storeToDB = await this.installationService.saveStoreDetails(shopDetails, accessToken);
 
           this.jobsService.configure(storeToDB.table_id);
 
@@ -180,7 +164,9 @@ export class InstallationController {
           });
         }
       } else {
-        if (validateNonce == false) { console.log('invalid nonce') };
+        if (validateNonce == false) {
+          console.log('invalid nonce');
+        }
         this.logger.warn(`HMAC isn't from Shopify`);
         throw new UnauthorizedException({
           status: 401,
@@ -205,7 +191,8 @@ export class InstallationController {
       const validateHMAC: boolean = await this.utilsService.validateRequestFromShopify(query);
       const validateNonce: boolean = await this.utilsService.validateNonce(query.state, query.shop);
       if (validateHMAC && validateNonce) {
-        const shop: string = query.shop; const code: string = query.code;
+        const shop: string = query.shop;
+        const code: string = query.code;
         const accessToken = await this.installationService.getAccessTokenForStore(shop, code);
         if (accessToken != false && accessToken.length > 0) {
           const stores: Store[] = await this.utilsService.getAllStoresByDomain(shop);
@@ -214,14 +201,11 @@ export class InstallationController {
             let store: Store = stores[0];
             if (stores.length > 1) {
               store = await this.installationService.getShopDetailsFromShopify(shop, accessToken);
-
-
             }
             const updateAccessToken = await this.installationService.updateAccessToken(store, accessToken);
-            console.log(updateAccessToken)
+            console.log(updateAccessToken);
             response.redirect('/dashboard');
-          }
-          else {
+          } else {
             //store doesn't exist in DB
           }
         }
@@ -229,6 +213,5 @@ export class InstallationController {
     } catch (error) {
       this.logger.error(error.message);
     }
-
   }
 }

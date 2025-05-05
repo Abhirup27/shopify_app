@@ -17,196 +17,194 @@ import {
 } from 'class-validator';
 
 export class CreateShopDTO {
+  @IsNumber()
+  @IsNotEmpty()
+  @Min(1)
+  id: number;
 
-@IsNumber()
-@IsNotEmpty()
-@Min(1)
-    id: number;
-    
-@IsString()
-@Length(1, 255)
-    name: string;
-    
-@IsEmail()
-@IsNotEmpty()
-    email: string;
-    
-@IsString()
-@IsNotEmpty()
-//@Matches(/^[a-zA-Z0-9-]+\.myshopify\.com$/)
-    domain: string;
-    
-@IsOptional()
-@IsString()
-    province: string | null;
-    
-@IsString()
-@Length(2, 2)
-    country: string;
-    
-@IsOptional()
-@IsString()
-    address1: string | null;
-    
-@IsOptional()
-@IsString()
-    zip: string | null;
+  @IsString()
+  @Length(1, 255)
+  name: string;
 
-@IsOptional()
-@IsString()
-    city: string | null;
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
 
-@IsOptional()
-@IsString()
-    source: string | null;
+  @IsString()
+  @IsNotEmpty()
+  //@Matches(/^[a-zA-Z0-9-]+\.myshopify\.com$/)
+  domain: string;
 
-@IsOptional()
-@IsString()
-    phone: string | null;
+  @IsOptional()
+  @IsString()
+  province?: string | null;
 
-@IsOptional()
-@IsNumber()
-    latitude: number | null;
+  @IsString()
+  @Length(2, 2)
+  country: string;
 
-@IsOptional()
-@IsNumber()
-    longitude: number | null;
+  @IsOptional()
+  @IsString()
+  address1?: string | null;
 
-@IsString()
-@Length(2, 5)
-    primary_locale: string;
+  @IsOptional()
+  @IsString()
+  zip?: string | null;
 
-@IsOptional()
-@IsString()
-    address2: string | null;
+  @IsOptional()
+  @IsString()
+  city?: string | null;
 
-@IsDateString()
-    created_at: string;
+  @IsOptional()
+  @IsString()
+  source?: string | null;
 
-@IsDateString()
-    updated_at: string;
+  @IsOptional()
+  @IsString()
+  phone?: string | null;
 
-@IsString()
-@Length(2, 2)
-    country_code: string;
+  @IsOptional()
+  @IsNumber()
+  latitude?: number | null;
 
-@IsString()
-    country_name: string;
+  @IsOptional()
+  @IsNumber()
+  longitude?: number | null;
 
-@IsString()
-@Length(3, 3)
-    currency: string;
+  @IsString()
+  @Length(2, 5)
+  primary_locale: string;
 
-@IsEmail()
-    customer_email: string;
+  @IsOptional()
+  @IsString()
+  address2?: string | null;
 
-@IsString()
-    timezone: string;
+  @IsDateString()
+  created_at: string;
 
-@IsString()
-    iana_timezone: string;
+  @IsDateString()
+  updated_at: string;
 
-@IsString()
-    shop_owner: string;
+  @IsString()
+  @Length(2, 2)
+  country_code: string;
 
-@IsString()
-    money_format: string;
+  @IsString()
+  country_name: string;
 
-@IsString()
-    money_with_currency_format: string;
+  @IsString()
+  @Length(3, 3)
+  currency: string;
 
-@IsString()
-@IsIn(['kg', 'g', 'lbs', 'oz'])
-    weight_unit: string;
+  @IsEmail()
+  customer_email: string;
 
-@IsOptional()
-@IsString()
-    province_code: string | null;
+  @IsString()
+  timezone: string;
 
-@IsBoolean()
-    taxes_included: boolean;
+  @IsString()
+  iana_timezone: string;
 
-@IsOptional()
-@IsBoolean()
-    auto_configure_tax_inclusivity: boolean | null;
+  @IsString()
+  shop_owner: string;
 
-@IsOptional()
-@IsBoolean()
-    tax_shipping: boolean | null;
+  @IsString()
+  money_format: string;
 
-@IsBoolean()
-    county_taxes: boolean;
+  @IsString()
+  money_with_currency_format: string;
 
-@IsString()
-    plan_display_name: string;
+  @IsString()
+  @IsIn(['kg', 'g', 'lbs', 'oz'])
+  weight_unit: string;
 
-@IsString()
-    plan_name: string;
+  @IsOptional()
+  @IsString()
+  province_code?: string | null;
 
-@IsBoolean()
-    has_discounts: boolean;
+  @IsBoolean()
+  taxes_included: boolean;
 
-@IsBoolean()
-    has_gift_cards: boolean;
+  @IsOptional()
+  @IsBoolean()
+  auto_configure_tax_inclusivity?: boolean | null;
 
-@IsString()
-//@Matches(/^[a-zA-Z0-9-]+\.myshopify\.com$/)
-    myshopify_domain: string;
+  @IsOptional()
+  @IsBoolean()
+  tax_shipping?: boolean | null;
 
-@IsOptional()
-@IsString()
-    google_apps_domain: string | null;
+  @IsBoolean()
+  county_taxes: boolean;
 
-@IsOptional()
-@IsBoolean()
-    google_apps_login_enabled: boolean | null;
+  @IsString()
+  plan_display_name: string;
 
-@IsString()
-    money_in_emails_format: string;
+  @IsString()
+  plan_name: string;
 
-@IsString()
-    money_with_currency_in_emails_format: string;
+  @IsBoolean()
+  has_discounts: boolean;
 
-@IsBoolean()
-    eligible_for_payments: boolean;
+  @IsBoolean()
+  has_gift_cards: boolean;
 
-@IsBoolean()
-    requires_extra_payments_agreement: boolean;
+  @IsString()
+  //@Matches(/^[a-zA-Z0-9-]+\.myshopify\.com$/)
+  myshopify_domain: string;
 
-@IsBoolean()
-    password_enabled: boolean;
+  @IsOptional()
+  @IsString()
+  google_apps_domain?: string | null;
 
-@IsBoolean()
-    has_storefront: boolean;
+  @IsOptional()
+  @IsBoolean()
+  google_apps_login_enabled?: boolean | null;
 
-@IsBoolean()
-    finances: boolean;
+  @IsString()
+  money_in_emails_format: string;
 
-@IsNumber()
-@Min(1)
-    primary_location_id: number;
+  @IsString()
+  money_with_currency_in_emails_format: string;
 
-@IsBoolean()
-    checkout_api_supported: boolean;
+  @IsBoolean()
+  eligible_for_payments: boolean;
 
-@IsBoolean()
-    multi_location_enabled: boolean;
+  @IsBoolean()
+  requires_extra_payments_agreement: boolean;
 
-@IsBoolean()
-    setup_required: boolean;
+  @IsBoolean()
+  password_enabled: boolean;
 
-@IsBoolean()
-    pre_launch_enabled: boolean;
+  @IsBoolean()
+  has_storefront: boolean;
 
-@IsArray()
-@IsString({ each: true })
-@Length(3, 3, { each: true })
-    enabled_presentment_currencies: string[];
+  @IsBoolean()
+  finances: boolean;
 
-@IsBoolean()
-    marketing_sms_consent_enabled_at_checkout: boolean;
+  @IsNumber()
+  @Min(1)
+  primary_location_id: number;
 
-@IsBoolean()
-    transactional_sms_disabled: boolean;
+  @IsBoolean()
+  checkout_api_supported: boolean;
 
+  @IsBoolean()
+  multi_location_enabled: boolean;
+
+  @IsBoolean()
+  setup_required: boolean;
+
+  @IsBoolean()
+  pre_launch_enabled: boolean;
+
+  @IsArray()
+  @IsString({ each: true })
+  @Length(3, 3, { each: true })
+  enabled_presentment_currencies: string[];
+
+  @IsBoolean()
+  marketing_sms_consent_enabled_at_checkout: boolean;
+
+  @IsBoolean()
+  transactional_sms_disabled: boolean;
 }

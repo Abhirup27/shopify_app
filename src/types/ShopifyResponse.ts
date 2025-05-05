@@ -1,8 +1,21 @@
+import { CreateShopDTO } from 'src/installation/dtos/create-store.dto';
 
-type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
-export type ShopifyResponse = {
-    "status": boolean,
-    "error"?: boolean,
-    "respBody": JsonValue,
-    "statusCode"?: number
-}
+//export type CreateShopDTOType = InstanceType<typeof CreateShopDTO>;
+//export type CreateShopDTOWithIndex = CreateShopDTOType & {
+// [key: string]: ResponseBodyType | undefined;
+//};
+
+export type ResponseBodyType =
+  | string
+  | number
+  | boolean
+  | null
+  | ResponseBodyType[]
+  | { [key: string]: ResponseBodyType };
+
+export type ShopifyResponse<T extends ResponseBodyType = ResponseBodyType> = {
+  status: boolean;
+  error?: boolean;
+  respBody: T;
+  statusCode?: number;
+};

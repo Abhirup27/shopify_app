@@ -6,7 +6,6 @@ import { AxiosHeaders } from 'axios';
 import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 import { ShopifyResponse } from 'src/types/ShopifyResponse';
 import { UtilsService } from 'src/utils/utils.service';
-import { Repository } from 'typeorm';
 import { CreateShopDTO } from './dtos/create-store.dto';
 import { CreateStoreProvider } from './providers/create-store.provider';
 import { UserStore } from 'src/database/entities/userstore.entity';
@@ -34,18 +33,12 @@ export class InstallationService {
     // private storesRepository: Repository<Store>,
     // @InjectRepository(User)
     // private usersRepository:Repository<User>
-  ) { }
+  ) {}
 
-  public isAccessTokenValid = async (storeDetails: any): Promise<boolean> => {
+  public isAccessTokenValid = async (storeDetails: Store): Promise<boolean> => {
     try {
-      if (
-        'access_token' in storeDetails ||
-        storeDetails.access_token.length > 0
-      ) {
-        const endpoint = this.utilsService.getShopifyStoreURL(
-          'shop.json',
-          storeDetails,
-        );
+      if (storeDetails.access_token.length > 0) {
+        const endpoint = this.utilsService.getShopifyStoreURL('shop.json', storeDetails);
         const headers = new AxiosHeaders()
           .set('Content-Type', 'application/json')
           .set('X-Shopify-Access-Token', storeDetails.access_token);
@@ -54,27 +47,19 @@ export class InstallationService {
           headers: headers,
         };
 
-        const response: ShopifyResponse =
-          await this.utilsService.requestToShopify('get', options);
+        const response: ShopifyResponse = await this.utilsService.requestToShopify('get', options);
 
         return response.statusCode === 200;
       }
-      throw new Error(
-        `Access token for the store ${storeDetails.name} is not present`,
-      );
+      throw new Error(`Access token for the store ${storeDetails.name} is not present`);
     } catch (error) {
       //log
-      this.logger.error(
-        `Failed to verify access token for the Shopify store. \n ${error}`,
-      );
+      this.logger.error(`Failed to verify access token for the Shopify store. \n ${error}`);
       return false;
     }
   };
 
-  public getOAuthURL = async (
-    clientId: string,
-    shopDomain: string,
-  ): Promise<string> => {
+  public getOAuthURL = async (clientId: string, shopDomain: string): Promise<string> => {
     const nonce = crypto.randomBytes(16).toString('hex');
     await this.nonceProvider.storeNonce(nonce, shopDomain);
 
@@ -89,72 +74,55 @@ export class InstallationService {
     return url;
   };
 
-  public validateNonce = async (
-    nonce: string,
-    shopDomain: string,
-  ): Promise<boolean> => {
+  public validateNonce = async (nonce: string, shopDomain: string): Promise<boolean> => {
     return await this.nonceProvider.validateAndRemoveNonce(nonce, shopDomain);
   };
-  public getAccessTokenForStore = async (shop: any, code: string,): Promise<string | false> => {
+  public getAccessTokenForStore = async (shop: any, code: string): Promise<string | false> => {
     try {
       const endpoint = `https://${shop}/admin/oauth/access_token`;
-      const headers = new AxiosHeaders().set(
-        'Content-Type',
-        'application/json',
-      );
+      const headers = new AxiosHeaders().set('Content-Type', 'application/json');
       const data = {
-        client_id: this.configService.get('shopify_api_key'),
+        client_id: this.configService.get<string>('shopify_api_key'),
         //'scope': this.configService.get('accessScopes'),
-        client_secret: this.configService.get('shopify_api_secret'),
+        client_secret: this.configService.get<string>('shopify_api_secret'),
         code: code,
       };
 
       //const response = await this.utilsService.requestToShopify("post", endpoint, headers, data); //need to change
       const options: ShopifyRequestOptions = { data, url: endpoint, headers };
-      const response: ShopifyResponse =
-        await this.utilsService.requestToShopify('post', options);
+      const response = await this.utilsService.requestToShopify<{ access_token: string }>('post', options);
 
       if ('statusCode' in response && response.statusCode === 200) {
         //console.log(response.respBody);
         // equal to (response.respBody.hasOwnProperty('access_token'))
         if (
-          response.respBody['access_token'] &&
-          response.respBody['access_token'] !== null
+          response.respBody.access_token &&
+          response.respBody.access_token !== null &&
+          response.respBody.access_token != undefined
         ) {
-          console.log(response.respBody)
-          return response.respBody['access_token'].toString();
+          console.log(response.respBody);
+          return response.respBody.access_token.toString();
         }
 
-        this.logger.error(
-          `Failed to retrieve access token from Shopify for ${shop} : ${response}`,
-        );
+        this.logger.error(`Failed to retrieve access token from Shopify for ${shop} : ${response}`);
         return false;
       }
 
-      this.logger.error(
-        `Failed to retrieve access token from Shopify for ${shop} : ${response}`,
-      );
+      this.logger.error(`Failed to retrieve access token from Shopify for ${shop} : ${response}`);
       return false;
     } catch (error) {
       //log
       console.error(error);
-      this.logger.error(
-        `Error retrieving access token for ${shop}: ${error.message}`,
-      );
+      this.logger.error(`Error retrieving access token for ${shop}: ${error.message}`);
       return false;
     }
   };
 
-  public getShopDetailsFromShopify = async (
-    shop_domain: any,
-    accessToken: string,
-  ): Promise<any> => {
+  public getShopDetailsFromShopify = async (shop_domain: string, accessToken: string): Promise<any> => {
     try {
       const options: ShopifyRequestOptions = { url: null, headers: null };
 
-      options.url = this.utilsService.getShopifyStoreURL('shop.json', {
-        myshopify_domain: shop_domain,
-      });
+      options.url = this.utilsService.getShopifyStoreURL('shop.json', shop_domain);
 
       options.headers = new AxiosHeaders()
         .set('Content-Type', 'application/json')
@@ -162,13 +130,12 @@ export class InstallationService {
 
       //console.log(options.url)
 
-      const shopDetails: ShopifyResponse =
-        await this.utilsService.requestToShopify('get', options);
+      const shopDetails = await this.utilsService.requestToShopify('get', options);
 
       //console.log(shopDetails.respBody, '\n')
       if (shopDetails.statusCode === 200 || shopDetails.status === true) {
         // log storeDetails.respBody
-        return shopDetails.respBody;
+        return shopDetails;
       } else {
         //log the error using Logger module or custom class
         this.logger.error(
@@ -178,13 +145,8 @@ export class InstallationService {
         return null;
       }
     } catch (error) {
-      console.error(
-        'Error in fetching shop details from shopify. \n',
-        error.message,
-      );
-      this.logger.error(
-        `Error in sending a request to fetch shop details. \n Error: ${error}`,
-      );
+      console.error('Error in fetching shop details from shopify. \n', error.message);
+      this.logger.error(`Error in sending a request to fetch shop details. \n Error: ${error}`);
       return null;
     }
   };
@@ -192,13 +154,13 @@ export class InstallationService {
   /**
    * Saves store details to the database, in store_table. CreateShopDTO has all the key value pairs that the shopify server returns for requesting the shop.json
    */
-  public saveStoreDetails = async (shopDetails: CreateShopDTO, accessToken: string,): Promise<{ table_id: number | null; success: boolean }> => {
+  public saveStoreDetails = async (
+    shopDetails: CreateShopDTO,
+    accessToken: string,
+  ): Promise<{ table_id: number | null; success: boolean }> => {
     let result: { success?: boolean; user: User; store: Store };
     try {
-      result = await this.createStoreProvider.createStore(
-        shopDetails,
-        accessToken,
-      );
+      result = await this.createStoreProvider.createStore(shopDetails, accessToken);
 
       //console.log(result)
       //create a new entry with the table_id of the store table and the id of the user in another table
@@ -214,20 +176,14 @@ export class InstallationService {
     await this.jobsService.syncOrders(result.store);
     await this.jobsService.syncCustomers(result.store);
 
-    const createRelation: UserStore | false = await this.createSuperAdmin(
-      result.user.user_id,
-      result.store.table_id,
-    );
+    const createRelation: UserStore | false = await this.createSuperAdmin(result.user.user_id, result.store.table_id);
     if (typeof createRelation == 'boolean') {
       return { table_id: result.store.table_id, success: false };
     }
     return { table_id: result.store.table_id, success: true };
   };
 
-  public createSuperAdmin = async (
-    userId: number,
-    storeId: number,
-  ): Promise<UserStore | false> => {
+  public createSuperAdmin = async (userId: number, storeId: number): Promise<UserStore | false> => {
     let result: UserStore | null;
     try {
       result = await this.createSuperAdminProvider.create(userId, storeId);
@@ -244,7 +200,6 @@ export class InstallationService {
   };
 
   public updateAccessToken = async (store: Store, accessToken: string): Promise<boolean> => {
-
     return await this.jobsService.updateStoreToken(store, accessToken);
-  }
+  };
 }

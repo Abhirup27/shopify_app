@@ -26,8 +26,7 @@ import { CurrentUser } from './decorators/user.decorator';
 import { UserDto } from './dtos/user.dto';
 import { ADMIN, SUPER_ADMIN } from 'src/database/entities/constants/user-roles.constants';
 import { RegisterUserDto } from './dtos/register-member.dto';
-import { UserStore } from 'src/database/entities/userstore.entity';
-import { getTsBuildInfoEmitOutputFilePath } from 'typescript';
+import { newProductDto } from './dtos/new-product.dto';
 
 @UseGuards(AccessTokenGuard, StoreContextGuard)
 @Controller()
@@ -104,7 +103,7 @@ export class WebAppController {
 
   @Get('/orders')
   public async getOrders(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query) {
-    let payload: Object = {};
+    let payload: object = {};
     const token = this.utilsService.generateToken(req, res);
     try {
       payload = await this.webAppService.getOrders(user);
@@ -124,7 +123,7 @@ export class WebAppController {
     @Query() query,
   ) {
     try {
-      let payload: Object = {};
+      let payload: object = {};
       const orderId: number = query.order_id;
       if (orderId == undefined) {
         throw new Error('no order ID provided.');
@@ -144,7 +143,7 @@ export class WebAppController {
 
   @Get('/products')
   public async getProducts(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query) {
-    const payload: Object = await this.webAppService.getProducts(user);
+    const payload: object = await this.webAppService.getProducts(user);
     payload['csrfToken'] = this.utilsService.generateToken(req, res);
     res.render('products/index', payload);
   }
@@ -159,7 +158,7 @@ export class WebAppController {
         throw new UnauthorizedException();
       }
     } catch (error) {
-      this.logger.error(error.mesage, this.createProductPage.name);
+      this.logger.error(error.message, this.createProductPage.name);
     }
   }
   @Get('/syncOrders')
@@ -171,7 +170,7 @@ export class WebAppController {
 
   @Get('/members')
   public async getMembers(@CurrentUser() user: UserDto, @Res() res: Response, @Req() req: Request) {
-    let payload: Object = {};
+    const payload: object = {};
     try {
       if (user.can(['all_access', 'read_members'])) {
         payload['members'] = await this.webAppService.getMembers(user.store_id);
@@ -197,7 +196,7 @@ export class WebAppController {
   public async registerMember(@CurrentUser() user: UserDto, @Res() res: Response, @Req() req: Request) {
     try {
       if (user.can(['write_members'])) {
-        const payload: Object = {};
+        const payload: object = {};
         payload['previousUrl'] = req.headers.origin;
         payload['user'] = user;
         payload['csrfToken'] = this.utilsService.generateToken(req, res);
@@ -214,7 +213,7 @@ export class WebAppController {
         throw new Error('User has no permission to create new members.');
       }
     } catch (error) {
-      this.logger.error(error.messsage, this.registerMember.name);
+      this.logger.error(error.message, this.registerMember.name);
     }
   }
   @Post('/createMember')
@@ -240,6 +239,22 @@ export class WebAppController {
       }
     } catch (error) {
       this.logger.error(error.message, this.syncLocations.name);
+    }
+  }
+
+  @Post('/productPublish')
+  public async createProduct(
+    @Req() req: Request,
+    @CurrentUser() user: UserDto,
+    @Res() res: Response,
+    @Body() product: newProductDto,
+  ) {
+    try {
+      if (user.can(['all_access', 'write_products'])) {
+        const result: boolean = await this.webAppService.createProduct(user, product);
+      }
+    } catch (error) {
+      this.logger.error(error.message, this.createProduct.name);
     }
   }
 }

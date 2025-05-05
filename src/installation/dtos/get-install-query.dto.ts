@@ -1,36 +1,34 @@
-import { Type } from "class-transformer";
-import { IsHash, IsNotEmpty, IsNumber, IsOptional, IsString, IsUrl } from "class-validator";
+import { Type } from 'class-transformer';
+import { IsHash, IsNotEmpty, IsNumber, IsOptional, IsString, IsUrl } from 'class-validator';
 
 /**
  * Data Transfer Object when someone installs the app from the shopify app store or accesses it, these two params get passed
  */
 export class GetInstallInitQueryDto {
+  @IsNotEmpty()
+  @IsUrl()
+  shop: string;
 
-    @IsNotEmpty()
-    @IsUrl()
-    shop: string;
+  @IsNotEmpty()
+  @IsHash('sha256')
+  hmac: string;
 
-    @IsNotEmpty()
-    @IsHash('sha256')
-    hmac: string;
+  @IsNotEmpty()
+  @IsString()
+  host: string;
 
-    @IsNotEmpty()
-    @IsString()
-    host: string;
+  //     @IsNotEmpty()
+  // @IsNumber()
+  // @Type(()=> Number)
+  // timestamp: number;
+  @IsNotEmpty()
+  @IsString()
+  timestamp: string;
 
-    //     @IsNotEmpty()
-    // @IsNumber()
-    // @Type(()=> Number)
-    // timestamp: number;
-    @IsNotEmpty()
-    @IsString()
-    timestamp: string;
-
-    @IsOptional()
-    @IsString()
-    session?: string;
-    // @IsNotEmpty()
-    // @IsString()
-    // code: string;
-
+  @IsOptional()
+  @IsString()
+  session?: string;
+  // @IsNotEmpty()
+  // @IsString()
+  // code: string;
 }

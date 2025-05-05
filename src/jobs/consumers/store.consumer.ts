@@ -1,12 +1,5 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import {
-  GET_STORE,
-  GET_STORE_LOCATIONS,
-  STORES_QUEUE,
-  SYNC_STORE,
-  SYNC_STORE_LOCATIONS,
-  UPDATE_STORE_TOKEN,
-} from '../constants/jobs.constants';
+import { JOB_TYPES, JobRegistry, QUEUES } from '../constants/jobs.constants';
 import { Store } from 'src/database/entities/store.entity';
 import { Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -20,7 +13,18 @@ import { AxiosHeaders } from 'axios';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 
-@Processor(STORES_QUEUE)
+type StoreJobNames =
+  | typeof JOB_TYPES.GET_STORE
+  | typeof JOB_TYPES.SYNC_STORE
+  | typeof JOB_TYPES.GET_STORE_LOCATIONS
+  | typeof JOB_TYPES.SYNC_STORE_LOCATIONS
+  | typeof JOB_TYPES.UPDATE_STORE_TOKEN;
+
+type StoreJobs = {
+  [K in StoreJobNames]: Job<JobRegistry[K]['data'], JobRegistry[K]['result']> & { name: K };
+}[StoreJobNames];
+
+@Processor(QUEUES.STORES)
 export class StoresConsumer extends WorkerHost {
   private readonly logger = new Logger(StoresConsumer.name);
 
@@ -36,37 +40,45 @@ export class StoresConsumer extends WorkerHost {
   ) {
     super();
   }
-
-  public process = async (job: Job): Promise<Store | boolean | StoreLocations[]> => {
+  public process = async (job: StoreJobs): Promise<JobRegistry[StoreJobNames]['result']> => {
     try {
       switch (job.name) {
-        case GET_STORE:
+        case JOB_TYPES.GET_STORE:
           return await this.retrieveStore(job.data);
-        case SYNC_STORE:
-          return await this.syncStore(job);
-        case GET_STORE_LOCATIONS:
-          return await this.retrieveStoreLocations(job);
-        case SYNC_STORE_LOCATIONS:
-          return await this.syncStoreLocations(job);
-        case UPDATE_STORE_TOKEN:
-          return await this.updateStoreToken(job);
+        case JOB_TYPES.SYNC_STORE:
+          return await this.syncStore(job.data);
+        case JOB_TYPES.GET_STORE_LOCATIONS:
+          return await this.retrieveStoreLocations(job.data);
+        case JOB_TYPES.SYNC_STORE_LOCATIONS:
+          return await this.syncStoreLocations(job.data);
+        case JOB_TYPES.UPDATE_STORE_TOKEN:
+          return await this.updateStoreToken(job.data);
         default:
-          throw Error('Invalid job');
+          throw new Error('Invalid job');
       }
     } catch (error) {
       this.logger.error(error.message);
       return null;
     }
   };
-
-  private retrieveStore = async (storeId: number): Promise<Store | null> => {
+  /**
+  private isJobOfType<T extends keyof JobRegistry>(
+    job: Job<JobRegistry[keyof JobTypeMap]['data'], JobTypeMap[keyof JobTypeMap]['result']>,
+    name: T,
+  ): job is Job<JobTypeMap[T]['data'], JobTypeMap[T]['result']> {
+    return job.name === name;
+  }
+*/
+  private retrieveStore = async (
+    data: JobRegistry[typeof JOB_TYPES.GET_STORE]['data'],
+  ): Promise<JobRegistry[typeof JOB_TYPES.GET_STORE]['result']> => {
     //let storeId;
 
     try {
       //typeof job.data === 'number' ? storeId = job.data : null;
 
       const store: Store = await this.storesRepository.findOneBy({
-        table_id: storeId,
+        table_id: data.storeId,
       });
       if (store !== undefined) {
         return store;
@@ -77,65 +89,60 @@ export class StoresConsumer extends WorkerHost {
 
     return null;
   };
-
   private updateStoreToken = async (
-    job: Job<{ store: Store | number; accessToken: string }, boolean>,
-  ): Promise<boolean> => {
-    //let updatedStore: Store;
+    data: JobRegistry[typeof JOB_TYPES.UPDATE_STORE_TOKEN]['data'],
+  ): Promise<JobRegistry[typeof JOB_TYPES.UPDATE_STORE_TOKEN]['result']> => {
     try {
-      if (this.isStore(job.data.store) == false) {
-        job.data.store = await this.retrieveStore(job.data.store);
-      }
+      const { store, accessToken } = data;
+      const storeData = this.isStore(store) ? store : await this.retrieveStore(store);
+
+      if (!storeData) return false;
 
       const updatedEntry: UpdateResult = await this.storesRepository.update(
-        { id: job.data.store.id },
-        { access_token: job.data.accessToken },
+        { id: storeData.id },
+        { access_token: accessToken },
       );
-      if (updatedEntry.affected && updatedEntry.affected > 0) {
-        return true;
-      }
+
+      return updatedEntry.affected && updatedEntry.affected > 0;
     } catch (error) {
       this.logger.error(error.message, this.updateStoreToken.name);
+      return false;
     }
-    return false;
   };
-  private syncStore = async (job: Job): Promise<Store | null> => {
+  private syncStore = async (
+    data: JobRegistry[typeof JOB_TYPES.SYNC_STORE]['data'],
+  ): Promise<JobRegistry[typeof JOB_TYPES.SYNC_STORE]['result']> => {
     try {
     } catch (error) {
       this.logger.error(error.message, this.syncStore.name);
       return null;
     }
   };
-
-  private retrieveStoreLocations = async (job: Job): Promise<StoreLocations[] | null> => {
-    let locations: StoreLocations[];
-
+  private retrieveStoreLocations = async (
+    data: JobRegistry[typeof JOB_TYPES.GET_STORE_LOCATIONS]['data'],
+  ): Promise<JobRegistry[typeof JOB_TYPES.GET_STORE_LOCATIONS]['result']> => {
     try {
-      const storeId: number = this.isStore(job.data)
-        ? job.data.id
-        : typeof job.data === 'number'
-          ? job.data
-          : (() => {
-              throw Error('Invalid job data. Expected Store or number.');
-            })();
-      locations = await this.locationsRepository.findBy({ store_id: storeId });
+      return await this.locationsRepository.findBy({ store_id: data.storeId });
     } catch (error) {
       this.logger.error(error.message, this.retrieveStoreLocations.name);
+      return null;
     }
-    return locations;
   };
-  private syncStoreLocations = async (job: Job): Promise<StoreLocations[] | null> => {
-    let locations: StoreLocations[] = [];
+
+  private syncStoreLocations = async (
+    data: JobRegistry[typeof JOB_TYPES.SYNC_STORE_LOCATIONS]['data'],
+  ): Promise<JobRegistry[typeof JOB_TYPES.SYNC_STORE_LOCATIONS]['result']> => {
+    const locations: StoreLocations[] = [];
 
     try {
-      const store: Store = this.isStore(job.data) ? job.data : await this.retrieveStore(job.data);
+      const store: Store = this.isStore(data.store) ? data.store : await this.retrieveStore({ storeId: data.store });
       // console.log(store, job.data);
       const options: ShopifyRequestOptions = {
-        url: await this.utilsService.getShopifyURLForStore('graphql.json', store),
+        url: this.utilsService.getShopifyURLForStore('graphql.json', store),
         headers: this.utilsService.getGraphQLHeadersForStore(store),
       };
 
-      let cursor: string | null = null;
+      const cursor: string | null = null;
       do {
         options.data = this.getQueryObjForLocations(cursor);
         const response: ShopifyResponse = await this.utilsService.requestToShopify('post', options);
@@ -170,11 +177,11 @@ export class StoresConsumer extends WorkerHost {
     }
   }
 
-  private saveStoreLocations = async (locations: Object[], storeId: number): Promise<StoreLocations[]> => {
-    let returnData: Array<StoreLocations> = [];
-    let payload: Array<StoreLocations> = [];
+  private saveStoreLocations = async (locations: object[], storeId: number): Promise<StoreLocations[]> => {
+    const returnData: Array<StoreLocations> = [];
+    const payload: Array<StoreLocations> = [];
     //console.log(locations[0]);
-    for (let data of locations) {
+    for (const data of locations) {
       const loc = data['node'];
 
       const location = {

@@ -1,5 +1,5 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { GET_ORDER, GET_ORDERS, ORDERS_QUEUE, SYNC_ORDERS } from '../constants/jobs.constants';
+import { JOB_TYPES, JobRegistry, QUEUES } from '../constants/jobs.constants';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
@@ -7,8 +7,6 @@ import { UtilsService } from 'src/utils/utils.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from 'src/database/entities/order.entity';
 import { Repository } from 'typeorm';
-import { AxiosHeaders } from 'axios';
-import { Store } from 'src/database/entities/store.entity';
 import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 import { ShopifyResponse } from 'src/types/ShopifyResponse';
 
@@ -127,7 +125,12 @@ interface PageInfo {
   startCursor: string;
 }
 
-@Processor(ORDERS_QUEUE)
+type OrderJobNames = typeof JOB_TYPES.SYNC_ORDERS | typeof JOB_TYPES.GET_ORDERS | typeof JOB_TYPES.GET_ORDER;
+type OrderJobs = {
+  [K in OrderJobNames]: Job<JobRegistry[K]['data'], JobRegistry[K]['result']> & { name: K };
+}[OrderJobNames];
+
+@Processor(QUEUES.ORDERS)
 export class OrdersConsumer extends WorkerHost {
   private readonly logger = new Logger(OrdersConsumer.name);
 
@@ -141,33 +144,28 @@ export class OrdersConsumer extends WorkerHost {
     super();
   }
 
-  public process = async (job: Job<Store | number>): Promise<Order[] | Order | null> => {
+  public process = async (job: OrderJobs): Promise<JobRegistry[OrderJobNames]['result']> => {
     try {
       //const store: Store = job.data;
 
       switch (job.name) {
-        case SYNC_ORDERS:
+        case JOB_TYPES.SYNC_ORDERS:
           if (typeof job.data == 'number') {
             throw new Error('Invalid job data, Store expected recieved number type.');
           }
 
-          return await this.syncOrders(job.data, job);
+          return await this.syncOrders(job.data);
 
-        case GET_ORDERS:
-          if (job.data instanceof Object) {
-            throw new Error('Invalid job data, number expected recieved store type.');
-          }
+        case JOB_TYPES.GET_ORDERS:
           return await this.retrieveOrders(job.data);
-        case GET_ORDER:
-          if (job.data instanceof Object) {
-            throw new Error('Invalid job data, orderID(number) expected recieved store type.');
-          }
+        case JOB_TYPES.GET_ORDER:
           return await this.retrieveOrder(job.data);
         default:
           throw new Error('Invalid job name');
       }
     } catch (error) {
       if (error.message == '401') {
+        console.log('yes');
         // job.moveToCompleted(error, undefined);
         //job.moveToFailed(error, job.token);
       }
@@ -175,10 +173,13 @@ export class OrdersConsumer extends WorkerHost {
     }
   };
 
-  private syncOrders = async (store: Store, job: Job): Promise<any> => {
+  private syncOrders = async (
+    data: JobRegistry[typeof JOB_TYPES.SYNC_ORDERS]['data'],
+  ): Promise<JobRegistry[typeof JOB_TYPES.SYNC_ORDERS]['result']> => {
+    const store = data.store;
     try {
       const options: ShopifyRequestOptions = {
-        url: await this.utilsService.getShopifyURLForStore('graphql.json', store),
+        url: this.utilsService.getShopifyURLForStore('graphql.json', store),
         headers: this.utilsService.getGraphQLHeadersForStore(store),
       };
       //const headers: AxiosHeaders = this.utilsService.getGraphQLHeadersForStore(store);
@@ -209,7 +210,11 @@ export class OrdersConsumer extends WorkerHost {
       this.logger.error(error.message, this.syncOrders.name);
       throw error;
     }
+    return true;
   };
+  /**
+   *need to change the code such that it updates existing users. Right now it doesn't update the table even if one of the orders from the response(the arguements to this func) already exist in DB.
+   * */
   private async saveOrdersInDB(storeId: number, orders: any[]): Promise<void> {
     try {
       if (!orders || !Array.isArray(orders) || orders.length === 0) {
@@ -363,7 +368,10 @@ export class OrdersConsumer extends WorkerHost {
     }
   };
 
-  private retrieveOrders = async (store: number): Promise<Order[] | Order | null> => {
+  private retrieveOrders = async (
+    data: JobRegistry[typeof JOB_TYPES.GET_ORDERS]['data'],
+  ): Promise<JobRegistry[typeof JOB_TYPES.GET_ORDERS]['result']> => {
+    const store = data.storeId;
     let orders: Order[];
     try {
       orders = await this.ordersRepository.findBy({
@@ -376,7 +384,10 @@ export class OrdersConsumer extends WorkerHost {
       return null;
     }
   };
-  private retrieveOrder = async (orderId: number): Promise<Order | null> => {
+  private retrieveOrder = async (
+    data: JobRegistry[typeof JOB_TYPES.GET_ORDER]['data'],
+  ): Promise<JobRegistry[typeof JOB_TYPES.GET_ORDER]['result']> => {
+    const orderId = data.orderId;
     let order: Order | null = null;
     try {
       order = await this.ordersRepository.findOneBy({ id: orderId });

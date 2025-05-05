@@ -62,6 +62,18 @@ export class Store {
     length: 40,
   })
   access_token: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  api_key?: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  api_secret_key?: string;
   @Column({
     type: 'varchar',
     nullable: false,
