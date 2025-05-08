@@ -89,6 +89,6 @@ export class JobsService {
   public getMembers = (storeId: number) => this.addJob(JOB_TYPES.GET_USERS, { storeId: storeId });
   public createMember = (newMember: RegisterUserDto, storeId: number) =>
     this.addJob(JOB_TYPES.CREATE_USER, { user: newMember, storeId: storeId });
-  public createProduct = (store: number, product: newProductDto) =>
-    this.addJob(JOB_TYPES.CREATE_PRODUCT, { product: product, storeId: store });
+  public createProduct = (store: Store, product: newProductDto) =>
+    this.addJob(JOB_TYPES.CREATE_PRODUCT, { product: product, store: store });
 }

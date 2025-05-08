@@ -73,7 +73,7 @@ export class WebAppService {
           return sum + orderPrice;
         }, 0);
       }
-
+      console.log(recentOrders);
       const isPublic: boolean = !this.utilsService.checkIfStoreIsPrivate(user.store);
 
       dashboard = {
@@ -124,20 +124,20 @@ export class WebAppService {
                   price: recentOrders[2].total_price,
                   status: 'Rejected',
                 },
-                {
-                  id: recentOrders[3].id,
-                  customer: recentOrders[3].customer['firstName'] + ' ' + recentOrders[3].customer['lastName'],
-                  product:
-                    recentOrders[3].line_items[0]['name'] +
-                    ' , ' +
-                    recentOrders[3].line_items[1]['name'] +
-                    ' , ' +
-                    recentOrders[3].line_items[2]['name'] +
-                    ' , ' +
-                    recentOrders[3].line_items[3]['name'],
-                  price: recentOrders[3].total_price,
-                  status: 'Approved',
-                },
+                /* {
+                id: recentOrders[3].id,
+                customer: recentOrders[3].customer['firstName'] + ' ' + recentOrders[3].customer['lastName'],
+                product:
+                  recentOrders[3].line_items[0]['name'] +
+                  ' , ' +
+                  recentOrders[3].line_items[1]['name'] +
+                  ' , ' +
+                  recentOrders[3].line_items[2]['name'] +
+                  ' , ' +
+                  recentOrders[3].line_items[3]['name'],
+                price: recentOrders[3].total_price,
+                status: 'Approved',
+              }, */
               ]
             : '',
         topSelling: [
@@ -334,7 +334,7 @@ export class WebAppService {
   };
 
   public createProduct = async (user: UserDto, product: newProductDto): Promise<boolean> => {
-    const result = await this.jobsService.createProduct(user.store.table_id, product);
+    const result = await this.jobsService.createProduct(user.store, product);
 
     return true;
   };

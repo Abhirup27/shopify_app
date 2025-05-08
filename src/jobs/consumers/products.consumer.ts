@@ -174,16 +174,59 @@ export class ProductsConsumer extends WorkerHost {
   private createProduct = async (
     data: JobRegistry[typeof JOB_TYPES.CREATE_PRODUCT]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.CREATE_PRODUCT]['result']> => {
+    const store: Store = data.store;
+    const product: newProductDto = data.product;
     const locations: StoreLocations[] = [];
+    try {
+      const options: ShopifyRequestOptions = {
+        url: this.utilsService.getShopifyURLForStore('graphql.json', store),
+        headers: this.utilsService.getGraphQLHeadersForStore(store),
+      };
+      console.log(this.utilsService.checkIfStoreIsPrivate(store));
+      options.data = await this.getCreateProductPayload(store, product, locations);
+      const response = await this.utilsService.requestToShopify('post', options);
+
+      console.log(response);
+      console.log(response.respBody);
+    } catch (error) {
+      this.logger.error(error, this.getCreateProductPayload.name);
+    }
 
     return true;
   };
-
   private getCreateProductPayload = async (
     store: Store,
     product: newProductDto,
-    location: StoreLocations,
-  ): Promise<string> => {
-    return '';
+    location: StoreLocations[],
+  ): Promise<{ mutation: string }> => {
+    console.log(product.title, product.vendor, product.desc, JSON.stringify(product.tags));
+    const productData = `(product: {category: "gid://shopify/TaxonomyCategory/me-1-3", title:"${product.title}",vendor:"${product.vendor}", description:"${product.desc}", tags:${JSON.stringify(product.tags)}})`;
+    try {
+      const mutation = `{
+      productCreate${productData} {
+        product {
+          id
+          title
+          options {
+            id
+            name
+            optionValues {
+              id
+              name
+              hasVariants
+            }
+          }
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }`;
+      return { mutation };
+    } catch (error) {
+      this.logger.error(error, this.getCreateProductPayload.name);
+      throw error; // Re-throw the error or return a default value
+    }
   };
 }

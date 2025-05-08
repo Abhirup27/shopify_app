@@ -32,8 +32,8 @@
                 <div class="card-body">
                     <h5 class="card-title">Create a product</h5>
                     <!-- Floating Labels Form -->
-                    <form class="row g-3" method="POST" action="<%= route('shopify.product.publish') %>">
-                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <form id="productForm" class="row g-3" method="POST" action="<%= route('shopify.product.publish') %>">
+                       <!-- <input type="hidden" name="_csrf" value="<%= csrfToken %>"> -->
                         <div class="col-md-12">
                             <div class="form-floating">
                             <input type="text" class="form-control" id="floatingName" name="title" placeholder="Product Name/Title" required>
@@ -88,7 +88,7 @@
 </section>
 
 <script>
-   document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Function to add a new variant row
     function addVariantRow() {
         // Get the current number of variants
@@ -106,25 +106,25 @@
                 <a class="btn btn-danger remove_variant" style="margin-left:50px">X</a></label>    
                 <div class="col-md-4">
                     <div class="form-floating">
-                        <input type="text" class="form-control" id="floatingVariantTitle" name="variant_title[]" placeholder="Title" required>
+                        <input type="text" class="form-control variant-field" data-field="title" placeholder="Title" required>
                         <label for="floatingVariantTitle">Title</label>
                     </div>
                 </div>
                 <div class="col-md-2">
                     <div class="form-floating">
-                        <input type="text" class="form-control" id="floatingSKU" name="sku[]" placeholder="SKU" required>
+                        <input type="text" class="form-control variant-field" data-field="sku" placeholder="SKU" required>
                         <label for="floatingSKU">SKU</label>
                     </div>
                 </div>
                 <div class="col-md-2">
                     <div class="form-floating">
-                        <input type="number" class="form-control" id="floatingVariantPrice" name="variant_price[]" placeholder="Price" required>
+                        <input type="number" class="form-control variant-field" data-field="price" placeholder="Price" required>
                         <label for="floatingVariantPrice">Price</label>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-floating">
-                        <input type="number" class="form-control" id="floatingCompareAtVariantPrice" name="variant_caprice[]" placeholder="Compare At Price" required>
+                        <input type="number" class="form-control variant-field" data-field="compare_at_price" placeholder="Compare At Price" required>
                         <label for="floatingCompareAtVariantPrice">Compare At Price</label>
                     </div>
                 </div>
@@ -134,11 +134,14 @@
         if (hasInventorySection) {
             const inventorySection = hasInventorySection.cloneNode(true);
             
-            // Update the inventory input names to match the new count
+            // Update the inventory inputs
             const inputs = inventorySection.querySelectorAll('input');
             inputs.forEach(input => {
-                // Replace the count number in the name attribute
-                input.name = input.name.replace(/_\d+$/, `_${count}`);
+                const locationId = input.name.split('_')[0];
+                input.setAttribute('data-location', locationId);
+                input.setAttribute('data-field', 'inventory');
+                input.className = 'form-control variant-field inventory-field';
+                input.removeAttribute('name');
                 input.value = ''; // Clear the value
             });
             
@@ -149,6 +152,41 @@
         
         document.getElementById('variantsRow').insertAdjacentHTML('beforeend', variantHtml);
     }
+
+    // Update the first variant to use data-field attributes instead of name attributes
+    function updateFirstVariant() {
+        const firstVariant = document.querySelector('#variantsRow .pb-4');
+        if (!firstVariant) return;
+        
+        // Update variant fields
+        const variantInputs = firstVariant.querySelectorAll('input[name^="variant_"], input[name^="sku"]');
+        variantInputs.forEach(input => {
+            if (input.name === 'variant_title[]') {
+                input.setAttribute('data-field', 'title');
+            } else if (input.name === 'sku[]') {
+                input.setAttribute('data-field', 'sku');
+            } else if (input.name === 'variant_price[]') {
+                input.setAttribute('data-field', 'price');
+            } else if (input.name === 'variant_caprice[]') {
+                input.setAttribute('data-field', 'compare_at_price');
+            }
+            input.className = 'form-control variant-field';
+            input.removeAttribute('name');
+        });
+        
+        // Update inventory fields
+        const inventoryInputs = firstVariant.querySelectorAll('input[name$="_inventory_1"]');
+        inventoryInputs.forEach(input => {
+            const locationId = input.name.split('_')[0];
+            input.setAttribute('data-location', locationId);
+            input.setAttribute('data-field', 'inventory');
+            input.className = 'form-control variant-field inventory-field';
+            input.removeAttribute('name');
+        });
+    }
+
+    // Call this function when the page loads
+    updateFirstVariant();
 
     document.querySelector('.add_variant').addEventListener('click', function (e) {
         e.preventDefault();
@@ -161,16 +199,80 @@
             e.target.closest('.pb-4').remove();
         }
     });
-const syncLocationsBtn = document.querySelector('#syncLocations');
+
+    // Form submission handler
+    document.getElementById('productForm').addEventListener('submit', function(e) {
+        // Don't prevent default, we'll let the form submit naturally
+        // But we need to transform our variant fields into the expected format
+
+        // First remove any previously added hidden inputs to avoid duplicates
+        const existingInputs = document.querySelectorAll('input[name^="variants["]');
+        existingInputs.forEach(input => input.remove());
+        
+        // Get all variants containers
+        const variantContainers = document.querySelectorAll('#variantsRow .pb-4');
+        
+        // Collect variant data
+        variantContainers.forEach((container, index) => {
+            // Basic variant fields
+            if (container.querySelector('.variant-field[data-field="title"]')) {
+                const titleInput = document.createElement('input');
+                titleInput.type = 'hidden';
+                titleInput.name = 'variants[variant_title][]';
+                titleInput.value = container.querySelector('.variant-field[data-field="title"]').value;
+                this.appendChild(titleInput);
+            }
+            
+            if (container.querySelector('.variant-field[data-field="sku"]')) {
+                const skuInput = document.createElement('input');
+                skuInput.type = 'hidden';
+                skuInput.name = 'variants[sku][]';
+                skuInput.value = container.querySelector('.variant-field[data-field="sku"]').value;
+                this.appendChild(skuInput);
+            }
+            
+            if (container.querySelector('.variant-field[data-field="price"]')) {
+                const priceInput = document.createElement('input');
+                priceInput.type = 'hidden';
+                priceInput.name = 'variants[variant_price][]';
+                priceInput.value = container.querySelector('.variant-field[data-field="price"]').value;
+                this.appendChild(priceInput);
+            }
+            
+            if (container.querySelector('.variant-field[data-field="compare_at_price"]')) {
+                const capriceInput = document.createElement('input');
+                capriceInput.type = 'hidden';
+                capriceInput.name = 'variants[variant_caprice][]';
+                capriceInput.value = container.querySelector('.variant-field[data-field="compare_at_price"]').value;
+                this.appendChild(capriceInput);
+            }
+            
+            // Inventory fields
+            const inventoryFields = container.querySelectorAll('.inventory-field');
+            inventoryFields.forEach(field => {
+                const locationId = field.getAttribute('data-location');
+                const inventoryInput = document.createElement('input');
+                inventoryInput.type = 'hidden';
+                inventoryInput.name = `variants[inventory][${locationId}][]`;
+                inventoryInput.value = field.value;
+                this.appendChild(inventoryInput);
+            });
+        });
+        
+        // Submit the form
+        // this.submit(); - Not needed since we're not preventing default
+    });
+
+    const syncLocationsBtn = document.querySelector('#syncLocations');
     if (syncLocationsBtn) {
         syncLocationsBtn.addEventListener('click', function(e) {
             e.preventDefault();
             
             syncLocationsBtn.innerHTML = 'Syncing...';
             syncLocationsBtn.disabled = true;
-           console.log(this.href); 
+            console.log(this.href); 
             
-            fetch( this.href , {
+            fetch(this.href, {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
@@ -214,10 +316,11 @@ const syncLocationsBtn = document.querySelector('#syncLocations');
                 inventoryHtml += `
                 <div class="col-md-3">
                     <div class="form-floating">
-                        <input type="number" class="form-control" id="floatingVariantPrice" 
-                               name="${location.id}_inventory_${variantNum}" 
-                               placeholder="Price" required>
-                        <label for="floatingVariantPrice">${location.name}</label>
+                        <input type="number" class="form-control variant-field inventory-field" 
+                               data-location="${location.id}" 
+                               data-field="inventory"
+                               placeholder="Inventory" required>
+                        <label>${location.name}</label>
                     </div>
                 </div>`;
             });
@@ -232,7 +335,6 @@ const syncLocationsBtn = document.querySelector('#syncLocations');
                 container.insertAdjacentHTML('beforeend', inventoryHtml);
             }
         });
-        
     }
 }); 
 </script>

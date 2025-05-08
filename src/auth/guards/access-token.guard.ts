@@ -8,12 +8,10 @@ import { REQUEST_USER_KEY } from '../constants/auth.constants';
 import { Reflector } from '@nestjs/core';
 import { UserService } from 'src/web-app/user/user.service';
 
-
 export const Public = () => SetMetadata('isPublic', true);
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
-
   constructor(
     private reflector: Reflector,
     private readonly jwtService: JwtService,
@@ -21,24 +19,20 @@ export class AccessTokenGuard implements CanActivate {
     @Inject(jwtConfiguration.KEY)
     private readonly jwtConfig: ConfigType<typeof jwtConfiguration>,
 
-    private userService: UserService    
-  ) { }
+    private userService: UserService,
+  ) {}
 
   private extractToken = (request: Request): string | undefined => {
-    
+    console.log(request.body);
+
     const [_, token] = request.headers.authorization?.split(' ') ?? [];
     return token;
-  }
-  
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  };
 
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     //check if the route is public or not. A controller or a specific endpoint can be set public by using @Public()
-    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
-      context.getHandler(),
-      context.getClass()
-    ])
-    if (isPublic)
-    {
+    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [context.getHandler(), context.getClass()]);
+    if (isPublic) {
       return true;
     }
 
@@ -50,10 +44,8 @@ export class AccessTokenGuard implements CanActivate {
     const token = this.extractToken(request);
 
     //validate the token
-    if (!token)
-    {
+    if (!token) {
       throw new UnauthorizedException();
-      
     }
 
     try {
@@ -66,14 +58,9 @@ export class AccessTokenGuard implements CanActivate {
       //console.log(User, UserStore);
       request.user = User;
       request.roles = UserStore;
-      
-    } catch (error)
-    {
-      
+    } catch (error) {
       throw new UnauthorizedException();
     }
     return true;
   }
-
-
 }

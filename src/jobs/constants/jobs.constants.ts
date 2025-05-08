@@ -55,7 +55,7 @@ export type JobRegistry = {
   };
   [JOB_TYPES.CREATE_PRODUCT]: {
     queue: typeof QUEUES.PRODUCTS;
-    data: { product: newProductDto; storeId: number };
+    data: { product: newProductDto; store: Store };
     result: boolean;
   };
   [JOB_TYPES.SYNC_ORDERS]: {

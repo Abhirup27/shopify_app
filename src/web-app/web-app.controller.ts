@@ -250,6 +250,7 @@ export class WebAppController {
     @Body() product: newProductDto,
   ) {
     try {
+      console.log('here');
       if (user.can(['all_access', 'write_products'])) {
         const result: boolean = await this.webAppService.createProduct(user, product);
       }

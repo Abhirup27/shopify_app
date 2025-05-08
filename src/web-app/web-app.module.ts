@@ -12,7 +12,6 @@ import { WebAppService } from './web-app.service';
 import routesConfig from './config/routes.config';
 import { RouteService } from './providers/routes.provider';
 
-
 /**
  * This module will import submodules which will serve different pages of the website.
  */
@@ -24,17 +23,18 @@ import { RouteService } from './providers/routes.provider';
     AuthModule,
     ConfigModule.forFeature(routesConfig),
     ConfigModule.forFeature(jwtConfig),
-    JwtModule.registerAsync(jwtConfig.asProvider())
+    JwtModule.registerAsync(jwtConfig.asProvider()),
   ],
   controllers: [WebAppController],
   providers: [WebAppService, RouteService],
-  exports: [RouteService]
+  exports: [RouteService],
 })
 export class WebAppModule implements NestModule {
-
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(AuthMiddleware)
-      .forRoutes({ path: 'dashboard', method: RequestMethod.GET },
+    consumer
+      .apply(AuthMiddleware)
+      .forRoutes(
+        { path: 'dashboard', method: RequestMethod.GET },
         { path: 'orders', method: RequestMethod.GET },
         { path: 'logout', method: RequestMethod.POST },
         { path: 'syncOrders', method: RequestMethod.GET },
@@ -44,7 +44,8 @@ export class WebAppModule implements NestModule {
         { path: 'createMember', method: RequestMethod.POST },
         { path: 'products', method: RequestMethod.GET },
         { path: 'productCreate', method: RequestMethod.GET },
-        { path: 'syncStoreLocations', method: RequestMethod.GET }
-      )
+        { path: 'syncStoreLocations', method: RequestMethod.GET },
+        { path: 'productPublish', method: RequestMethod.POST },
+      );
   }
 }

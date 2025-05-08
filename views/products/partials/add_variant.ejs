@@ -4,25 +4,25 @@
     <% if(typeof count !== 'undefined' && count > 1) { %><a class="btn btn-danger remove_variant" style="margin-left:50px">X</a><% } %></label>    
     <div class="col-md-4">
         <div class="form-floating">
-            <input type="text" class="form-control" id="floatingVariantTitle" name="variant_title[]" placeholder="Title" required>
+            <input type="text" class="form-control variant-field" data-field="title" placeholder="Title" required>
             <label for="floatingVariantTitle">Title</label>
         </div>
     </div>
     <div class="col-md-2">
         <div class="form-floating">
-            <input type="text" class="form-control" id="floatingSKU" name="sku[]" placeholder="SKU" required>
+            <input type="text" class="form-control variant-field" data-field="sku" placeholder="SKU" required>
             <label for="floatingSKU">SKU</label>
         </div>
     </div>
     <div class="col-md-2">
         <div class="form-floating">
-            <input type="number" class="form-control" id="floatingVariantPrice" name="variant_price[]" placeholder="Price" required>
+            <input type="number" class="form-control variant-field" data-field="price" placeholder="Price" required>
             <label for="floatingVariantPrice">Price</label>
         </div>
     </div>
     <div class="col-md-3">
         <div class="form-floating">
-            <input type="number" class="form-control" id="floatingCompareAtVariantPrice" name="variant_caprice[]" placeholder="Compare At Price" required>
+            <input type="number" class="form-control variant-field" data-field="compare_at_price" placeholder="Compare At Price" required>
             <label for="floatingCompareAtVariantPrice">Compare At Price</label>
         </div>
     </div>
@@ -33,8 +33,11 @@
         <% locations.forEach(function(location) { %>
         <div class="col-md-3">
             <div class="form-floating">
-                <input type="number" class="form-control" id="floatingVariantPrice" name="<%= location.id %>_inventory_<%= count %>" placeholder="Price" required>
-                <label for="floatingVariantPrice"><%= location.name %></label>
+                <input type="number" class="form-control variant-field inventory-field" 
+                       data-location="<%= location.id %>" 
+                       data-field="inventory" 
+                       placeholder="Inventory" required>
+                <label><%= location.name %></label>
             </div>
         </div>
         <% }); %>

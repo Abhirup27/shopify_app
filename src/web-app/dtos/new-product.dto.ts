@@ -33,4 +33,7 @@ export class newProductDto extends ProductVariantsDto {
     return [];
   })
   tags: string[];
+
+  @IsOptional()
+  _csrf?: string;
 }

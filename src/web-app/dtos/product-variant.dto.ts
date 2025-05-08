@@ -19,14 +19,21 @@ export class VariantDto {
 }
 
 export class ProductVariantsDto {
-  @IsArray()
+  // @IsArray()
   @ValidateNested({ each: true })
   @Type(() => VariantDto)
   @Transform(({ value, obj }) => {
-    const variantTitles: string[] = Array.isArray(obj.variant_title) ? (obj.variant_title as string[]) : [];
-    const skus: string[] = Array.isArray(obj.sku) ? (obj.sku as string[]) : [];
-    const variantPrices: number[] = Array.isArray(obj.variant_price) ? (obj.variant_price as number[]) : [];
-    const variantCaPrices: number[] = Array.isArray(obj.variant_caprice) ? (obj.variant_caprice as number[]) : [];
+    console.log(obj.variants);
+    const variantTitles: string[] = Array.isArray(obj.variants.variant_title)
+      ? (obj.variants.variant_title as string[])
+      : [];
+    const skus: string[] = Array.isArray(obj.sku) ? (obj.variants.sku as string[]) : [];
+    const variantPrices: number[] = Array.isArray(obj.variants.variant_price)
+      ? (obj.variants.variant_price as number[])
+      : [];
+    const variantCaPrices: number[] = Array.isArray(obj.variants.variant_caprice)
+      ? (obj.variants.variant_caprice as number[])
+      : [];
 
     const variants = [];
 
