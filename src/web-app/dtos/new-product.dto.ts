@@ -13,7 +13,15 @@ export class newProductDto extends ProductVariantsDto {
 
   @IsNotEmpty()
   @IsString()
-  product_type: string;
+  product_type_1: string;
+
+  @IsOptional()
+  @IsString()
+  product_type_2?: string;
+
+  @IsOptional()
+  @IsString()
+  product_type_3?: string;
 
   @IsNotEmpty()
   @IsString()

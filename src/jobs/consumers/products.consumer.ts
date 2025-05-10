@@ -203,62 +203,6 @@ export class ProductsConsumer extends WorkerHost {
     console.log(product.title, product.vendor, product.desc, JSON.stringify(product.tags));
     const productData = `(input: {category: "gid://shopify/TaxonomyCategory/me-1-3", title:"${product.title}",vendor:"${product.vendor}", descriptionHtml:"${product.desc}", tags:${JSON.stringify(product.tags)}})`;
     try {
-      /** const query = ` mutation productCreate {
-  productCreate(input: {
-    title: "New Product Name"
-    descriptionHtml: "<p>This is the product description with HTML formatting.</p>"
-    vendor: "Your Brand"
-    productType: "Product Category"
-    tags: ["tag1", "tag2", "tag3"]
-    collectionsToJoin: ["gid://shopify/Collection/12345678"]
-    images: [{
-      altText: "Product image description"
-      src: "https://example.com/product-image.jpg"
-    }]
-    variants: [{
-      price: "29.99"
-      compareAtPrice: "39.99"
-      inventoryPolicy: DENY
-      inventoryQuantities: {
-        availableQuantity: 100
-        locationId: "gid://shopify/Location/68107763825"
-      }
-      requiresShipping: true
-      taxable: true
-      weight: 1.5
-      weightUnit: KILOGRAMS
-      options: ["Default Title"]
-      sku: "SKU123"
-      barcode: "1234567890123"
-    }]
-    seo: {
-      title: "SEO Product Title"
-      description: "SEO product description for better search results."
-    }
-    status: ACTIVE
-  }) {
-    product {
-      id
-      title
-      handle
-      descriptionHtml
-      variants(first: 10) {
-        edges {
-          node {
-            id
-            title
-            price
-            sku
-          }
-        }
-      }
-    }
-    userErrors {
-      field
-      message
-    }
-  }
-}`; */
       const query = `mutation {
       productCreate${productData} {
         product {

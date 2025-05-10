@@ -46,14 +46,63 @@
                             <label for="floatingTextarea">Description</label>
                             </div>
                         </div>
+                        
+                        <!-- Category Selection - Multi-level dropdowns -->
                         <div class="col-md-4">
-                            <div class="col-md-12">
-                                <div class="form-floating">
-                                    <input type="text" class="form-control" name="product_type" id="floatingProductType" placeholder="Product Type" required>
-                                    <label for="floatingProductType">Product Type</label>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="product-type-level1" class="form-label">Product Category (required)</label>
+                                    <select class="form-select" id="product-type-level1" name="product_type_1" required>
+                                        <option value="" selected disabled>Select Category Level 1</option>
+                                        <option value="Animals & Pet Supplies">Animals & Pet Supplies</option>
+                                        <option value="Apparel & Accessories">Apparel & Accessories</option>
+                                        <option value="Arts & Entertainment">Arts & Entertainment</option>
+                                        <option value="Baby & Toddler">Baby & Toddler</option>
+                                        <option value="Business & Industrial">Business & Industrial</option>
+                                        <option value="Cameras & Optics">Cameras & Optics</option>
+                                        <option value="Electronics">Electronics</option>
+                                        <option value="Food, Beverages & Tobacco">Food, Beverages & Tobacco</option>
+                                        <option value="Furniture">Furniture</option>
+                                        <option value="Gift Cards">Gift Cards</option>
+                                        <option value="Hardware">Hardware</option>
+                                        <option value="Health & Beauty">Health & Beauty</option>
+                                        <option value="Home & Garden">Home & Garden</option>
+                                        <option value="Luggage & Bags">Luggage & Bags</option>
+                                        <option value="Mature">Mature</option>
+                                        <option value="Media">Media</option>
+                                        <option value="Office Supplies">Office Supplies</option>
+                                        <option value="Product Add-Ons">Product Add-Ons</option>
+                                        <option value="Religious & Ceremonial">Religious & Ceremonial</option>
+                                        <option value="Services">Services</option>
+                                        <option value="Software">Software</option>
+                                        <option value="Sporting Goods">Sporting Goods</option>
+                                        <option value="Toys & Games">Toys & Games</option>
+                                        <option value="Uncategorized">Uncategorized</option>
+                                        <option value="Vehicles & Parts">Vehicles & Parts</option>
+                                    </select>
                                 </div>
+                                
+                                <div class="col-md-12 mb-3">
+                                    <label for="product-type-level2" class="form-label">Sub Category (Optional)</label>
+                                    <select class="form-select" id="product-type-level2" name="product_type_2" disabled>
+                                        <option value="" selected disabled>Select Category Level 2</option>
+                                        <!-- Level 2 options will be populated by JavaScript -->
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-12">
+                                    <label for="product-type-level3" class="form-label">Sub Category (Optional)</label>
+                                    <select class="form-select" id="product-type-level3" name="product_type_3" disabled>
+                                        <option value="" selected disabled>Select Category Level 3</option>
+                                        <!-- Level 3 options will be populated by JavaScript -->
+                                    </select>
+                                </div>
+                                
+                                <!-- Hidden field to store the final product type -->
+                               <!-- <input type="hidden" name="product_type" id="product_type_field"> -->
                             </div>
                         </div>
+                        
                         <div class="col-md-4">
                             <div class="col-md-12">
                                 <div class="form-floating">
@@ -89,6 +138,44 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Shopify category hierarchy
+    const categoryHierarchy = {
+        "Animals & Pet Supplies": ["Pet Supplies", "Live Animals"],
+        "Apparel & Accessories": ["Clothing", "Clothing Accessories", "Costumes & Accessories", "Jewelry", "Shoes"],
+        "Arts & Entertainment": ["Event Tickets", "Hobbies & Creative Arts", "Party & Celebration"],
+        "Baby & Toddler": ["Baby Accessories", "Baby Food", "Baby Furniture", "Baby Safety", "Baby Toys"],
+        "Business & Industrial": ["Agriculture", "Construction", "Industrial Supplies", "Medical", "Office"],
+        "Cameras & Optics": ["Cameras", "Photography", "Optics", "Camera Accessories"],
+        "Electronics": ["Audio", "Video", "Computers", "Electronics Accessories", "Networking"],
+        "Food, Beverages & Tobacco": ["Food", "Beverages", "Tobacco Products"],
+        "Furniture": ["Bedroom", "Living Room", "Kitchen", "Office", "Outdoor"],
+        "Gift Cards": ["Gift Cards", "Prepaid Cards"],
+        "Hardware": ["Building Materials", "Hardware Accessories", "Tools"],
+        "Health & Beauty": ["Beauty Products", "Personal Care", "Health Care"],
+        "Home & Garden": ["Home Decor", "Household Supplies", "Kitchen & Dining", "Lawn & Garden"],
+        "Luggage & Bags": ["Backpacks", "Briefcases", "Handbags", "Luggage", "Wallets"],
+        "Mature": ["Adult", "Weapons & Hunting"],
+        "Media": ["Books", "Digital Content", "Electronics Media", "Magazines & Newspapers", "Music", "Videos"],
+        "Office Supplies": ["Office Equipment", "Office Furniture", "Office Supplies"],
+        "Product Add-Ons": ["Product Warranties", "Product Bundles"],
+        "Religious & Ceremonial": ["Memorial Items", "Religious Items", "Wedding Ceremony"],
+        "Services": ["Business Services", "Education", "Entertainment", "Financial Services"],
+        "Software": ["Computer Software", "Mobile Apps", "Video Game Software"],
+        "Sporting Goods": ["Athletics", "Exercise & Fitness", "Indoor Games", "Outdoor Recreation"],
+        "Toys & Games": ["Baby Toys", "Board Games", "Dolls & Figures", "Puzzles", "Video Games"],
+        "Uncategorized": ["Miscellaneous"],
+        "Vehicles & Parts": ["Vehicle Parts & Accessories", "Vehicles"]
+    };
+    
+    // Level 3 categories - specific to the "Media > Books" path
+    const level3Categories = {
+        "Books": ["Audiobooks", "E-Books", "Print Books"],
+        "Magazines & Newspapers": ["Digital Magazines", "Print Magazines", "Newspapers"],
+        "Music": ["Digital Music", "Music Albums", "Sheet Music"],
+        "Videos": ["Movies", "TV Shows", "Online Videos"]
+        // Add other Level 2 > Level 3 mappings as needed
+    };
+    
     // Function to add a new variant row
     function addVariantRow() {
         // Get the current number of variants
@@ -200,8 +287,100 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Category selection logic
+    const level1Select = document.getElementById('product-type-level1');
+    const level2Select = document.getElementById('product-type-level2');
+    const level3Select = document.getElementById('product-type-level3');
+    //const productTypeField = document.getElementById('product_type_field');
+    
+    // When Level 1 category changes
+    level1Select.addEventListener('change', function(e) {
+        const selectedLevel1 = this.value;
+        
+        // Clear and disable Level 3
+        level3Select.innerHTML = '<option value="" selected disabled>Select Category Level 3</option>';
+        level3Select.disabled = true;
+        
+        // Clear and update Level 2
+        level2Select.innerHTML = '<option value="" selected disabled>Select Category Level 2</option>';
+        
+        if (selectedLevel1 && categoryHierarchy[selectedLevel1]) {
+            // Add Level 2 options
+            categoryHierarchy[selectedLevel1].forEach(level2Category => {
+                const option = document.createElement('option');
+                option.value = level2Category;
+                option.textContent = level2Category;
+                level2Select.appendChild(option);
+            });
+            
+            level2Select.disabled = false;
+        } else {
+            level2Select.disabled = true;
+        }
+        
+        // Update product type field
+        updateProductTypeField();
+    });
+    
+    // When Level 2 category changes
+    level2Select.addEventListener('change', function(e) {
+        const selectedLevel2 = this.value;
+        
+        // Clear and update Level 3
+        level3Select.innerHTML = '<option value="" selected disabled>Select Category Level 3</option>';
+        
+        if (selectedLevel2 && level3Categories[selectedLevel2]) {
+            // Add Level 3 options
+            level3Categories[selectedLevel2].forEach(level3Category => {
+                const option = document.createElement('option');
+                option.value = level3Category;
+                option.textContent = level3Category;
+                level3Select.appendChild(option);
+            });
+            
+            level3Select.disabled = false;
+        } else {
+            level3Select.disabled = true;
+        }
+        
+        // Update product type field
+        updateProductTypeField();
+    });
+    
+    // When Level 3 category changes
+    level3Select.addEventListener('change', function(e) {
+        // Update product type field
+        updateProductTypeField();
+    });
+   
+   /**
+    // Update the hidden product_type field with the full category path
+    function updateProductTypeField() {
+        const level1 = level1Select.value || '';
+        const level2 = level2Select.value || '';
+        const level3 = level3Select.value || '';
+        
+        let productType = '';
+        
+        if (level1) {
+            productType = level1;
+            if (level2) {
+                productType += ' > ' + level2;
+                if (level3) {
+                    productType += ' > ' + level3;
+                }
+            }
+        }
+        
+        productTypeField.value = productType;
+    }
+    */
+
     // Form submission handler
     document.getElementById('productForm').addEventListener('submit', function(e) {
+        // Make sure the product type is set before submitting
+        updateProductTypeField();
+        
         // Don't prevent default, we'll let the form submit naturally
         // But we need to transform our variant fields into the expected format
 
@@ -258,9 +437,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.appendChild(inventoryInput);
             });
         });
-        
-        // Submit the form
-        // this.submit(); - Not needed since we're not preventing default
     });
 
     const syncLocationsBtn = document.querySelector('#syncLocations');
