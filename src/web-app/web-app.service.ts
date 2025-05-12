@@ -15,6 +15,7 @@ import { StoreLocations } from 'src/database/entities/storeLocations.entity';
 import * as crypto from 'crypto';
 import { Response } from 'express';
 import { newProductDto } from './dtos/new-product.dto';
+import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 
 @Injectable()
 export class WebAppService {
@@ -26,6 +27,49 @@ export class WebAppService {
     private readonly jobsService: JobsService,
   ) {}
 
+  public getTaxonomyPayload(): { query: string } {
+    const query = `{
+
+      taxonomy{
+          categories( first:250) {
+            edges{
+              node {
+
+                fullName
+                id
+              }
+            }
+                pageInfo {
+                hasNextPage
+                endCursor
+                hasPreviousPage
+                startCursor
+                }
+
+          }
+        }
+    }`;
+
+    return { query };
+  }
+  public async getCategories(store: Store) {
+    try {
+      const options: ShopifyRequestOptions = {
+        url: this.utilsService.getShopifyURLForStore('graphql.json', store),
+        headers: this.utilsService.getGraphQLHeadersForStore(store),
+      };
+      console.log(this.utilsService.checkIfStoreIsPrivate(store));
+      options.data = this.getTaxonomyPayload();
+      const response = await this.utilsService.requestToShopify('post', options);
+
+      console.log(response);
+      console.log(response.respBody);
+      console.log(response.respBody['data']['taxonomy']['categories']['edges']);
+      console.log(response.respBody['data']['taxonomy']['categories']['pageInfo']);
+    } catch (error) {
+      this.logger.error(error, this.getCategories.name);
+    }
+  }
   public getSuperDashboardPayload = async (user: UserDto): Promise<object> => {
     let dashboard: object = {};
 
@@ -125,19 +169,19 @@ export class WebAppService {
                   status: 'Rejected',
                 },
                 /* {
-                id: recentOrders[3].id,
-                customer: recentOrders[3].customer['firstName'] + ' ' + recentOrders[3].customer['lastName'],
-                product:
-                  recentOrders[3].line_items[0]['name'] +
-                  ' , ' +
-                  recentOrders[3].line_items[1]['name'] +
-                  ' , ' +
-                  recentOrders[3].line_items[2]['name'] +
-                  ' , ' +
-                  recentOrders[3].line_items[3]['name'],
-                price: recentOrders[3].total_price,
-                status: 'Approved',
-              }, */
+id: recentOrders[3].id,
+customer: recentOrders[3].customer['firstName'] + ' ' + recentOrders[3].customer['lastName'],
+product:
+recentOrders[3].line_items[0]['name'] +
+' , ' +
+recentOrders[3].line_items[1]['name'] +
+' , ' +
+recentOrders[3].line_items[2]['name'] +
+' , ' +
+recentOrders[3].line_items[3]['name'],
+price: recentOrders[3].total_price,
+status: 'Approved',
+}, */
               ]
             : '',
         topSelling: [

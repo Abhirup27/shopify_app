@@ -42,6 +42,11 @@ export class WebAppController {
     private readonly authService: AuthService,
   ) {}
 
+  //@Public()
+  @Get('taxonomy')
+  public testTaxonomy(@Req() req: Request, @CurrentUser() user: UserDto) {
+    this.webAppService.getCategories(user.store);
+  }
   @Public()
   @Get()
   @Render('login')
