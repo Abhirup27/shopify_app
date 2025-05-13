@@ -25,12 +25,15 @@ import { UsersConsumer } from './consumers/users.consumer';
 import { UsersQueueEvents } from './providers/user-listener.provider';
 import { AuthModule } from 'src/auth/auth.module';
 import { StoreLocations } from 'src/database/entities/storeLocations.entity';
+import { ProductType } from 'src/database/entities/productType.entity';
+import { RedisModule } from '@nestjs-modules/ioredis';
+import { CacheProvider } from './providers/cache-redis.provider';
 
 @Module({
   imports: [
     UtilsModule,
     AuthModule,
-    TypeOrmModule.forFeature([Store, Product, Order, Customer, UserStore, User, StoreLocations]),
+    TypeOrmModule.forFeature([Store, Product, ProductType, Order, Customer, UserStore, User, StoreLocations]),
 
     BullModule.forRootAsync({
       imports: [ConfigModule],
@@ -51,6 +54,15 @@ import { StoreLocations } from 'src/database/entities/storeLocations.entity';
       { name: QUEUES.CUSTOMERS },
       { name: QUEUES.USERS },
     ),
+    RedisModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        type: 'single',
+        //url: configService.get<string>('REDIS_URL'),
+        url: `redis://${configService.get<string>('redis.host')}:${configService.get<number>('redis.port')}`,
+      }),
+    }),
   ],
 
   providers: [
@@ -66,6 +78,8 @@ import { StoreLocations } from 'src/database/entities/storeLocations.entity';
     CustomersQueueEvents,
     StoresQueueEvents,
     UsersQueueEvents,
+
+    CacheProvider,
   ],
   controllers: [JobsController],
   exports: [JobsService],

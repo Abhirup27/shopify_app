@@ -13,11 +13,17 @@ import { ShopifyResponse } from 'src/types/ShopifyResponse';
 import { Logger } from '@nestjs/common';
 import { newProductDto } from 'src/web-app/dtos/new-product.dto';
 import { StoreLocations } from 'src/database/entities/storeLocations.entity';
+import { CacheProvider } from '../providers/cache-redis.provider';
+import { ProductType } from 'src/database/entities/productType.entity';
 
 type ProductsQueueJobName =
   | typeof JOB_TYPES.SYNC_PRODUCTS
   | typeof JOB_TYPES.GET_PRODUCTS
-  | typeof JOB_TYPES.CREATE_PRODUCT;
+  | typeof JOB_TYPES.CREATE_PRODUCT
+  | typeof JOB_TYPES.GET_PRODUCT_TYPES
+  | typeof JOB_TYPES.GET_PRODUCT_TYPES_DB
+  | typeof JOB_TYPES.SYNC_PRODUCT_TYPES
+  | typeof JOB_TYPES.CHECK_PRODUCT_TYPE;
 
 // Create union type of Job objects for these jobs
 type ProductsQueueJob = {
@@ -29,11 +35,14 @@ export class ProductsConsumer extends WorkerHost {
   private readonly logger = new Logger(ProductsConsumer.name);
 
   constructor(
+    private readonly cacheService: CacheProvider,
     private readonly configService: ConfigService,
     private readonly utilsService: UtilsService,
 
     @InjectRepository(Product)
     private readonly productsRepository: Repository<Product>,
+    @InjectRepository(ProductType)
+    private readonly productTypesRepository: Repository<ProductType>,
   ) {
     super();
   }
@@ -49,6 +58,14 @@ export class ProductsConsumer extends WorkerHost {
         case JOB_TYPES.CREATE_PRODUCT:
           //  return await this.handleCreateProducts(job);
           return await this.createProduct(job.data);
+        case JOB_TYPES.GET_PRODUCT_TYPES:
+          return await this.getProductTypes(job.data);
+        case JOB_TYPES.GET_PRODUCT_TYPES_DB:
+          return await this.getProductTypesFromDB();
+        case JOB_TYPES.SYNC_PRODUCT_TYPES:
+          return await this.syncProductTypes();
+        case JOB_TYPES.CHECK_PRODUCT_TYPE:
+          return await this.checkProductTypeByName(job.data);
         default:
           throw new Error('Invalid job name');
           break;
@@ -171,6 +188,55 @@ export class ProductsConsumer extends WorkerHost {
   private isArray(array: unknown): array is string[] {
     return Array.isArray(array) && array.every(item => typeof item === 'string');
   }
+
+  private getProductTypes = async (
+    data: JobRegistry[typeof JOB_TYPES.GET_PRODUCT_TYPES]['data'],
+  ): Promise<JobRegistry[typeof JOB_TYPES.GET_PRODUCT_TYPES]['result']> => {
+    const result = await this.cacheService.getMap('product-types');
+
+    /* if(result == undefined || result == null ){
+       result = 
+ 
+     } */
+
+    return result;
+  };
+  private getProductTypesFromDB = async (): Promise<ProductType[]> => {
+    const result: ProductType[] = await this.productTypesRepository.find();
+
+    return result;
+  };
+  private getTaxonomyPayload(): { query: string } {
+    const query = `{
+
+      taxonomy{
+          categories( first:250) {
+            edges{
+              node {
+
+                fullName
+                id
+              }
+            }
+                pageInfo {
+                hasNextPage
+                endCursor
+                hasPreviousPage
+                startCursor
+                }
+
+          }
+        }
+    }`;
+
+    return { query };
+  }
+
+  private syncProductTypes = async (): Promise<void> => {};
+  private checkProductTypeByName = async (
+    data: JobRegistry[typeof JOB_TYPES.CHECK_PRODUCT_TYPE]['data'],
+  ): Promise<void> => {};
+
   private createProduct = async (
     data: JobRegistry[typeof JOB_TYPES.CREATE_PRODUCT]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.CREATE_PRODUCT]['result']> => {

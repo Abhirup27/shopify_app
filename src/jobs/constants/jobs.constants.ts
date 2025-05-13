@@ -1,6 +1,7 @@
 import { Customer } from 'src/database/entities/customer.entity';
 import { Order } from 'src/database/entities/order.entity';
 import { Product } from 'src/database/entities/product.entity';
+import { ProductType } from 'src/database/entities/productType.entity';
 import { Store } from 'src/database/entities/store.entity';
 import { StoreLocations } from 'src/database/entities/storeLocations.entity';
 import { User } from 'src/database/entities/user.entity';
@@ -21,6 +22,10 @@ export const JOB_TYPES = {
   SYNC_PRODUCTS: 'sync-products',
   GET_PRODUCTS: 'retrieve-products',
   CREATE_PRODUCT: 'create-product',
+  GET_PRODUCT_TYPES: 'retrieve-product-types',
+  GET_PRODUCT_TYPES_DB: 'retrieve-product-types-db',
+  SYNC_PRODUCT_TYPES: 'sync-product-types',
+  CHECK_PRODUCT_TYPE: 'check-product-type',
 
   SYNC_ORDERS: 'sync-orders',
   GET_ORDERS: 'retrieve-orders',
@@ -43,6 +48,7 @@ export const JOB_TYPES = {
 } as const;
 
 export type JobRegistry = {
+  /** for product jobs*/
   [JOB_TYPES.SYNC_PRODUCTS]: {
     queue: typeof QUEUES.PRODUCTS;
     data: { store: Store };
@@ -58,6 +64,27 @@ export type JobRegistry = {
     data: { product: newProductDto; store: Store };
     result: boolean;
   };
+  [JOB_TYPES.GET_PRODUCT_TYPES]: {
+    queue: typeof QUEUES.PRODUCTS;
+    data: null;
+    result: Record<string, string>;
+  };
+  [JOB_TYPES.GET_PRODUCT_TYPES_DB]: {
+    queue: typeof QUEUES.PRODUCTS;
+    data: null;
+    result: ProductType[];
+  };
+  [JOB_TYPES.SYNC_PRODUCT_TYPES]: {
+    queue: typeof QUEUES.PRODUCTS;
+    data: null;
+    result: ProductType[] | Record<string, string>;
+  };
+  [JOB_TYPES.CHECK_PRODUCT_TYPE]: {
+    queue: typeof QUEUES.PRODUCTS;
+    data: { name: string };
+    result: boolean;
+  };
+  /** for order jobs*/
   [JOB_TYPES.SYNC_ORDERS]: {
     queue: typeof QUEUES.ORDERS;
     data: { store: Store };
@@ -73,6 +100,7 @@ export type JobRegistry = {
     data: { orderId: number };
     result: Order;
   };
+  /** for stores*/
   [JOB_TYPES.SYNC_STORE]: {
     queue: typeof QUEUES.STORES;
     data: { storeId: number };
@@ -98,6 +126,8 @@ export type JobRegistry = {
     data: { storeId: number };
     result: StoreLocations[];
   };
+
+  /**For Customer queue jobs*/
   [JOB_TYPES.SYNC_CUSTOMERS]: {
     queue: typeof QUEUES.CUSTOMERS;
     data: { store: Store };
@@ -108,6 +138,8 @@ export type JobRegistry = {
     data: { storeId: number };
     result: Customer[];
   };
+
+  /**For User Queue Jobs*/
   [JOB_TYPES.GET_USERS]: {
     queue: typeof QUEUES.USERS;
     data: { storeId: number };
@@ -131,10 +163,16 @@ export type JobRegistry = {
 };
 export type JobType = keyof JobRegistry;
 export type QueueName = JobRegistry[JobType]['queue'];
+
 export const jobToQueueMap: { [K in JobType]: QueueName } = {
   [JOB_TYPES.CONFIGURE_WEBHOOKS]: QUEUES.CONFIGURE,
   [JOB_TYPES.SYNC_PRODUCTS]: QUEUES.PRODUCTS,
   [JOB_TYPES.CREATE_PRODUCT]: QUEUES.PRODUCTS,
+  [JOB_TYPES.GET_PRODUCT_TYPES]: QUEUES.PRODUCTS,
+  [JOB_TYPES.GET_PRODUCT_TYPES_DB]: QUEUES.PRODUCTS,
+  [JOB_TYPES.SYNC_PRODUCT_TYPES]: QUEUES.PRODUCTS,
+  [JOB_TYPES.CHECK_PRODUCT_TYPE]: QUEUES.PRODUCTS,
+
   [JOB_TYPES.CREATE_USER]: QUEUES.USERS,
   [JOB_TYPES.SYNC_CUSTOMERS]: QUEUES.CUSTOMERS,
   [JOB_TYPES.SYNC_STORE]: QUEUES.STORES,
