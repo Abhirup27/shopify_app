@@ -44,8 +44,9 @@ export class WebAppController {
 
   //@Public()
   @Get('taxonomy')
-  public testTaxonomy(@Req() req: Request, @CurrentUser() user: UserDto) {
-    this.webAppService.getCategories(user.store);
+  public async testTaxonomy(@Req() req: Request, @CurrentUser() user: UserDto) {
+    await this.webAppService.syncProductTypes(user.store);
+    this.webAppService.printProductTypes();
   }
   @Public()
   @Get()

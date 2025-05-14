@@ -39,6 +39,12 @@ export class WebAppService {
                 id
               }
             }
+
+            nodes {
+              fullName
+              id
+              childrenIds
+            }
                 pageInfo {
                 hasNextPage
                 endCursor
@@ -52,6 +58,21 @@ export class WebAppService {
 
     return { query };
   }
+  public async syncProductTypes(store: Store) {
+    try {
+      await this.jobsService.syncProductTypes(store);
+    } catch (error) {
+      this.logger.error(error, this.syncProductTypes.name);
+    }
+  }
+  public async printProductTypes() {
+    try {
+      const result = await this.jobsService.getProductTypes();
+      console.log(result);
+    } catch (error) {
+      this.logger.error(error, this.printProductTypes.name);
+    }
+  }
   public async getCategories(store: Store) {
     try {
       const options: ShopifyRequestOptions = {
@@ -64,7 +85,7 @@ export class WebAppService {
 
       console.log(response);
       console.log(response.respBody);
-      console.log(response.respBody['data']['taxonomy']['categories']['edges']);
+      console.log(response.respBody['data']['taxonomy']['categories']['nodes']);
       console.log(response.respBody['data']['taxonomy']['categories']['pageInfo']);
     } catch (error) {
       this.logger.error(error, this.getCategories.name);

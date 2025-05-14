@@ -91,4 +91,7 @@ export class JobsService {
     this.addJob(JOB_TYPES.CREATE_USER, { user: newMember, storeId: storeId });
   public createProduct = (store: Store, product: newProductDto) =>
     this.addJob(JOB_TYPES.CREATE_PRODUCT, { product: product, store: store });
+
+  public syncProductTypes = (store: Store) => this.addJob(JOB_TYPES.SYNC_PRODUCT_TYPES, { store: store });
+  public getProductTypes = () => this.addJob(JOB_TYPES.GET_PRODUCT_TYPES, {});
 }

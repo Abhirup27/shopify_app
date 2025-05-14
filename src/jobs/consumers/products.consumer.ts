@@ -50,20 +50,17 @@ export class ProductsConsumer extends WorkerHost {
     try {
       switch (job.name) {
         case JOB_TYPES.SYNC_PRODUCTS:
-          //return await this.handleSyncProducts(job);
           return await this.syncProducts(job.data);
         case JOB_TYPES.GET_PRODUCTS:
-          // return await this.handleGetProducts(job);
           return await this.retrieveProducts(job.data);
         case JOB_TYPES.CREATE_PRODUCT:
-          //  return await this.handleCreateProducts(job);
           return await this.createProduct(job.data);
         case JOB_TYPES.GET_PRODUCT_TYPES:
           return await this.getProductTypes(job.data);
         case JOB_TYPES.GET_PRODUCT_TYPES_DB:
           return await this.getProductTypesFromDB();
         case JOB_TYPES.SYNC_PRODUCT_TYPES:
-          return await this.syncProductTypes();
+          return await this.syncProductTypes(job.data);
         case JOB_TYPES.CHECK_PRODUCT_TYPE:
           return await this.checkProductTypeByName(job.data);
         default:
@@ -218,6 +215,16 @@ export class ProductsConsumer extends WorkerHost {
                 id
               }
             }
+            nodes{
+              id
+              fullName
+              name
+              isRoot
+              level
+              isLeaf
+              childrenIds
+              parentId
+            }
                 pageInfo {
                 hasNextPage
                 endCursor
@@ -232,10 +239,55 @@ export class ProductsConsumer extends WorkerHost {
     return { query };
   }
 
-  private syncProductTypes = async (): Promise<void> => {};
+  private syncProductTypes = async (
+    data: JobRegistry[typeof JOB_TYPES.SYNC_PRODUCT_TYPES]['data'],
+  ): Promise<JobRegistry[typeof JOB_TYPES.SYNC_PRODUCT_TYPES]['result']> => {
+    try {
+      const options: ShopifyRequestOptions = {
+        url: this.utilsService.getShopifyURLForStore('graphql.json', data.store),
+        headers: this.utilsService.getGraphQLHeadersForStore(data.store),
+      };
+      options.data = this.getTaxonomyPayload();
+      const response = await this.utilsService.requestToShopify('post', options);
+
+      console.log(response);
+      console.log(response.respBody);
+      //console.log(response.respBody['data']['taxonomy']['categories']['edges']);
+      console.log(response.respBody['data']['taxonomy']['categories']['pageInfo']);
+
+      let productTypes = response.respBody['data']['taxonomy']['categories']['nodes'];
+      productTypes = this.productTypesRepository.create(productTypes);
+      productTypes = await this.productTypesRepository.save(productTypes);
+
+      const productMap: Map<string, string> = new Map<string, string>();
+
+      for (const data of response.respBody['data']['taxonomy']['categories']['nodes']) {
+        productMap.set(data['fullName'], data['id']);
+      }
+      this.cacheService.storeMap('product-types', productMap);
+      return productTypes;
+    } catch (error) {
+      this.logger.error(error, this.syncProductTypes.name);
+    }
+  };
+
   private checkProductTypeByName = async (
     data: JobRegistry[typeof JOB_TYPES.CHECK_PRODUCT_TYPE]['data'],
-  ): Promise<void> => {};
+  ): Promise<JobRegistry[typeof JOB_TYPES.CHECK_PRODUCT_TYPE]['result']> => {
+    try {
+      const result = await this.cacheService.mapFieldExists('product-types', data.name);
+      if (result == false) {
+        const resultDB = await this.productTypesRepository.existsBy({ fullName: data.name });
+        if (resultDB == true) {
+          return true;
+        }
+        return false;
+      }
+      return true;
+    } catch (error) {
+      this.logger.error(error, this.checkProductTypeByName.name);
+    }
+  };
 
   private createProduct = async (
     data: JobRegistry[typeof JOB_TYPES.CREATE_PRODUCT]['data'],

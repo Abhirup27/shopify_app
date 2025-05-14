@@ -66,7 +66,7 @@ export type JobRegistry = {
   };
   [JOB_TYPES.GET_PRODUCT_TYPES]: {
     queue: typeof QUEUES.PRODUCTS;
-    data: null;
+    data: unknown;
     result: Record<string, string>;
   };
   [JOB_TYPES.GET_PRODUCT_TYPES_DB]: {
@@ -76,7 +76,7 @@ export type JobRegistry = {
   };
   [JOB_TYPES.SYNC_PRODUCT_TYPES]: {
     queue: typeof QUEUES.PRODUCTS;
-    data: null;
+    data: { store: Store };
     result: ProductType[] | Record<string, string>;
   };
   [JOB_TYPES.CHECK_PRODUCT_TYPE]: {
