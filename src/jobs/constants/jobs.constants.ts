@@ -8,6 +8,7 @@ import { User } from 'src/database/entities/user.entity';
 import { UserStore } from 'src/database/entities/userstore.entity';
 import { newProductDto } from 'src/web-app/dtos/new-product.dto';
 import { RegisterUserDto } from 'src/web-app/dtos/register-member.dto';
+import { ProductsType } from '../consumers/products.consumer';
 
 export const QUEUES = {
   PRODUCTS: 'products',
@@ -77,7 +78,7 @@ export type JobRegistry = {
   [JOB_TYPES.SYNC_PRODUCT_TYPES]: {
     queue: typeof QUEUES.PRODUCTS;
     data: { store: Store };
-    result: ProductType[] | Record<string, string>;
+    result: void;
   };
   [JOB_TYPES.CHECK_PRODUCT_TYPE]: {
     queue: typeof QUEUES.PRODUCTS;

@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
+import { ProductsType } from '../consumers/products.consumer';
 @Injectable()
 export class CacheProvider {
   constructor(@InjectRedis() private readonly redis: Redis) {}
 
-  async storeMap(key: string, map: Map<string, string>): Promise<void> {
+  async storeMap(key: string, map: Map<string, ProductsType | ProductsType[]>): Promise<void> {
     await this.redis.hmset(key, map);
   }
   async getMapField(key: string, field: string): Promise<string | null> {

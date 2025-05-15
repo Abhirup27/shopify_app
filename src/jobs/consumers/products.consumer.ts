@@ -16,6 +16,28 @@ import { StoreLocations } from 'src/database/entities/storeLocations.entity';
 import { CacheProvider } from '../providers/cache-redis.provider';
 import { ProductType } from 'src/database/entities/productType.entity';
 
+export type ProductsType = {
+  id: string;
+  isRoot: boolean;
+  isLeaf: boolean;
+  childrenIds?: string[];
+  parentId?: string;
+  fullName: string;
+  name: string;
+  level: number;
+
+  children?: Map<string, ProductsType>;
+};
+type ProductTypesResponse = {
+  data: {
+    taxonomy: {
+      categories: {
+        nodes: ProductsType[];
+      };
+    };
+  };
+};
+
 type ProductsQueueJobName =
   | typeof JOB_TYPES.SYNC_PRODUCTS
   | typeof JOB_TYPES.GET_PRODUCTS
@@ -203,6 +225,36 @@ export class ProductsConsumer extends WorkerHost {
 
     return result;
   };
+  private getChildrenPayload(id: string): { query: string } {
+    const query = `{
+
+      taxonomy{
+          categories( first:250, childrenOf:"${id}") {
+            nodes{
+              id
+              fullName
+              name
+              isRoot
+              level
+              isLeaf
+              childrenIds
+              parentId
+              
+              }
+                pageInfo {
+                hasNextPage
+                endCursor
+                hasPreviousPage
+                startCursor
+                }
+
+          }
+        }
+    }`;
+
+    return { query };
+  }
+
   private getTaxonomyPayload(): { query: string } {
     const query = `{
 
@@ -248,24 +300,55 @@ export class ProductsConsumer extends WorkerHost {
         headers: this.utilsService.getGraphQLHeadersForStore(data.store),
       };
       options.data = this.getTaxonomyPayload();
-      const response = await this.utilsService.requestToShopify('post', options);
-
-      console.log(response);
-      console.log(response.respBody);
-      //console.log(response.respBody['data']['taxonomy']['categories']['edges']);
-      console.log(response.respBody['data']['taxonomy']['categories']['pageInfo']);
+      const response = await this.utilsService.requestToShopify<ProductTypesResponse>('post', options);
 
       let productTypes = response.respBody['data']['taxonomy']['categories']['nodes'];
       productTypes = this.productTypesRepository.create(productTypes);
       productTypes = await this.productTypesRepository.save(productTypes);
 
-      const productMap: Map<string, string> = new Map<string, string>();
+      const productMap: Map<string, ProductsType[] | ProductsType> = new Map<string, ProductsType[]>();
 
       for (const data of response.respBody['data']['taxonomy']['categories']['nodes']) {
-        productMap.set(data['fullName'], data['id']);
+        //        childrenIds.push(...data['childrenIds']);
+
+        if (data['isLeaf'] == false) {
+          options.data = this.getChildrenPayload(data['id']);
+          const res = await this.utilsService.requestToShopify<ProductTypesResponse>('post', options);
+
+          productTypes = res.respBody.data.taxonomy.categories.nodes;
+          productTypes = this.productTypesRepository.create(productTypes);
+          productTypes = await this.productTypesRepository.save(productTypes);
+          //    console.log(res.respBody['data']['taxonomy']['categories']['nodes']);
+
+          for (const data of res.respBody['data']['taxonomy']['categories']['nodes']) {
+            data.children = new Map<string, ProductsType>();
+            data.children.set(data.fullName, data);
+
+            if (data['isLeaf'] == false) {
+              options.data = this.getChildrenPayload(data['id']);
+
+              const res = await this.utilsService.requestToShopify<ProductTypesResponse>('post', options);
+
+              productTypes = res.respBody.data.taxonomy.categories.nodes;
+              console.log(res.respBody.data.taxonomy.categories.nodes);
+
+              productTypes = this.productTypesRepository.create(productTypes);
+              productTypes = await this.productTypesRepository.save(productTypes);
+
+              for (const data of res.respBody.data.taxonomy.categories.nodes) {
+                data.children = new Map<string, ProductsType>();
+
+                data.children.set(data.fullName, data);
+              }
+            }
+          }
+        }
+        productMap.set(data['fullName'], data);
       }
+      //console.log(childrenIds);
+
       this.cacheService.storeMap('product-types', productMap);
-      return productTypes;
+      //return productTypes;
     } catch (error) {
       this.logger.error(error, this.syncProductTypes.name);
     }
