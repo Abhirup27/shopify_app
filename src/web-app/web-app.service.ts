@@ -27,37 +27,6 @@ export class WebAppService {
     private readonly jobsService: JobsService,
   ) {}
 
-  public getTaxonomyPayload(): { query: string } {
-    const query = `{
-
-      taxonomy{
-          categories( first:250) {
-            edges{
-              node {
-
-                fullName
-                id
-              }
-            }
-
-            nodes {
-              fullName
-              id
-              childrenIds
-            }
-                pageInfo {
-                hasNextPage
-                endCursor
-                hasPreviousPage
-                startCursor
-                }
-
-          }
-        }
-    }`;
-
-    return { query };
-  }
   public async syncProductTypes(store: Store) {
     try {
       await this.jobsService.syncProductTypes(store);
@@ -71,24 +40,6 @@ export class WebAppService {
       console.log(result);
     } catch (error) {
       this.logger.error(error, this.printProductTypes.name);
-    }
-  }
-  public async getCategories(store: Store) {
-    try {
-      const options: ShopifyRequestOptions = {
-        url: this.utilsService.getShopifyURLForStore('graphql.json', store),
-        headers: this.utilsService.getGraphQLHeadersForStore(store),
-      };
-      console.log(this.utilsService.checkIfStoreIsPrivate(store));
-      options.data = this.getTaxonomyPayload();
-      const response = await this.utilsService.requestToShopify('post', options);
-
-      console.log(response);
-      console.log(response.respBody);
-      console.log(response.respBody['data']['taxonomy']['categories']['nodes']);
-      console.log(response.respBody['data']['taxonomy']['categories']['pageInfo']);
-    } catch (error) {
-      this.logger.error(error, this.getCategories.name);
     }
   }
   public getSuperDashboardPayload = async (user: UserDto): Promise<object> => {
@@ -348,6 +299,7 @@ status: 'Approved',
     let payload: object = {};
     try {
       const locations: StoreLocations[] = await this.jobsService.getStoreLocations(user.store_id);
+      const level_one_categories: string[] = await this.jobsService.getProductTypesNames(1);
       payload = {
         storeId: user.store_id,
         locations: locations,

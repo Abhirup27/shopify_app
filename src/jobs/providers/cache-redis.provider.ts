@@ -6,7 +6,7 @@ import { ProductsType } from '../consumers/products.consumer';
 export class CacheProvider {
   constructor(@InjectRedis() private readonly redis: Redis) {}
 
-  async storeMap(key: string, map: Map<string, ProductsType | ProductsType[]>): Promise<void> {
+  async storeMap(key: string, map: Map<string, string>): Promise<void> {
     await this.redis.hmset(key, map);
   }
   async getMapField(key: string, field: string): Promise<string | null> {

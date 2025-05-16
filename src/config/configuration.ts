@@ -40,10 +40,10 @@ export default () => ({
   database: {
     host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT, 10) || 3306,
-    type: process.env.DB_TYPE.toString(),
+    type: process.env.DB_TYPE as any,
     name: process.env.DB_NAME,
     username: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
+    password: process.env.DB_PASSWORD.toString(),
     synchronize: process.env.DB_SYNC === 'true' ? true : false,
     autoload: process.env.DB_AUTOLOAD === 'true' ? true : false,
   },

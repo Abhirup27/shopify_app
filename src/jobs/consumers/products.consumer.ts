@@ -1,10 +1,10 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { JOB_TYPES, JobRegistry, QUEUES } from '../constants/jobs.constants';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { UtilsService } from 'src/utils/utils.service';
 import { Store } from 'src/database/entities/store.entity';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Job } from 'bullmq';
 import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 import { AxiosHeaders } from 'axios';
@@ -25,8 +25,6 @@ export type ProductsType = {
   fullName: string;
   name: string;
   level: number;
-
-  children?: Map<string, ProductsType>;
 };
 type ProductTypesResponse = {
   data: {
@@ -61,6 +59,8 @@ export class ProductsConsumer extends WorkerHost {
     private readonly configService: ConfigService,
     private readonly utilsService: UtilsService,
 
+    @InjectEntityManager()
+    private entityManager: EntityManager,
     @InjectRepository(Product)
     private readonly productsRepository: Repository<Product>,
     @InjectRepository(ProductType)
@@ -290,11 +290,28 @@ export class ProductsConsumer extends WorkerHost {
 
     return { query };
   }
+  private getProductTypeUpdated = async (tableName: string = 'product_type'): Promise<Date | null> => {
+    const result = await this.entityManager.query(`SELECT last_updated FROM table_metadata WHERE table_name = $1`, [
+      tableName,
+    ]);
 
+    return result.length > 0 ? result[0].last_updated : null;
+  };
   private syncProductTypes = async (
     data: JobRegistry[typeof JOB_TYPES.SYNC_PRODUCT_TYPES]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.SYNC_PRODUCT_TYPES]['result']> => {
     try {
+      //we check if the product categories has been synced in the last 30 minutes, if yes, don't sync again
+      const lastUpdated = await this.getProductTypeUpdated();
+      console.log(lastUpdated);
+      const minutes = lastUpdated !== null ? new Date().getTime() - lastUpdated.getTime() : null;
+      console.log(minutes);
+
+      if (minutes != null) {
+        if (minutes / (1000 * 60) < 30) {
+          return;
+        }
+      }
       const options: ShopifyRequestOptions = {
         url: this.utilsService.getShopifyURLForStore('graphql.json', data.store),
         headers: this.utilsService.getGraphQLHeadersForStore(data.store),
@@ -306,7 +323,7 @@ export class ProductsConsumer extends WorkerHost {
       productTypes = this.productTypesRepository.create(productTypes);
       productTypes = await this.productTypesRepository.save(productTypes);
 
-      const productMap: Map<string, ProductsType[] | ProductsType> = new Map<string, ProductsType[]>();
+      const productMap: Map<string, string> = new Map<string, string>();
 
       for (const data of response.respBody['data']['taxonomy']['categories']['nodes']) {
         //        childrenIds.push(...data['childrenIds']);
@@ -320,10 +337,9 @@ export class ProductsConsumer extends WorkerHost {
           productTypes = await this.productTypesRepository.save(productTypes);
           //    console.log(res.respBody['data']['taxonomy']['categories']['nodes']);
 
+          productMap.set(data.id, data.fullName);
           for (const data of res.respBody['data']['taxonomy']['categories']['nodes']) {
-            data.children = new Map<string, ProductsType>();
-            data.children.set(data.fullName, data);
-
+            productMap.set(data.id, data.fullName);
             if (data['isLeaf'] == false) {
               options.data = this.getChildrenPayload(data['id']);
 
@@ -336,14 +352,11 @@ export class ProductsConsumer extends WorkerHost {
               productTypes = await this.productTypesRepository.save(productTypes);
 
               for (const data of res.respBody.data.taxonomy.categories.nodes) {
-                data.children = new Map<string, ProductsType>();
-
-                data.children.set(data.fullName, data);
+                productMap.set(data.id, data.fullName);
               }
             }
           }
         }
-        productMap.set(data['fullName'], data);
       }
       //console.log(childrenIds);
 

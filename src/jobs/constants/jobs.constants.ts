@@ -24,6 +24,7 @@ export const JOB_TYPES = {
   GET_PRODUCTS: 'retrieve-products',
   CREATE_PRODUCT: 'create-product',
   GET_PRODUCT_TYPES: 'retrieve-product-types',
+  GET_PRODUCT_TYPE_NAMES: 'retrieve-product-type-names',
   GET_PRODUCT_TYPES_DB: 'retrieve-product-types-db',
   SYNC_PRODUCT_TYPES: 'sync-product-types',
   CHECK_PRODUCT_TYPE: 'check-product-type',
@@ -64,6 +65,11 @@ export type JobRegistry = {
     queue: typeof QUEUES.PRODUCTS;
     data: { product: newProductDto; store: Store };
     result: boolean;
+  };
+  [JOB_TYPES.GET_PRODUCT_TYPE_NAMES]: {
+    queue: typeof QUEUES.PRODUCTS;
+    data: { level: number };
+    result: string[];
   };
   [JOB_TYPES.GET_PRODUCT_TYPES]: {
     queue: typeof QUEUES.PRODUCTS;
@@ -169,6 +175,7 @@ export const jobToQueueMap: { [K in JobType]: QueueName } = {
   [JOB_TYPES.CONFIGURE_WEBHOOKS]: QUEUES.CONFIGURE,
   [JOB_TYPES.SYNC_PRODUCTS]: QUEUES.PRODUCTS,
   [JOB_TYPES.CREATE_PRODUCT]: QUEUES.PRODUCTS,
+  [JOB_TYPES.GET_PRODUCT_TYPE_NAMES]: QUEUES.PRODUCTS,
   [JOB_TYPES.GET_PRODUCT_TYPES]: QUEUES.PRODUCTS,
   [JOB_TYPES.GET_PRODUCT_TYPES_DB]: QUEUES.PRODUCTS,
   [JOB_TYPES.SYNC_PRODUCT_TYPES]: QUEUES.PRODUCTS,

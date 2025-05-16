@@ -7,7 +7,6 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 // Load environment variables from the appropriate .env file
 const nodeEnv = process.env.NODE_ENV ?? '';
-console.log(nodeEnv);
 const envPath = path.resolve(
   process.cwd(),
   `.env${nodeEnv == 'production' || nodeEnv == '' ? '' : '.'}${nodeEnv != 'production' ? nodeEnv : ''}`,
@@ -16,16 +15,16 @@ console.log(envPath);
 config({ path: envPath });
 
 const configObject = configuration();
-
+console.log(__dirname);
 export const dataSourceOptions: DataSourceOptions = {
-  type: configObject.database.type as any,
-  host: configObject.database.host as string,
-  port: configObject.database.port as number,
-  username: configObject.database.username as string,
+  type: configObject.database.type,
+  host: configObject.database.host,
+  port: configObject.database.port,
+  username: configObject.database.username,
   password: configObject.database.password as any,
-  database: configObject.database.name as string,
+  database: configObject.database.name,
   entities: [path.join(__dirname, '..', 'database', 'entities', '*.entity.{ts,js}')],
-  migrations: [path.join(__dirname, '..', 'database', 'migrations', '*-migration.{ts,js}')],
+  migrations: [path.join(__dirname, '..', 'database', 'migrations', '*.{ts,js}')],
   synchronize: configObject.database.synchronize,
   //logging: configObject.database.logging === 'true',
 };
@@ -37,16 +36,16 @@ export default AppDataSource;
 // For App Module
 export const moduleOptions = async (configService: ConfigService): Promise<TypeOrmModuleOptions> => {
   return {
-    type: configService.get('database.type') as any,
+    type: configService.get<any>('database.type'),
     host: configService.get<string>('database.host'),
     port: configService.get<number>('database.port'),
     username: configService.get<string>('database.username'),
-    password: configService.get('database.password'),
+    password: configService.get<string>('database.password'),
     database: configService.get<string>('database.name'),
     entities: [path.join(__dirname, '..', 'database', 'entities', '*.entity.{ts,js}')],
 
     autoLoadEntities: configService.get<boolean>('database.autoload'),
-    migrations: [path.join(__dirname, '..', 'database', 'migrations', '*-migration.{ts,js}')],
+    migrations: [path.join(__dirname, '..', 'database', 'migrations', '*.{ts,js}')],
 
     synchronize: configService.get<boolean>('database.synchronize'),
     logging: configService.get<boolean>('database.logging') === true,
