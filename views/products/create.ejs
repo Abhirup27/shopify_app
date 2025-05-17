@@ -54,32 +54,13 @@
                                     <label for="product-type-level1" class="form-label">Product Category (required)</label>
                                     <select class="form-select" id="product-type-level1" name="product_type_1" required>
                                         <option value="" selected disabled>Select Category Level 1</option>
-                                        <option value="Animals & Pet Supplies">Animals & Pet Supplies</option>
-                                        <option value="Apparel & Accessories">Apparel & Accessories</option>
-                                        <option value="Arts & Entertainment">Arts & Entertainment</option>
-                                        <option value="Baby & Toddler">Baby & Toddler</option>
-                                        <option value="Business & Industrial">Business & Industrial</option>
-                                        <option value="Cameras & Optics">Cameras & Optics</option>
-                                        <option value="Electronics">Electronics</option>
-                                        <option value="Food, Beverages & Tobacco">Food, Beverages & Tobacco</option>
-                                        <option value="Furniture">Furniture</option>
-                                        <option value="Gift Cards">Gift Cards</option>
-                                        <option value="Hardware">Hardware</option>
-                                        <option value="Health & Beauty">Health & Beauty</option>
-                                        <option value="Home & Garden">Home & Garden</option>
-                                        <option value="Luggage & Bags">Luggage & Bags</option>
-                                        <option value="Mature">Mature</option>
-                                        <option value="Media">Media</option>
-                                        <option value="Office Supplies">Office Supplies</option>
-                                        <option value="Product Add-Ons">Product Add-Ons</option>
-                                        <option value="Religious & Ceremonial">Religious & Ceremonial</option>
-                                        <option value="Services">Services</option>
-                                        <option value="Software">Software</option>
-                                        <option value="Sporting Goods">Sporting Goods</option>
-                                        <option value="Toys & Games">Toys & Games</option>
-                                        <option value="Uncategorized">Uncategorized</option>
-                                        <option value="Vehicles & Parts">Vehicles & Parts</option>
+                                        <% if (typeof productTypes !== 'undefined') { %>
+                                            <% Object.entries(productTypes).forEach(([id, name]) => { %>
+                                            <option value = "<%= id %>"> <%= name %></option>
+                                            <% }); %>
+                                        <% } %>
                                     </select>
+                                    <input type="hidden" name="product_type_1_name" id="product-type-level1-name">
                                 </div>
                                 
                                 <div class="col-md-12 mb-3">
@@ -88,6 +69,7 @@
                                         <option value="" selected disabled>Select Category Level 2</option>
                                         <!-- Level 2 options will be populated by JavaScript -->
                                     </select>
+                                    <input type="hidden" name="product_type_2_name" id="product-type-level2-name">
                                 </div>
                                 
                                 <div class="col-md-12">
@@ -96,10 +78,11 @@
                                         <option value="" selected disabled>Select Category Level 3</option>
                                         <!-- Level 3 options will be populated by JavaScript -->
                                     </select>
+                                    <input type="hidden" name="product_type_3_name" id="product-type-level3-name">
                                 </div>
                                 
-                                <!-- Hidden field to store the final product type -->
-                               <!-- <input type="hidden" name="product_type" id="product_type_field"> -->
+                                <!-- Hidden field to store the full product type path -->
+                                <input type="hidden" name="product_type" id="product_type_field">
                             </div>
                         </div>
                         
@@ -138,44 +121,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Shopify category hierarchy
-    const categoryHierarchy = {
-        "Animals & Pet Supplies": ["Pet Supplies", "Live Animals"],
-        "Apparel & Accessories": ["Clothing", "Clothing Accessories", "Costumes & Accessories", "Jewelry", "Shoes"],
-        "Arts & Entertainment": ["Event Tickets", "Hobbies & Creative Arts", "Party & Celebration"],
-        "Baby & Toddler": ["Baby Accessories", "Baby Food", "Baby Furniture", "Baby Safety", "Baby Toys"],
-        "Business & Industrial": ["Agriculture", "Construction", "Industrial Supplies", "Medical", "Office"],
-        "Cameras & Optics": ["Cameras", "Photography", "Optics", "Camera Accessories"],
-        "Electronics": ["Audio", "Video", "Computers", "Electronics Accessories", "Networking"],
-        "Food, Beverages & Tobacco": ["Food", "Beverages", "Tobacco Products"],
-        "Furniture": ["Bedroom", "Living Room", "Kitchen", "Office", "Outdoor"],
-        "Gift Cards": ["Gift Cards", "Prepaid Cards"],
-        "Hardware": ["Building Materials", "Hardware Accessories", "Tools"],
-        "Health & Beauty": ["Beauty Products", "Personal Care", "Health Care"],
-        "Home & Garden": ["Home Decor", "Household Supplies", "Kitchen & Dining", "Lawn & Garden"],
-        "Luggage & Bags": ["Backpacks", "Briefcases", "Handbags", "Luggage", "Wallets"],
-        "Mature": ["Adult", "Weapons & Hunting"],
-        "Media": ["Books", "Digital Content", "Electronics Media", "Magazines & Newspapers", "Music", "Videos"],
-        "Office Supplies": ["Office Equipment", "Office Furniture", "Office Supplies"],
-        "Product Add-Ons": ["Product Warranties", "Product Bundles"],
-        "Religious & Ceremonial": ["Memorial Items", "Religious Items", "Wedding Ceremony"],
-        "Services": ["Business Services", "Education", "Entertainment", "Financial Services"],
-        "Software": ["Computer Software", "Mobile Apps", "Video Game Software"],
-        "Sporting Goods": ["Athletics", "Exercise & Fitness", "Indoor Games", "Outdoor Recreation"],
-        "Toys & Games": ["Baby Toys", "Board Games", "Dolls & Figures", "Puzzles", "Video Games"],
-        "Uncategorized": ["Miscellaneous"],
-        "Vehicles & Parts": ["Vehicle Parts & Accessories", "Vehicles"]
-    };
-    
-    // Level 3 categories - specific to the "Media > Books" path
-    const level3Categories = {
-        "Books": ["Audiobooks", "E-Books", "Print Books"],
-        "Magazines & Newspapers": ["Digital Magazines", "Print Magazines", "Newspapers"],
-        "Music": ["Digital Music", "Music Albums", "Sheet Music"],
-        "Videos": ["Movies", "TV Shows", "Online Videos"]
-        // Add other Level 2 > Level 3 mappings as needed
-    };
-    
     // Function to add a new variant row
     function addVariantRow() {
         // Get the current number of variants
@@ -291,31 +236,58 @@ document.addEventListener('DOMContentLoaded', function () {
     const level1Select = document.getElementById('product-type-level1');
     const level2Select = document.getElementById('product-type-level2');
     const level3Select = document.getElementById('product-type-level3');
-    //const productTypeField = document.getElementById('product_type_field');
+    const productTypeField = document.getElementById('product_type_field');
+    
+    const level1NameField = document.getElementById('product-type-level1-name');
+    const level2NameField = document.getElementById('product-type-level2-name');
+    const level3NameField = document.getElementById('product-type-level3-name');
     
     // When Level 1 category changes
     level1Select.addEventListener('change', function(e) {
-        const selectedLevel1 = this.value;
+        const selectedLevel1Id = this.value;
+        const selectedLevel1Name = this.options[this.selectedIndex].text;
+        
+        // Store the selected level 1 name
+        level1NameField.value = selectedLevel1Name;
         
         // Clear and disable Level 3
         level3Select.innerHTML = '<option value="" selected disabled>Select Category Level 3</option>';
         level3Select.disabled = true;
+        level3NameField.value = '';
         
         // Clear and update Level 2
         level2Select.innerHTML = '<option value="" selected disabled>Select Category Level 2</option>';
+        level2Select.disabled = true;
+        level2NameField.value = '';
         
-        if (selectedLevel1 && categoryHierarchy[selectedLevel1]) {
-            // Add Level 2 options
-            categoryHierarchy[selectedLevel1].forEach(level2Category => {
-                const option = document.createElement('option');
-                option.value = level2Category;
-                option.textContent = level2Category;
-                level2Select.appendChild(option);
+        if (selectedLevel1Id) {
+            // Make AJAX request to get level 2 categories
+            let id = selectedLevel1Id.split('/').pop();
+            fetch(`/product-categories/children/${id}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data != undefined) {
+                    // Add Level 2 options
+                    Object.entries(data).forEach(([id, name]) => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = name;
+                    level2Select.appendChild(option);
+                    });
+                    level2Select.disabled = false;
+                }
+                
+                // Update product type field
+                updateProductTypeField();
+            })
+            .catch(error => {
+                console.error('Error fetching level 2 categories:', error);
             });
-            
-            level2Select.disabled = false;
-        } else {
-            level2Select.disabled = true;
         }
         
         // Update product type field
@@ -324,23 +296,48 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // When Level 2 category changes
     level2Select.addEventListener('change', function(e) {
-        const selectedLevel2 = this.value;
+        const selectedLevel2Id = this.value;
+        const selectedLevel2Name = this.options[this.selectedIndex].text;
+        
+        // Store the selected level 2 name
+        level2NameField.value = selectedLevel2Name;
         
         // Clear and update Level 3
         level3Select.innerHTML = '<option value="" selected disabled>Select Category Level 3</option>';
+        level3Select.disabled = true;
+        level3NameField.value = '';
         
-        if (selectedLevel2 && level3Categories[selectedLevel2]) {
-            // Add Level 3 options
-            level3Categories[selectedLevel2].forEach(level3Category => {
-                const option = document.createElement('option');
-                option.value = level3Category;
-                option.textContent = level3Category;
-                level3Select.appendChild(option);
+        if (selectedLevel2Id) {
+        let id = selectedLevel2Id.split('/').pop();
+        
+           // Make AJAX request to get level 3 categories
+            fetch(`/product-categories/children/${id}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (Array.isArray(Object.entries(data))  && Object.entries(data).length > 0) {
+                    // Add Level 3 options
+                    Object.entries(data).forEach(([id, name]) => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = name;
+                    level3Select.appendChild(option);
+                    });
+
+                    
+                    level3Select.disabled = false;
+                }
+                
+                // Update product type field
+                updateProductTypeField();
+            })
+            .catch(error => {
+                console.error('Error fetching level 3 categories:', error);
             });
-            
-            level3Select.disabled = false;
-        } else {
-            level3Select.disabled = true;
         }
         
         // Update product type field
@@ -349,32 +346,37 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // When Level 3 category changes
     level3Select.addEventListener('change', function(e) {
+        // Store the selected level 3 name
+        if (this.selectedIndex > 0) {
+            level3NameField.value = this.options[this.selectedIndex].text;
+        } else {
+            level3NameField.value = '';
+        }
+        
         // Update product type field
         updateProductTypeField();
     });
-   
-   /**
+    
     // Update the hidden product_type field with the full category path
     function updateProductTypeField() {
-        const level1 = level1Select.value || '';
-        const level2 = level2Select.value || '';
-        const level3 = level3Select.value || '';
+        const level1Name = level1NameField.value || '';
+        const level2Name = level2NameField.value || '';
+        const level3Name = level3NameField.value || '';
         
         let productType = '';
         
-        if (level1) {
-            productType = level1;
-            if (level2) {
-                productType += ' > ' + level2;
-                if (level3) {
-                    productType += ' > ' + level3;
+        if (level1Name) {
+            productType = level1Name;
+            if (level2Name) {
+                productType += ' > ' + level2Name;
+                if (level3Name) {
+                    productType += ' > ' + level3Name;
                 }
             }
         }
         
         productTypeField.value = productType;
     }
-    */
 
     // Form submission handler
     document.getElementById('productForm').addEventListener('submit', function(e) {
@@ -446,7 +448,6 @@ document.addEventListener('DOMContentLoaded', function () {
             
             syncLocationsBtn.innerHTML = 'Syncing...';
             syncLocationsBtn.disabled = true;
-            console.log(this.href); 
             
             fetch(this.href, {
                 headers: {

@@ -211,6 +211,9 @@ export class ProductsConsumer extends WorkerHost {
   private getProductTypes = async (
     data: JobRegistry[typeof JOB_TYPES.GET_PRODUCT_TYPES]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.GET_PRODUCT_TYPES]['result']> => {
+    if (data.id != null) {
+      return await this.cacheService.getMap(data.id);
+    }
     const result = await this.cacheService.getMap('product-types');
 
     /* if(result == undefined || result == null ){
@@ -323,10 +326,11 @@ export class ProductsConsumer extends WorkerHost {
       productTypes = this.productTypesRepository.create(productTypes);
       productTypes = await this.productTypesRepository.save(productTypes);
 
-      const productMap: Map<string, string> = new Map<string, string>();
+      const productlevel1Map: Map<string, string> = new Map<string, string>();
 
       for (const data of response.respBody['data']['taxonomy']['categories']['nodes']) {
         //        childrenIds.push(...data['childrenIds']);
+        productlevel1Map.set(data.id, data.name);
 
         if (data['isLeaf'] == false) {
           options.data = this.getChildrenPayload(data['id']);
@@ -336,14 +340,19 @@ export class ProductsConsumer extends WorkerHost {
           productTypes = this.productTypesRepository.create(productTypes);
           productTypes = await this.productTypesRepository.save(productTypes);
           //    console.log(res.respBody['data']['taxonomy']['categories']['nodes']);
-
-          productMap.set(data.id, data.fullName);
+          const currentProduct = data.id;
+          const currentProductMap: Map<string, string> = new Map<string, string>();
+          //productMap.set(data.id, data.fullName);
           for (const data of res.respBody['data']['taxonomy']['categories']['nodes']) {
-            productMap.set(data.id, data.fullName);
+            currentProductMap.set(data.id, data.fullName);
+
             if (data['isLeaf'] == false) {
               options.data = this.getChildrenPayload(data['id']);
 
               const res = await this.utilsService.requestToShopify<ProductTypesResponse>('post', options);
+
+              const currentlevel2Product = data.id;
+              const currentlevel2ProductMap = new Map<string, string>();
 
               productTypes = res.respBody.data.taxonomy.categories.nodes;
               console.log(res.respBody.data.taxonomy.categories.nodes);
@@ -352,15 +361,17 @@ export class ProductsConsumer extends WorkerHost {
               productTypes = await this.productTypesRepository.save(productTypes);
 
               for (const data of res.respBody.data.taxonomy.categories.nodes) {
-                productMap.set(data.id, data.fullName);
+                currentlevel2ProductMap.set(data.id, data.fullName);
               }
+              this.cacheService.storeMap(currentlevel2Product, currentlevel2ProductMap);
             }
           }
+          this.cacheService.storeMap(currentProduct, currentProductMap);
         }
       }
       //console.log(childrenIds);
 
-      this.cacheService.storeMap('product-types', productMap);
+      this.cacheService.storeMap('product-types', productlevel1Map);
       //return productTypes;
     } catch (error) {
       this.logger.error(error, this.syncProductTypes.name);

@@ -16,6 +16,7 @@ import * as crypto from 'crypto';
 import { Response } from 'express';
 import { newProductDto } from './dtos/new-product.dto';
 import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
+import { ProductType } from 'src/database/entities/productType.entity';
 
 @Injectable()
 export class WebAppService {
@@ -34,12 +35,12 @@ export class WebAppService {
       this.logger.error(error, this.syncProductTypes.name);
     }
   }
-  public async printProductTypes() {
+
+  public async getSubCategories(id: string) {
     try {
-      const result = await this.jobsService.getProductTypes();
-      console.log(result);
+      return await this.jobsService.getProductTypes('gid://shopify/TaxonomyCategory/' + id);
     } catch (error) {
-      this.logger.error(error, this.printProductTypes.name);
+      this.logger.error(error);
     }
   }
   public getSuperDashboardPayload = async (user: UserDto): Promise<object> => {
@@ -299,7 +300,8 @@ status: 'Approved',
     let payload: object = {};
     try {
       const locations: StoreLocations[] = await this.jobsService.getStoreLocations(user.store_id);
-      const level_one_categories: string[] = await this.jobsService.getProductTypesNames(1);
+      const level_one_categories: Record<string, string> = await this.jobsService.getProductTypes();
+      //console.log(level_one_categories);
       payload = {
         storeId: user.store_id,
         locations: locations,
@@ -310,6 +312,7 @@ status: 'Approved',
         style: '',
         appName: 'Shopify App',
         body: '',
+        productTypes: level_one_categories,
       };
     } catch (error) {
       this.logger.error(error.message, this.createProductPagePayload.name);

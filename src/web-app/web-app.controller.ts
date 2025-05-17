@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Inject,
   Logger,
+  Param,
   Post,
   Query,
   Render,
@@ -46,7 +47,6 @@ export class WebAppController {
   @Get('taxonomy')
   public async testTaxonomy(@Req() req: Request, @CurrentUser() user: UserDto) {
     await this.webAppService.syncProductTypes(user.store);
-    this.webAppService.printProductTypes();
   }
   @Public()
   @Get()
@@ -167,6 +167,11 @@ export class WebAppController {
       this.logger.error(error.message, this.createProductPage.name);
     }
   }
+  @Get('/product-categories/children/:id')
+  public async getSubCaregories(@Param('id') id: string) {
+    return this.webAppService.getSubCategories(id);
+  }
+
   @Get('/syncOrders')
   public async syncOrders(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query) {
     if (user.hasRole(SUPER_ADMIN) || user.hasRole(ADMIN) || user.can(['write_orders'])) {
@@ -256,7 +261,6 @@ export class WebAppController {
     @Body() product: newProductDto,
   ) {
     try {
-      console.log('here');
       if (user.can(['all_access', 'write_products'])) {
         const result: boolean = await this.webAppService.createProduct(user, product);
       }

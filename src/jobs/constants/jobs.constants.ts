@@ -73,7 +73,7 @@ export type JobRegistry = {
   };
   [JOB_TYPES.GET_PRODUCT_TYPES]: {
     queue: typeof QUEUES.PRODUCTS;
-    data: unknown;
+    data: { id?: string | null };
     result: Record<string, string>;
   };
   [JOB_TYPES.GET_PRODUCT_TYPES_DB]: {
