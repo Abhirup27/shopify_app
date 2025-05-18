@@ -79,20 +79,23 @@ export class JobsService {
   public syncOrders = async (store: Store) => await this.addJob(JOB_TYPES.SYNC_ORDERS, { store: store });
   public getOrders = async (store: number) => await this.addJob(JOB_TYPES.GET_ORDERS, { storeId: store });
   public getOrder = async (orderId: number) => await this.addJob(JOB_TYPES.GET_ORDER, { orderId: orderId });
-  public syncCustomers = (store: Store) => this.addJob(JOB_TYPES.SYNC_CUSTOMERS, { store: store });
-  public getCustomers = (store: number) => this.addJob(JOB_TYPES.GET_CUSTOMERS, { storeId: store });
-  public getStore = (storeId: number) => this.addJob(JOB_TYPES.GET_STORE, { storeId: storeId });
-  public updateStoreToken = (store: Store, accessToken: string) =>
-    this.addJob(JOB_TYPES.UPDATE_STORE_TOKEN, { store: store, accessToken: accessToken });
-  public syncStoreLocations = (store: number | Store) => this.addJob(JOB_TYPES.SYNC_STORE_LOCATIONS, { store: store });
-  public getStoreLocations = (storeId: number) => this.addJob(JOB_TYPES.GET_STORE_LOCATIONS, { storeId: storeId });
-  public getMembers = (storeId: number) => this.addJob(JOB_TYPES.GET_USERS, { storeId: storeId });
-  public createMember = (newMember: RegisterUserDto, storeId: number) =>
-    this.addJob(JOB_TYPES.CREATE_USER, { user: newMember, storeId: storeId });
-  public createProduct = (store: Store, product: newProductDto) =>
-    this.addJob(JOB_TYPES.CREATE_PRODUCT, { product: product, store: store });
+  public syncCustomers = async (store: Store) => await this.addJob(JOB_TYPES.SYNC_CUSTOMERS, { store: store });
+  public getCustomers = async (store: number) => this.addJob(JOB_TYPES.GET_CUSTOMERS, { storeId: store });
+  public getStore = async (storeId: number) => this.addJob(JOB_TYPES.GET_STORE, { storeId: storeId });
+  public updateStoreToken = async (store: Store, accessToken: string) =>
+    await this.addJob(JOB_TYPES.UPDATE_STORE_TOKEN, { store: store, accessToken: accessToken });
+  public syncStoreLocations = async (store: number | Store) =>
+    await this.addJob(JOB_TYPES.SYNC_STORE_LOCATIONS, { store: store });
+  public getStoreLocations = async (storeId: number) =>
+    await this.addJob(JOB_TYPES.GET_STORE_LOCATIONS, { storeId: storeId });
+  public getMembers = async (storeId: number) => await this.addJob(JOB_TYPES.GET_USERS, { storeId: storeId });
+  public createMember = async (newMember: RegisterUserDto, storeId: number) =>
+    await this.addJob(JOB_TYPES.CREATE_USER, { user: newMember, storeId: storeId });
+  public createProduct = async (store: Store, product: newProductDto) =>
+    await this.addJob(JOB_TYPES.CREATE_PRODUCT, { product: product, store: store });
 
-  public syncProductTypes = (store: Store) => this.addJob(JOB_TYPES.SYNC_PRODUCT_TYPES, { store: store });
-  public getProductTypes = (id?: string) => this.addJob(JOB_TYPES.GET_PRODUCT_TYPES, { id: id });
-  public getProductTypesNames = (level: number) => this.addJob(JOB_TYPES.GET_PRODUCT_TYPE_NAMES, { level: level });
+  public syncProductTypes = async (store: Store) => await this.addJob(JOB_TYPES.SYNC_PRODUCT_TYPES, { store: store });
+  public getProductTypes = async (id?: string) => await this.addJob(JOB_TYPES.GET_PRODUCT_TYPES, { id: id });
+  public getProductTypesNames = async (level: number) =>
+    await this.addJob(JOB_TYPES.GET_PRODUCT_TYPE_NAMES, { level: level });
 }

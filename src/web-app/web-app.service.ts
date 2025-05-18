@@ -354,6 +354,7 @@ status: 'Approved',
   };
 
   public createProduct = async (user: UserDto, product: newProductDto): Promise<boolean> => {
+    console.log(product.product_type_1, product.product_type_2, product.product_type_3);
     const result = await this.jobsService.createProduct(user.store, product);
 
     return true;

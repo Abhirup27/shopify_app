@@ -130,7 +130,7 @@ type OrderJobs = {
   [K in OrderJobNames]: Job<JobRegistry[K]['data'], JobRegistry[K]['result']> & { name: K };
 }[OrderJobNames];
 
-@Processor(QUEUES.ORDERS)
+@Processor(QUEUES.ORDERS, { concurrency: 10 })
 export class OrdersConsumer extends WorkerHost {
   private readonly logger = new Logger(OrdersConsumer.name);
 

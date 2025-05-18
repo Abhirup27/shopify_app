@@ -23,7 +23,7 @@ type CustomersJobNames = typeof JOB_TYPES.SYNC_CUSTOMERS | typeof JOB_TYPES.GET_
 type CustomerQueueJob = {
   [K in CustomersJobNames]: Job<JobRegistry[K]['data'], JobRegistry[K]['result']> & { name: K };
 }[CustomersJobNames];
-@Processor(QUEUES.CUSTOMERS)
+@Processor(QUEUES.CUSTOMERS, { concurrency: 10 })
 export class CustomersConsumer extends WorkerHost {
   private readonly logger = new Logger(CustomersConsumer.name);
 

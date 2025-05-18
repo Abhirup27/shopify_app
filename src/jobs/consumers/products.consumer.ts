@@ -50,7 +50,7 @@ type ProductsQueueJob = {
   [K in ProductsQueueJobName]: Job<JobRegistry[K]['data'], JobRegistry[K]['result']> & { name: K };
 }[ProductsQueueJobName];
 
-@Processor(QUEUES.PRODUCTS)
+@Processor(QUEUES.PRODUCTS, { concurrency: 10 })
 export class ProductsConsumer extends WorkerHost {
   private readonly logger = new Logger(ProductsConsumer.name);
 
@@ -216,11 +216,6 @@ export class ProductsConsumer extends WorkerHost {
     }
     const result = await this.cacheService.getMap('product-types');
 
-    /* if(result == undefined || result == null ){
-       result = 
- 
-     } */
-
     return result;
   };
   private getProductTypesFromDB = async (): Promise<ProductType[]> => {
@@ -228,71 +223,36 @@ export class ProductsConsumer extends WorkerHost {
 
     return result;
   };
-  private getChildrenPayload(id: string): { query: string } {
+
+  private getTaxonomyPayload(id?: string): { query: string } {
+    const categoriesParams = id ? `categories(first: 250, childrenOf: "${id}")` : `categories(first: 250)`;
+
     const query = `{
-
-      taxonomy{
-          categories( first:250, childrenOf:"${id}") {
-            nodes{
-              id
-              fullName
-              name
-              isRoot
-              level
-              isLeaf
-              childrenIds
-              parentId
-              
-              }
-                pageInfo {
-                hasNextPage
-                endCursor
-                hasPreviousPage
-                startCursor
-                }
-
-          }
+    taxonomy {
+      ${categoriesParams} {
+        nodes {
+          id
+          fullName
+          name
+          isRoot
+          level
+          isLeaf
+          childrenIds
+          parentId
         }
-    }`;
+        pageInfo {
+          hasNextPage
+          endCursor
+          hasPreviousPage
+          startCursor
+        }
+      }
+    }
+  }`;
 
     return { query };
   }
 
-  private getTaxonomyPayload(): { query: string } {
-    const query = `{
-
-      taxonomy{
-          categories( first:250) {
-            edges{
-              node {
-
-                fullName
-                id
-              }
-            }
-            nodes{
-              id
-              fullName
-              name
-              isRoot
-              level
-              isLeaf
-              childrenIds
-              parentId
-            }
-                pageInfo {
-                hasNextPage
-                endCursor
-                hasPreviousPage
-                startCursor
-                }
-
-          }
-        }
-    }`;
-
-    return { query };
-  }
   private getProductTypeUpdated = async (tableName: string = 'product_type'): Promise<Date | null> => {
     const result = await this.entityManager.query(`SELECT last_updated FROM table_metadata WHERE table_name = $1`, [
       tableName,
@@ -300,83 +260,64 @@ export class ProductsConsumer extends WorkerHost {
 
     return result.length > 0 ? result[0].last_updated : null;
   };
+
   private syncProductTypes = async (
     data: JobRegistry[typeof JOB_TYPES.SYNC_PRODUCT_TYPES]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.SYNC_PRODUCT_TYPES]['result']> => {
     try {
-      //we check if the product categories has been synced in the last 30 minutes, if yes, don't sync again
+      // Check if the product categories have been synced in the last 30 minutes
       const lastUpdated = await this.getProductTypeUpdated();
       console.log(lastUpdated);
       const minutes = lastUpdated !== null ? new Date().getTime() - lastUpdated.getTime() : null;
-      console.log(minutes);
-
-      if (minutes != null) {
-        if (minutes / (1000 * 60) < 30) {
-          return;
-        }
+      if (minutes != null && minutes / (1000 * 60) < 30) {
+        // return;
       }
+
       const options: ShopifyRequestOptions = {
         url: this.utilsService.getShopifyURLForStore('graphql.json', data.store),
         headers: this.utilsService.getGraphQLHeadersForStore(data.store),
       };
-      options.data = this.getTaxonomyPayload();
-      const response = await this.utilsService.requestToShopify<ProductTypesResponse>('post', options);
 
-      let productTypes = response.respBody['data']['taxonomy']['categories']['nodes'];
-      productTypes = this.productTypesRepository.create(productTypes);
-      productTypes = await this.productTypesRepository.save(productTypes);
-
-      const productlevel1Map: Map<string, string> = new Map<string, string>();
-
-      for (const data of response.respBody['data']['taxonomy']['categories']['nodes']) {
-        //        childrenIds.push(...data['childrenIds']);
-        productlevel1Map.set(data.id, data.name);
-
-        if (data['isLeaf'] == false) {
-          options.data = this.getChildrenPayload(data['id']);
-          const res = await this.utilsService.requestToShopify<ProductTypesResponse>('post', options);
-
-          productTypes = res.respBody.data.taxonomy.categories.nodes;
-          productTypes = this.productTypesRepository.create(productTypes);
-          productTypes = await this.productTypesRepository.save(productTypes);
-          //    console.log(res.respBody['data']['taxonomy']['categories']['nodes']);
-          const currentProduct = data.id;
-          const currentProductMap: Map<string, string> = new Map<string, string>();
-          //productMap.set(data.id, data.fullName);
-          for (const data of res.respBody['data']['taxonomy']['categories']['nodes']) {
-            currentProductMap.set(data.id, data.fullName);
-
-            if (data['isLeaf'] == false) {
-              options.data = this.getChildrenPayload(data['id']);
-
-              const res = await this.utilsService.requestToShopify<ProductTypesResponse>('post', options);
-
-              const currentlevel2Product = data.id;
-              const currentlevel2ProductMap = new Map<string, string>();
-
-              productTypes = res.respBody.data.taxonomy.categories.nodes;
-              console.log(res.respBody.data.taxonomy.categories.nodes);
-
-              productTypes = this.productTypesRepository.create(productTypes);
-              productTypes = await this.productTypesRepository.save(productTypes);
-
-              for (const data of res.respBody.data.taxonomy.categories.nodes) {
-                currentlevel2ProductMap.set(data.id, data.fullName);
-              }
-              this.cacheService.storeMap(currentlevel2Product, currentlevel2ProductMap);
-            }
-          }
-          this.cacheService.storeMap(currentProduct, currentProductMap);
-        }
-      }
-      //console.log(childrenIds);
-
-      this.cacheService.storeMap('product-types', productlevel1Map);
-      //return productTypes;
+      await this.syncProductLevel(null, 'product-types', options);
     } catch (error) {
       this.logger.error(error, this.syncProductTypes.name);
     }
   };
+
+  private async syncProductLevel(
+    parentId: string | null,
+    cacheKey: string,
+    options: ShopifyRequestOptions,
+  ): Promise<void> {
+    try {
+      // Get sub product types for the parentId
+      options.data = this.getTaxonomyPayload(parentId);
+      const response = await this.utilsService.requestToShopify<ProductTypesResponse>('post', options);
+      let productTypes = response.respBody?.data?.taxonomy?.categories?.nodes || [];
+
+      if (!productTypes.length) return;
+
+      productTypes = this.productTypesRepository.create(productTypes);
+      productTypes = await this.productTypesRepository.save(productTypes);
+
+      const currentLevelMap = new Map<string, string>();
+
+      for (const product of productTypes) {
+        currentLevelMap.set(product.id, product.name);
+
+        // If this node has children (not a leaf), recursively process the next level
+        if (product.isLeaf === false) {
+          // product's ID as the cache key for its children
+          await this.syncProductLevel(product.id, product.id, options);
+        }
+      }
+
+      // Cache the map for the current level
+      await this.cacheService.storeMap(cacheKey, currentLevelMap);
+    } catch (error) {
+      this.logger.error(`Error syncing product level with parent ID ${parentId}: ${error}`, this.syncProductLevel.name);
+    }
+  }
 
   private checkProductTypeByName = async (
     data: JobRegistry[typeof JOB_TYPES.CHECK_PRODUCT_TYPE]['data'],

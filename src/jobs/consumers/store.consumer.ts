@@ -24,7 +24,7 @@ type StoreJobs = {
   [K in StoreJobNames]: Job<JobRegistry[K]['data'], JobRegistry[K]['result']> & { name: K };
 }[StoreJobNames];
 
-@Processor(QUEUES.STORES)
+@Processor(QUEUES.STORES, { concurrency: 10 })
 export class StoresConsumer extends WorkerHost {
   private readonly logger = new Logger(StoresConsumer.name);
 

@@ -47,61 +47,37 @@
                             </div>
                         </div>
                         
-                        <!-- Category Selection - Multi-level dropdowns -->
                         <div class="col-md-4">
-                            <div class="row">
-                                <div class="col-md-12 mb-3">
-                                    <label for="product-type-level1" class="form-label">Product Category (required)</label>
-                                    <select class="form-select" id="product-type-level1" name="product_type_1" required>
-                                        <option value="" selected disabled>Select Category Level 1</option>
-                                        <% if (typeof productTypes !== 'undefined') { %>
-                                            <% Object.entries(productTypes).forEach(([id, name]) => { %>
-                                            <option value = "<%= id %>"> <%= name %></option>
-                                            <% }); %>
-                                        <% } %>
-                                    </select>
-                                    <input type="hidden" name="product_type_1_name" id="product-type-level1-name">
-                                </div>
-                                
-                                <div class="col-md-12 mb-3">
-                                    <label for="product-type-level2" class="form-label">Sub Category (Optional)</label>
-                                    <select class="form-select" id="product-type-level2" name="product_type_2" disabled>
-                                        <option value="" selected disabled>Select Category Level 2</option>
-                                        <!-- Level 2 options will be populated by JavaScript -->
-                                    </select>
-                                    <input type="hidden" name="product_type_2_name" id="product-type-level2-name">
-                                </div>
-                                
-                                <div class="col-md-12">
-                                    <label for="product-type-level3" class="form-label">Sub Category (Optional)</label>
-                                    <select class="form-select" id="product-type-level3" name="product_type_3" disabled>
-                                        <option value="" selected disabled>Select Category Level 3</option>
-                                        <!-- Level 3 options will be populated by JavaScript -->
-                                    </select>
-                                    <input type="hidden" name="product_type_3_name" id="product-type-level3-name">
-                                </div>
-                                
-                                <!-- Hidden field to store the full product type path -->
-                                <input type="hidden" name="product_type" id="product_type_field">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" name="vendor" id="floatingVendor" placeholder="Vendor" required>
+                                <label for="floatingVendor">Vendor</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" name="tags" id="floatingCostPerItem" placeholder="Tags" required>
+                                <label for="floatingCostPerItem">Tags</label>
                             </div>
                         </div>
                         
-                        <div class="col-md-4">
-                            <div class="col-md-12">
-                                <div class="form-floating">
-                                    <input type="text" class="form-control" name="vendor" id="floatingVendor" placeholder="Vendor" required>
-                                    <label for="floatingVendor">Vendor</label>
+                        <!-- Category Selection - Dynamic categories -->
+                        <div class="col-md-12 mt-3">
+                            <div class="row" id="category-container">
+                                <div class="col-md-4">
+                                    <label for="product-category-0" class="form-label">Product Category (required)</label>
+                                    <select class="form-select product-category" id="product-category-0" name="product_type_1" data-level="0" required>
+                                        <option value="" selected disabled>Select Category</option>
+                                        <% if (typeof productTypes !== 'undefined') { %>
+                                            <% Object.entries(productTypes).forEach(([id, name]) => { %>
+                                            <option value="<%= id %>"><%= name %></option>
+                                            <% }); %>
+                                        <% } %>
+                                    </select>
                                 </div>
+                                <!-- Additional categories will be added dynamically here -->
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="col-md-12">
-                                <div class="form-floating">
-                                    <input type="text" class="form-control" name="tags" id="floatingCostPerItem" placeholder="Tags" required>
-                                    <label for="floatingCostPerItem">Tags</label>
-                                </div>
-                            </div>
-                        </div>
+                        
                         <div class="card-body row g-3" id="variantsRow">
                             <h5 class="card-title">Variant Details</h5>
                             <%- include('partials/add_variant', { count: 1 }) %>
@@ -169,7 +145,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Update the inventory inputs
             const inputs = inventorySection.querySelectorAll('input');
             inputs.forEach(input => {
-                const locationId = input.name.split('_')[0];
+                const locationId = input.name ? input.name.split('_')[0] : input.getAttribute('data-location');
                 input.setAttribute('data-location', locationId);
                 input.setAttribute('data-field', 'inventory');
                 input.className = 'form-control variant-field inventory-field';
@@ -232,156 +208,81 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Category selection logic
-    const level1Select = document.getElementById('product-type-level1');
-    const level2Select = document.getElementById('product-type-level2');
-    const level3Select = document.getElementById('product-type-level3');
-    const productTypeField = document.getElementById('product_type_field');
+    // Category selection logic - Dynamic and recursive
+    const categoryContainer = document.getElementById('category-container');
     
-    const level1NameField = document.getElementById('product-type-level1-name');
-    const level2NameField = document.getElementById('product-type-level2-name');
-    const level3NameField = document.getElementById('product-type-level3-name');
-    
-    // When Level 1 category changes
-    level1Select.addEventListener('change', function(e) {
-        const selectedLevel1Id = this.value;
-        const selectedLevel1Name = this.options[this.selectedIndex].text;
-        
-        // Store the selected level 1 name
-        level1NameField.value = selectedLevel1Name;
-        
-        // Clear and disable Level 3
-        level3Select.innerHTML = '<option value="" selected disabled>Select Category Level 3</option>';
-        level3Select.disabled = true;
-        level3NameField.value = '';
-        
-        // Clear and update Level 2
-        level2Select.innerHTML = '<option value="" selected disabled>Select Category Level 2</option>';
-        level2Select.disabled = true;
-        level2NameField.value = '';
-        
-        if (selectedLevel1Id) {
-            // Make AJAX request to get level 2 categories
-            let id = selectedLevel1Id.split('/').pop();
-            fetch(`/product-categories/children/${id}`, {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data != undefined) {
-                    // Add Level 2 options
-                    Object.entries(data).forEach(([id, name]) => {
-                    const option = document.createElement('option');
-                    option.value = id;
-                    option.textContent = name;
-                    level2Select.appendChild(option);
-                    });
-                    level2Select.disabled = false;
-                }
-                
-                // Update product type field
-                updateProductTypeField();
-            })
-            .catch(error => {
-                console.error('Error fetching level 2 categories:', error);
-            });
-        }
-        
-        // Update product type field
-        updateProductTypeField();
-    });
-    
-    // When Level 2 category changes
-    level2Select.addEventListener('change', function(e) {
-        const selectedLevel2Id = this.value;
-        const selectedLevel2Name = this.options[this.selectedIndex].text;
-        
-        // Store the selected level 2 name
-        level2NameField.value = selectedLevel2Name;
-        
-        // Clear and update Level 3
-        level3Select.innerHTML = '<option value="" selected disabled>Select Category Level 3</option>';
-        level3Select.disabled = true;
-        level3NameField.value = '';
-        
-        if (selectedLevel2Id) {
-        let id = selectedLevel2Id.split('/').pop();
-        
-           // Make AJAX request to get level 3 categories
-            fetch(`/product-categories/children/${id}`, {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (Array.isArray(Object.entries(data))  && Object.entries(data).length > 0) {
-                    // Add Level 3 options
-                    Object.entries(data).forEach(([id, name]) => {
-                    const option = document.createElement('option');
-                    option.value = id;
-                    option.textContent = name;
-                    level3Select.appendChild(option);
-                    });
-
-                    
-                    level3Select.disabled = false;
-                }
-                
-                // Update product type field
-                updateProductTypeField();
-            })
-            .catch(error => {
-                console.error('Error fetching level 3 categories:', error);
-            });
-        }
-        
-        // Update product type field
-        updateProductTypeField();
-    });
-    
-    // When Level 3 category changes
-    level3Select.addEventListener('change', function(e) {
-        // Store the selected level 3 name
-        if (this.selectedIndex > 0) {
-            level3NameField.value = this.options[this.selectedIndex].text;
-        } else {
-            level3NameField.value = '';
-        }
-        
-        // Update product type field
-        updateProductTypeField();
-    });
-    
-    // Update the hidden product_type field with the full category path
-    function updateProductTypeField() {
-        const level1Name = level1NameField.value || '';
-        const level2Name = level2NameField.value || '';
-        const level3Name = level3NameField.value || '';
-        
-        let productType = '';
-        
-        if (level1Name) {
-            productType = level1Name;
-            if (level2Name) {
-                productType += ' > ' + level2Name;
-                if (level3Name) {
-                    productType += ' > ' + level3Name;
-                }
+    // Remove all subcategory selects
+    function removeAllSubcategories(startLevel) {
+        const selects = categoryContainer.querySelectorAll('.product-category');
+        for (let i = 0; i < selects.length; i++) {
+            const select = selects[i];
+            const level = parseInt(select.getAttribute('data-level'));
+            if (level > startLevel) {
+                select.closest('.col-md-4').remove();
             }
         }
-        
-        productTypeField.value = productType;
     }
-
+    
+    // Function to create a new category dropdown
+    function createCategoryDropdown(level, id, name) {
+        const col = document.createElement('div');
+        col.className = 'col-md-4';
+        col.innerHTML = `
+            <label for="product-category-${level}" class="form-label">Subcategory (Optional)</label>
+            <select class="form-select product-category" id="product-category-${level}" name="product_type_${level + 1}" data-level="${level}" data-parent="${id}">
+                <option value="" selected disabled>Select Subcategory</option>
+            </select>
+        `;
+        return col;
+    }
+    
+    // Handle category change event
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.classList.contains('product-category')) {
+            const selectedId = e.target.value;
+            const level = parseInt(e.target.getAttribute('data-level'));
+            
+            // Remove all existing subcategories of higher levels
+            removeAllSubcategories(level);
+            
+            if (selectedId) {
+                // Extract ID from the selected value if needed
+                let id = selectedId.split('/').pop();
+                
+                // Make AJAX request to get subcategories
+                fetch(`/product-categories/children/${id}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data && Object.entries(data).length > 0) {
+                        // Create a new category dropdown for the next level
+                        const newLevel = level + 1;
+                        const newDropdown = createCategoryDropdown(newLevel, id, e.target.options[e.target.selectedIndex].text);
+                        categoryContainer.appendChild(newDropdown);
+                        
+                        // Add options to the new dropdown
+                        const select = document.getElementById(`product-category-${newLevel}`);
+                        Object.entries(data).forEach(([id, name]) => {
+                            const option = document.createElement('option');
+                            option.value = id;
+                            option.textContent = name;
+                            select.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error(`Error fetching subcategories for level ${level + 1}:`, error);
+                });
+            }
+        }
+    });
+    
     // Form submission handler
     document.getElementById('productForm').addEventListener('submit', function(e) {
-        // Make sure the product type is set before submitting
-        updateProductTypeField();
         
         // Don't prevent default, we'll let the form submit naturally
         // But we need to transform our variant fields into the expected format
@@ -389,6 +290,28 @@ document.addEventListener('DOMContentLoaded', function () {
         // First remove any previously added hidden inputs to avoid duplicates
         const existingInputs = document.querySelectorAll('input[name^="variants["]');
         existingInputs.forEach(input => input.remove());
+        
+        // Process category selections into a proper product_type concatenated string
+        const categorySelects = document.querySelectorAll('.product-category');
+        let selectedCategories = [];
+        
+        categorySelects.forEach(select => {
+            if (select.value) {
+                const selectedOption = select.options[select.selectedIndex];
+                if (selectedOption) {
+                    selectedCategories.push(selectedOption.textContent.trim());
+                }
+            }
+        });
+        
+        // Add the concatenated category path as a hidden input
+        if (selectedCategories.length > 0) {
+            const productTypePath = document.createElement('input');
+            productTypePath.type = 'hidden';
+            productTypePath.name = 'product_type_path';
+            productTypePath.value = selectedCategories.join(' > ');
+            this.appendChild(productTypePath);
+        }
         
         // Get all variants containers
         const variantContainers = document.querySelectorAll('#variantsRow .pb-4');

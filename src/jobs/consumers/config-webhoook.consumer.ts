@@ -16,7 +16,7 @@ type ConfigureJobNames = typeof JOB_TYPES.CONFIGURE_WEBHOOKS;
 type ConfigureJobs = {
   [K in ConfigureJobNames]: Job<JobRegistry[K]['data'], JobRegistry[K]['result']> & { name: K };
 }[ConfigureJobNames];
-@Processor(QUEUES.CONFIGURE)
+@Processor(QUEUES.CONFIGURE, { concurrency: 10 })
 export class ConfigWebhookConsumer extends WorkerHost {
   constructor(
     private readonly configService: ConfigService,

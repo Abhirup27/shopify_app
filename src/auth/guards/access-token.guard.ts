@@ -23,7 +23,7 @@ export class AccessTokenGuard implements CanActivate {
   ) {}
 
   private extractToken = (request: Request): string | undefined => {
-    console.log(request.body);
+    // console.log(request.body);
 
     const [_, token] = request.headers.authorization?.split(' ') ?? [];
     return token;
