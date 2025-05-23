@@ -43,6 +43,7 @@ type ProductsQueueJobName =
   | typeof JOB_TYPES.GET_PRODUCT_TYPES
   | typeof JOB_TYPES.GET_PRODUCT_TYPES_DB
   | typeof JOB_TYPES.SYNC_PRODUCT_TYPES
+  | typeof JOB_TYPES.CACHE_PRODUCT_TYPES
   | typeof JOB_TYPES.CHECK_PRODUCT_TYPE;
 
 // Create union type of Job objects for these jobs
@@ -83,6 +84,8 @@ export class ProductsConsumer extends WorkerHost {
           return await this.getProductTypesFromDB();
         case JOB_TYPES.SYNC_PRODUCT_TYPES:
           return await this.syncProductTypes(job.data);
+        case JOB_TYPES.CACHE_PRODUCT_TYPES:
+          return await this.cacheProductTypes();
         case JOB_TYPES.CHECK_PRODUCT_TYPE:
           return await this.checkProductTypeByName(job.data);
         default:
@@ -252,7 +255,52 @@ export class ProductsConsumer extends WorkerHost {
 
     return { query };
   }
+  private async cacheProductTypes(parentId: string | null = '', cacheKey: string = 'product-types'): Promise<void> {
+    try {
+      // Stack to store work items: [parentId, cacheKey]
+      const stack: Array<{
+        parentId: string | null;
+        cacheKey: string;
+      }> = [];
 
+      // Initialize stack with the starting parameters
+      stack.push({ parentId, cacheKey });
+
+      while (stack.length > 0) {
+        const { parentId: currentParentId, cacheKey: currentCacheKey } = stack.pop();
+
+        let children: ProductType[] = [];
+        if ((currentParentId == '' || currentParentId == null) && currentCacheKey == 'product-types') {
+          children = await this.productTypesRepository.findBy({ isRoot: true });
+        } else {
+          children = await this.productTypesRepository.findBy({ parentId: currentParentId });
+        }
+        if (!children.length) continue;
+
+        const currentLevelMap = new Map<string, string>();
+
+        for (const product of children) {
+          currentLevelMap.set(product.id, product.name);
+
+          // If this node has children (not a leaf), add it to the stack for processing
+          if (product.isLeaf === false) {
+            stack.push({
+              parentId: product.id,
+              cacheKey: product.id,
+            });
+          }
+        }
+
+        // Cache the map for the current level
+        await this.cacheService.storeMap(currentCacheKey, currentLevelMap);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error syncing product level with parent ID ${parentId}: ${error}`,
+        this.cacheProductTypes.name,
+      );
+    }
+  }
   private getProductTypeUpdated = async (tableName: string = 'product_type'): Promise<Date | null> => {
     const result = await this.entityManager.query(`SELECT last_updated FROM table_metadata WHERE table_name = $1`, [
       tableName,
@@ -348,13 +396,20 @@ export class ProductsConsumer extends WorkerHost {
         url: this.utilsService.getShopifyURLForStore('graphql.json', store),
         headers: this.utilsService.getGraphQLHeadersForStore(store),
       };
-      console.log(this.utilsService.checkIfStoreIsPrivate(store));
       options.data = await this.getCreateProductPayload(store, product, locations);
       const response = await this.utilsService.requestToShopify('post', options);
 
       console.log(response);
       console.log(response.respBody);
       console.log(response.respBody['data']['productCreate']);
+      if (response.statusCode === 201) {
+        //create the variants which get associated with the productID
+        options.data = this.getProductVariantsPayload(
+          response.respBody['data']['productsCreate']['product']['id'],
+          data,
+        );
+        const variantsResponse = await this.utilsService.requestToShopify('post', options);
+      }
     } catch (error) {
       this.logger.error(error, this.getCreateProductPayload.name);
     }
@@ -367,7 +422,8 @@ export class ProductsConsumer extends WorkerHost {
     location: StoreLocations[],
   ): Promise<{ query: string }> => {
     console.log(product.title, product.vendor, product.desc, JSON.stringify(product.tags));
-    const productData = `(input: {category: "gid://shopify/TaxonomyCategory/me-1-3", title:"${product.title}",vendor:"${product.vendor}", descriptionHtml:"${product.desc}", tags:${JSON.stringify(product.tags)}})`;
+    const category = product.product_type;
+    const productData = `(input: {category: "${category}", title:"${product.title}",vendor:"${product.vendor}", descriptionHtml:"${product.desc}", tags:${JSON.stringify(product.tags)}})`;
     try {
       const query = `mutation {
       productCreate${productData} {
@@ -395,6 +451,33 @@ export class ProductsConsumer extends WorkerHost {
     } catch (error) {
       this.logger.error(error, this.getCreateProductPayload.name);
       throw error; // Re-throw the error or return a default value
+    }
+  };
+
+  private getProductVariantsPayload = (id: string, data: any): { query: string } => {
+    try {
+      let variantsData;
+
+      const query = `mutation {
+        productVariantsBulkCreate${variantsData}{
+              productVariants {
+          id
+          title
+          selectedOptions {
+            name
+            value
+          }
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }`;
+
+      return { query };
+    } catch (error) {
+      this.logger.error(error.message, this.getProductVariantsPayload.name);
     }
   };
 }

@@ -47,6 +47,7 @@ export const JOB_TYPES = {
   UPDATE_STORE_TOKEN: 'update-store-token',
 
   CONFIGURE_WEBHOOKS: 'configure-webhooks',
+  CACHE_PRODUCT_TYPES: 'cache-product-types',
 } as const;
 
 export type JobRegistry = {
@@ -84,6 +85,11 @@ export type JobRegistry = {
   [JOB_TYPES.SYNC_PRODUCT_TYPES]: {
     queue: typeof QUEUES.PRODUCTS;
     data: { store: Store };
+    result: void;
+  };
+  [JOB_TYPES.CACHE_PRODUCT_TYPES]: {
+    queue: typeof QUEUES.PRODUCTS;
+    data: null;
     result: void;
   };
   [JOB_TYPES.CHECK_PRODUCT_TYPE]: {
@@ -179,6 +185,7 @@ export const jobToQueueMap: { [K in JobType]: QueueName } = {
   [JOB_TYPES.GET_PRODUCT_TYPES]: QUEUES.PRODUCTS,
   [JOB_TYPES.GET_PRODUCT_TYPES_DB]: QUEUES.PRODUCTS,
   [JOB_TYPES.SYNC_PRODUCT_TYPES]: QUEUES.PRODUCTS,
+  [JOB_TYPES.CACHE_PRODUCT_TYPES]: QUEUES.PRODUCTS,
   [JOB_TYPES.CHECK_PRODUCT_TYPE]: QUEUES.PRODUCTS,
 
   [JOB_TYPES.CREATE_USER]: QUEUES.USERS,

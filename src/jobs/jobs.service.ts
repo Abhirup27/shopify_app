@@ -98,4 +98,6 @@ export class JobsService {
   public getProductTypes = async (id?: string) => await this.addJob(JOB_TYPES.GET_PRODUCT_TYPES, { id: id });
   public getProductTypesNames = async (level: number) =>
     await this.addJob(JOB_TYPES.GET_PRODUCT_TYPE_NAMES, { level: level });
+
+  public cacheProductTypes = async () => await this.addJob(JOB_TYPES.CACHE_PRODUCT_TYPES, null);
 }
