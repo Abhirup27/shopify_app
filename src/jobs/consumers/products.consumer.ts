@@ -15,6 +15,7 @@ import { newProductDto } from 'src/web-app/dtos/new-product.dto';
 import { StoreLocations } from 'src/database/entities/storeLocations.entity';
 import { CacheProvider } from '../providers/cache-redis.provider';
 import { ProductType } from 'src/database/entities/productType.entity';
+import { VariantDto } from 'src/web-app/dtos/product-variant.dto';
 
 export type ProductsType = {
   id: string;
@@ -399,16 +400,17 @@ export class ProductsConsumer extends WorkerHost {
       options.data = await this.getCreateProductPayload(store, product, locations);
       const response = await this.utilsService.requestToShopify('post', options);
 
-      console.log(response);
-      console.log(response.respBody);
+      //console.log(response);
+      // console.log(response.respBody);
       console.log(response.respBody['data']['productCreate']);
-      if (response.statusCode === 201) {
+      if (response.statusCode === 200) {
         //create the variants which get associated with the productID
         options.data = this.getProductVariantsPayload(
-          response.respBody['data']['productsCreate']['product']['id'],
-          data,
+          response.respBody['data']['productCreate']['product']['id'],
+          data.product.variants,
         );
         const variantsResponse = await this.utilsService.requestToShopify('post', options);
+        console.log('this is the variants response', variantsResponse.respBody['data']);
       }
     } catch (error) {
       this.logger.error(error, this.getCreateProductPayload.name);
@@ -453,14 +455,37 @@ export class ProductsConsumer extends WorkerHost {
       throw error; // Re-throw the error or return a default value
     }
   };
-
-  private getProductVariantsPayload = (id: string, data: any): { query: string } => {
+  private getProductVariantsPayload = (productId: string, data: VariantDto[]): { query: string } => {
     try {
-      let variantsData;
+      console.log(data);
+      const variantsInput = data
+        .map(variant => {
+          // Build inventory quantities array
+          /*const inventoryQuantities = variant.inventory
+            .map(
+              inv => `{
+            availableQuantity: ${inv.quantity}
+            locationId: "${inv.locationId}"
+          }`,
+            )
+            .join('\n          ');
+          */
+          return `{
+          optionValues: [{
+            name: "${variant.title}",
+            optionName: "Title"
+          }],
+          inventoryItem: {
+            sku: "${variant.sku}",
+          },
+          price: "${variant.price}",
+        }`;
+        })
+        .join('\n        ');
 
       const query = `mutation {
-        productVariantsBulkCreate${variantsData}{
-              productVariants {
+      productVariantsBulkCreate(productId: "${productId}", variants: [${variantsInput}]){
+        productVariants {
           id
           title
           selectedOptions {
@@ -477,7 +502,8 @@ export class ProductsConsumer extends WorkerHost {
 
       return { query };
     } catch (error) {
-      this.logger.error(error.message, this.getProductVariantsPayload.name);
+      console.error('Error building product variants payload:', error);
+      throw error;
     }
   };
 }

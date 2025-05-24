@@ -1,8 +1,8 @@
-import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { ProductVariantsDto } from './product-variant.dto';
+import { Transform, Type } from 'class-transformer';
+import { IsArray, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { VariantDto } from './product-variant.dto';
 
-export class newProductDto extends ProductVariantsDto {
+export class newProductDto {
   @IsNotEmpty()
   @IsString()
   title: string;
@@ -15,32 +15,27 @@ export class newProductDto extends ProductVariantsDto {
   @IsString()
   product_type: string;
 
-  /* @IsOptional()
-  @IsString()
-  product_type_2?: string;
-
-  @IsOptional()
-  @IsString()
-  product_type_3?: string;
-*/
   @IsNotEmpty()
   @IsString()
   vendor: string;
 
   @IsOptional()
-  @Transform(({ value }): string[] => {
+  @Transform(({ value }) => {
     if (Array.isArray(value)) return value;
-
     if (typeof value === 'string') {
       return value
         .split(',')
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
     }
-
     return [];
   })
-  tags: string[];
+  tags?: string[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => VariantDto)
+  variants: VariantDto[];
 
   @IsOptional()
   _csrf?: string;

@@ -1,5 +1,15 @@
-import { Transform, Type } from 'class-transformer';
-import { IsArray, IsNotEmpty, IsNumber, IsString, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+
+export class InventoryDto {
+  @IsString()
+  @IsNotEmpty()
+  locationId: string;
+
+  @IsNumber()
+  @Min(0)
+  quantity: number;
+}
 
 export class VariantDto {
   @IsString()
@@ -11,62 +21,16 @@ export class VariantDto {
   sku: string;
 
   @IsNumber()
+  @Min(0)
   price: number;
 
   @IsNumber()
-  @IsNotEmpty()
+  @Min(0)
   compareAtPrice: number;
-}
 
-export class ProductVariantsDto {
-  // @IsArray()
+  @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => VariantDto)
-  @Transform(({ value, obj }) => {
-    console.log(obj.variants);
-    const variantTitles: string[] = Array.isArray(obj.variants.variant_title)
-      ? (obj.variants.variant_title as string[])
-      : [];
-    const skus: string[] = Array.isArray(obj.sku) ? (obj.variants.sku as string[]) : [];
-    const variantPrices: number[] = Array.isArray(obj.variants.variant_price)
-      ? (obj.variants.variant_price as number[])
-      : [];
-    const variantCaPrices: number[] = Array.isArray(obj.variants.variant_caprice)
-      ? (obj.variants.variant_caprice as number[])
-      : [];
-
-    const variants = [];
-
-    for (
-      let i = 0;
-      i < Math.max(variantTitles.length, skus.length, variantPrices.length, variantCaPrices.length);
-      i++
-    ) {
-      const title = variantTitles[i];
-      const sku = skus[i];
-      const price = variantPrices[i];
-      const compareAtPrice = variantCaPrices[i];
-
-      // Skip this variant if any of the fields are empty or undefined
-      if (
-        !title ||
-        !sku ||
-        price === undefined ||
-        isNaN(price) ||
-        compareAtPrice === undefined ||
-        isNaN(compareAtPrice)
-      ) {
-        continue;
-      }
-
-      // Add complete variant to array
-      variants.push({
-        title,
-        sku,
-        price: Number(price),
-        compareAtPrice: Number(compareAtPrice),
-      });
-    }
-  })
-  variants: VariantDto[];
+  @Type(() => InventoryDto)
+  @IsOptional()
+  inventory?: InventoryDto[];
 }
