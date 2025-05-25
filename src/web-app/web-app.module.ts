@@ -48,6 +48,7 @@ export class WebAppModule implements NestModule {
         { path: 'productPublish', method: RequestMethod.POST },
         { path: 'taxonomy', method: RequestMethod.GET },
         { path: 'product-categories/children/:id', method: RequestMethod.GET },
+        { path: 'syncProducts', method: RequestMethod.GET },
       );
   }
 }

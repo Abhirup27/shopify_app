@@ -131,7 +131,6 @@ export class InstallationService {
       //console.log(options.url)
 
       const shopDetails = await this.utilsService.requestToShopify('get', options);
-
       //console.log(shopDetails.respBody, '\n')
       if (shopDetails.statusCode === 200 || shopDetails.status === true) {
         // log storeDetails.respBody

@@ -126,9 +126,8 @@ export class InstallationController {
 
         const accessToken = await this.installationService.getAccessTokenForStore(shop, code);
         if (accessToken != false && accessToken.length > 0) {
-          const shopDetails = await this.installationService.getShopDetailsFromShopify(shop, accessToken);
-
-          const storeToDB = await this.installationService.saveStoreDetails(shopDetails, accessToken);
+          const shopDetails = (await this.installationService.getShopDetailsFromShopify(shop, accessToken)).respBody;
+          const storeToDB = await this.installationService.saveStoreDetails(shopDetails['shop'], accessToken);
 
           this.jobsService.configure(storeToDB.table_id);
 

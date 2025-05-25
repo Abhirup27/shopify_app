@@ -253,6 +253,18 @@ export class WebAppController {
     }
   }
 
+  @Get('/syncProducts')
+  public async syncProducts(@Req() req: Request, @CurrentUser() user: UserDto, @Res() res: Response) {
+    try {
+      if (user.can(['all_access', 'write_products'])) {
+        const result = await this.webAppService.syncProducts(user);
+        res.redirect('/products');
+      }
+    } catch (error) {
+      this.logger.error(error.message);
+    }
+  }
+
   @Post('/productPublish')
   public async createProduct(
     @Req() req: Request,

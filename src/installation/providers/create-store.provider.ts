@@ -44,7 +44,6 @@ export class CreateStoreProvider {
           name: createStoreDto.name,
           email_verified_at: new Date(),
         };
-
         newUser = this.usersRepository.create(user_payload);
         newUser = await this.usersRepository.save(newUser);
         const payload = {

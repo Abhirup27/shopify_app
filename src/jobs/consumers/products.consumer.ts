@@ -103,31 +103,125 @@ export class ProductsConsumer extends WorkerHost {
   ): job is Job<JobRegistry[T]['data'], JobRegistry[T]['result']> {
     return job.name === name;
   }
+  private syncProductsQuery = (cursor: string = ''): { query: string } => {
+    const filter = cursor != '' ? `(first: 250, after: ${cursor})` : `(first: 250)`;
+    const query = `{
+      products${filter} {
+        edges {
+          node {
+            id
+            title
+            category{
+              id
+            }
+            descriptionHtml
+            handle
+            createdAt
+            productType
+	          tags
+            status
+            totalInventory
+            updatedAt
+            compareAtPriceRange{
+              maxVariantCompareAtPrice{amount}
+              minVariantCompareAtPrice{amount}
+            }
+            priceRangeV2{
+              maxVariantPrice{amount}
+              minVariantPrice{amount}
+            }
+            variantsCount{count}
+            variants(first: 15){
+              edges{
+                node {
+                  compareAtPrice
+                  displayName
+                  id
+                  price
+                  sku
+                  title
+                  inventoryQuantity
+                  inventoryItem {
+                    id
+                    createdAt
+                    sku
+                    updatedAt
+                    inventoryLevels(first: 10){
+                      edges{
+                        node{
+                          id
+                          location{
+                           id
+                          isActive
+                          }
+                          quantities(names: ["available"]){
+                            id
+                            name
+                            quantity
+                            updatedAt
+                          }
+                        }
+                      }
+                    }
+                  }
+                  createdAt
+                  updatedAt
+                }
+              }
+              pageInfo {
+                hasNextPage
+              }
+            }
+          }
+          cursor
+        }
+        pageInfo{
+          hasNextPage
+          endCursor
+        }
+      }
+    }`;
+
+    return { query };
+  };
   private syncProducts = async (
     data: JobRegistry[typeof JOB_TYPES.SYNC_PRODUCTS]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.SYNC_PRODUCTS]['result']> => {
     try {
       // const store = store ?? null;
-
-      let since_id: number = 0;
+      let cursor: string | null = null;
+      //      let since_id: number = 0;
       const products = [];
       const requestOptions: ShopifyRequestOptions = { url: null, headers: null };
       requestOptions.headers = new AxiosHeaders()
         .set('Content-Type', 'application/json')
         .set('X-Shopify-Access-Token', data.store.access_token);
 
-      requestOptions.url = await this.utilsService.getShopifyURLForStore(
-        `products.json?since_id=${since_id}`,
-        data.store,
-      );
-      const response: ShopifyResponse = await this.utilsService.requestToShopify('get', requestOptions);
+      /* requestOptions.url = await this.utilsService.getShopifyURLForStore(
+         `products.json?since_id=${since_id}`,
+         data.store,
+       );*/
+      requestOptions.url = await this.utilsService.getShopifyURLForStore('graphql.json', data.store);
+      requestOptions.data = this.syncProductsQuery('');
+      const response: ShopifyResponse = await this.utilsService.requestToShopify('post', requestOptions);
+      //if(response.error == false && response.statusCode == 200){
+      this.logger.debug(JSON.stringify(response.respBody));
+      // }
+      do {
+        //response.statusCode == 200 ? products.push(...response.respBody['products']) : null;
+        const hasNextPage: boolean = response.respBody['data']['products']['pageInfo']['hasNextPage'];
+        if (hasNextPage == true) {
+          cursor = response.respBody['data']['products']['pageInfo']['endCursor'];
+        } else {
+          cursor = null;
+        }
+      } while (cursor !== null);
       //console.log(response.respBody["products"]);
-      response.statusCode == 200 ? products.push(...response.respBody['products']) : null;
       products.forEach(async product => {
         product.store_id = data.store.table_id;
         //console.log(store);
         await this.storeProductDB(product);
-        since_id = product.id;
+        // since_id = product.id;
       });
     } catch (error) {
       this.logger.error(error.message);
@@ -153,7 +247,11 @@ export class ProductsConsumer extends WorkerHost {
         tags: product.tags,
       };
       productCreated = this.productsRepository.create(payload);
-      productCreated = await this.productsRepository.save(payload);
+      if (await this.productsRepository.existsBy({ id: productCreated.id })) {
+        const result = await this.productsRepository.update({ id: productCreated.id }, productCreated);
+      } else {
+        productCreated = await this.productsRepository.save(payload, {});
+      }
     } catch (error) {
       this.logger.error(error);
       return null;
@@ -410,7 +508,11 @@ export class ProductsConsumer extends WorkerHost {
           data.product.variants,
         );
         const variantsResponse = await this.utilsService.requestToShopify('post', options);
-        console.log('this is the variants response', variantsResponse.respBody['data']);
+        console.log(
+          'this is the variants response',
+          variantsResponse.respBody['data']['productVariantsBulkCreate']['productVariants'],
+        );
+        this.logger.debug(JSON.stringify(variantsResponse));
       }
     } catch (error) {
       this.logger.error(error, this.getCreateProductPayload.name);
@@ -425,7 +527,10 @@ export class ProductsConsumer extends WorkerHost {
   ): Promise<{ query: string }> => {
     console.log(product.title, product.vendor, product.desc, JSON.stringify(product.tags));
     const category = product.product_type;
-    const productData = `(input: {category: "${category}", title:"${product.title}",vendor:"${product.vendor}", descriptionHtml:"${product.desc}", tags:${JSON.stringify(product.tags)}})`;
+    const p_categoy = category.substring(0, category.lastIndexOf('-'));
+    const categoryName = await this.cacheService.getMapField(p_categoy, category);
+    console.log(categoryName);
+    const productData = `(input: {category: "${category}", productType: "${categoryName}", title:"${product.title}",vendor:"${product.vendor}", descriptionHtml:"${product.desc}", tags:${JSON.stringify(product.tags)}})`;
     try {
       const query = `mutation {
       productCreate${productData} {
@@ -461,15 +566,15 @@ export class ProductsConsumer extends WorkerHost {
       const variantsInput = data
         .map(variant => {
           // Build inventory quantities array
-          /*const inventoryQuantities = variant.inventory
+          const inventoryQuantities = variant.inventory
             .map(
               inv => `{
             availableQuantity: ${inv.quantity}
-            locationId: "${inv.locationId}"
+            locationId: "gid://shopify/Location/${inv.locationId}"
           }`,
             )
             .join('\n          ');
-          */
+
           return `{
           optionValues: [{
             name: "${variant.title}",
@@ -479,6 +584,8 @@ export class ProductsConsumer extends WorkerHost {
             sku: "${variant.sku}",
           },
           price: "${variant.price}",
+          compareAtPrice: "${variant.compareAtPrice}",
+          inventoryQuantities: [${inventoryQuantities}]
         }`;
         })
         .join('\n        ');

@@ -1,7 +1,17 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { Store } from './store.entity';
 import { isArray } from 'class-validator';
 import { ConfigService } from '@nestjs/config';
+import { ProductVariant } from './productVariant.entity';
 
 @Entity()
 export class Product {
@@ -21,6 +31,9 @@ export class Product {
   @ManyToOne(() => Store, { nullable: false })
   @JoinColumn({ name: 'store_id', referencedColumnName: 'table_id' })
   store: Store;
+
+  @OneToMany(() => ProductVariant, variant => variant.product)
+  variants: ProductVariant[];
 
   @Column({
     type: 'text',
@@ -75,12 +88,6 @@ export class Product {
     nullable: true,
   })
   tags: string;
-
-  @Column({
-    type: 'json',
-    nullable: true,
-  })
-  variants: string[];
 
   @Column({
     type: 'json',

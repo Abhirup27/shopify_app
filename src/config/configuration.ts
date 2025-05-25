@@ -6,9 +6,9 @@ export default () => ({
   logToFile: process.env.LOG_TO_FILE,
 
   app_secret: process.env.APP_SECRET,
-  app_url: 'https://829d-223-233-73-41.ngrok-free.app',
-  app_install_URL: 'https://829d-223-233-73-41.ngrok-free.app/shopify/auth/redirect',
-  refresh_token_URL: 'https://829d-223-233-73-41.ngrok-free.app/shopify/auth/updateStoreToken',
+  app_url: 'https://2f30-223-233-76-152.ngrok-free.app',
+  app_install_URL: 'https://2f30-223-233-76-152.ngrok-free.app/shopify/auth/redirect',
+  refresh_token_URL: 'https://2f30-223-233-76-152.ngrok-free.app/shopify/auth/updateStoreToken',
   shopify_api_version: '2024-07',
   shopify_api_key: process.env.API_KEY,
   shopify_api_secret: process.env.API_SECRET,
@@ -24,6 +24,8 @@ export default () => ({
     'read_customers',
     'write_customers',
     'read_returns',
+    'read_inventory',
+    'write_inventory',
     //'read_marketplace_fulfillment_orders',
     'read_fulfillments',
     'write_fulfillments',
@@ -46,6 +48,7 @@ export default () => ({
     password: process.env.DB_PASSWORD.toString(),
     synchronize: process.env.DB_SYNC === 'true' ? true : false,
     autoload: process.env.DB_AUTOLOAD === 'true' ? true : false,
+    runMigrationsOnStart: process.env.DB_RUN_MIGRATIONS === 'true' ? true : false,
   },
 
   redis: {

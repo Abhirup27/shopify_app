@@ -272,7 +272,11 @@ status: 'Approved',
 
     return payload;
   };
-
+  public syncProducts = async (user: UserDto): Promise<void> => {
+    try {
+      await this.jobsService.syncProducts(user.store);
+    } catch (error) {}
+  };
   public getProducts = async (user: UserDto): Promise<object> => {
     let payload: object = {};
 
