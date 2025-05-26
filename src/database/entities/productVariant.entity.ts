@@ -1,14 +1,14 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { Product } from './product.entity';
 
-interface InventoryLevel {
-  id: string;
+export interface InventoryLevel {
+  id: number;
   location: {
-    id: string;
+    id: number;
     isActive: boolean;
   };
   quantities: Array<{
-    id: string;
+    id: number;
     name: string;
     quantity: number;
     updatedAt: string;

@@ -32,7 +32,7 @@ export class Product {
   @JoinColumn({ name: 'store_id', referencedColumnName: 'table_id' })
   store: Store;
 
-  @OneToMany(() => ProductVariant, variant => variant.product)
+  @OneToMany(() => ProductVariant, variant => variant.product, { cascade: ['remove'] })
   variants: ProductVariant[];
 
   @Column({
@@ -40,6 +40,9 @@ export class Product {
     nullable: false,
   })
   title: string;
+
+  @Column({ type: 'varchar', nullable: false })
+  category_id: string;
 
   @Column({
     type: 'varchar',
@@ -106,6 +109,13 @@ export class Product {
     nullable: false,
   })
   admin_graphql_api_id: string;
+
+  @Column({
+    type: 'integer',
+    nullable: false,
+  })
+  inventoryTotal: number;
+
   @CreateDateColumn({
     type: 'timestamp with time zone',
     //default: () => 'CURRENT_TIMESTAMP'

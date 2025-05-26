@@ -16,6 +16,7 @@ import { StoreLocations } from 'src/database/entities/storeLocations.entity';
 import { CacheProvider } from '../providers/cache-redis.provider';
 import { ProductType } from 'src/database/entities/productType.entity';
 import { VariantDto } from 'src/web-app/dtos/product-variant.dto';
+import { InventoryLevel, ProductVariant } from 'src/database/entities/productVariant.entity';
 
 export type ProductsType = {
   id: string;
@@ -32,6 +33,88 @@ type ProductTypesResponse = {
     taxonomy: {
       categories: {
         nodes: ProductsType[];
+      };
+    };
+  };
+};
+
+type ProductCreateResponse = {
+  data: {
+    products: {
+      edges: Array<{
+        node: {
+          id: string;
+          title: string;
+          category: {
+            id: string;
+          };
+          descriptionHtml: string;
+          handle: string;
+          createdAt: string;
+          productType: string;
+          tags: string[];
+          status: string;
+          totalInventory: number;
+          vendor: string;
+          updatedAt: string;
+          legacyResourceId: string;
+          compareAtPriceRange: {
+            maxVariantCompareAtPrice: { amount: number };
+            minVariantCompareAtPrice: { amount: number };
+          };
+          priceRangeV2: {
+            maxVariantPrice: { amount: number };
+            minVariantPrice: { amount: number };
+          };
+          variantsCount: { count: number };
+          variants: {
+            edges: Array<{
+              node: {
+                compareAtPrice: number;
+                displayName: string;
+                id: string;
+                price: number;
+                sku: string;
+                title: string;
+                inventoryQuantity: number;
+                inventoryItem: {
+                  id: string;
+                  createdAt: string;
+                  sku: string;
+                  updatedAt: string;
+
+                  inventoryLevels: {
+                    edges: Array<{
+                      node: {
+                        id: string;
+                        location: {
+                          id: string;
+                          isActive: boolean;
+                        };
+                        quantities: Array<{
+                          id: string;
+                          name: string;
+                          quantity: number;
+                          updatedAt: string;
+                        }>;
+                      };
+                    }>;
+                  };
+                };
+                createdAt: string;
+                updatedAt: string;
+              };
+            }>;
+            pageInfo: {
+              hasNextPage: boolean;
+            };
+          };
+        };
+        cursor: string;
+      }>;
+      pageInfo: {
+        hasNextPage: boolean;
+        endCursor: string;
       };
     };
   };
@@ -61,12 +144,18 @@ export class ProductsConsumer extends WorkerHost {
     private readonly configService: ConfigService,
     private readonly utilsService: UtilsService,
 
+    /**for protuct types table*/
     @InjectEntityManager()
     private entityManager: EntityManager,
+
     @InjectRepository(Product)
     private readonly productsRepository: Repository<Product>,
+
     @InjectRepository(ProductType)
     private readonly productTypesRepository: Repository<ProductType>,
+
+    @InjectRepository(ProductVariant)
+    private readonly productVariantsRepository: Repository<ProductVariant>,
   ) {
     super();
   }
@@ -121,7 +210,9 @@ export class ProductsConsumer extends WorkerHost {
 	          tags
             status
             totalInventory
+            vendor
             updatedAt
+            legacyResourceId
             compareAtPriceRange{
               maxVariantCompareAtPrice{amount}
               minVariantCompareAtPrice{amount}
@@ -189,9 +280,10 @@ export class ProductsConsumer extends WorkerHost {
   ): Promise<JobRegistry[typeof JOB_TYPES.SYNC_PRODUCTS]['result']> => {
     try {
       // const store = store ?? null;
+      const totalProducts: any[] = [];
+      const totalProductVariants: any[] = [];
       let cursor: string | null = null;
       //      let since_id: number = 0;
-      const products = [];
       const requestOptions: ShopifyRequestOptions = { url: null, headers: null };
       requestOptions.headers = new AxiosHeaders()
         .set('Content-Type', 'application/json')
@@ -203,10 +295,12 @@ export class ProductsConsumer extends WorkerHost {
        );*/
       requestOptions.url = await this.utilsService.getShopifyURLForStore('graphql.json', data.store);
       requestOptions.data = this.syncProductsQuery('');
-      const response: ShopifyResponse = await this.utilsService.requestToShopify('post', requestOptions);
+
+      let response = await this.utilsService.requestToShopify<ProductCreateResponse>('post', requestOptions);
       //if(response.error == false && response.statusCode == 200){
-      this.logger.debug(JSON.stringify(response.respBody));
+      // this.logger.debug(JSON.stringify(response.respBody));
       // }
+      const products: Product[] = [];
       do {
         //response.statusCode == 200 ? products.push(...response.respBody['products']) : null;
         const hasNextPage: boolean = response.respBody['data']['products']['pageInfo']['hasNextPage'];
@@ -215,17 +309,143 @@ export class ProductsConsumer extends WorkerHost {
         } else {
           cursor = null;
         }
+        const { products, productVariants } = await this.mapProductsToDB(response.respBody, data.store.table_id);
+        totalProducts.push(...products);
+        totalProductVariants.push(...productVariants);
+
+        requestOptions.data = this.syncProductsQuery(cursor);
+        response = await this.utilsService.requestToShopify<ProductCreateResponse>('post', requestOptions);
       } while (cursor !== null);
-      //console.log(response.respBody["products"]);
-      products.forEach(async product => {
-        product.store_id = data.store.table_id;
-        //console.log(store);
-        await this.storeProductDB(product);
-        // since_id = product.id;
-      });
+
+      const shopifyProductIds = totalProducts.map(p => p.id);
+      const shopifyVariantIds = totalProductVariants.map(v => v.id);
+
+      /*  await this.productVariantsRepository
+          .createQueryBuilder()
+          .delete()
+          // .where('product_id IN (SELECT id FROM product WHERE store_id = :storeId)', { storeId: data.store.table_id })
+          .where('id NOT IN (:...variantIds)', { variantIds: shopifyVariantIds })
+          .execute();
+  */
+      await this.productsRepository
+        .createQueryBuilder()
+        .delete()
+        .where('store_id = :storeId', { storeId: data.store.table_id })
+        .andWhere('id NOT IN (:...productIds)', { productIds: shopifyProductIds })
+        .execute();
+      const productEntities: Product[] = this.productsRepository.create(totalProducts);
+      await this.productsRepository.upsert(productEntities, ['id']);
+
+      const productVaraintsEntities: ProductVariant[] = this.productVariantsRepository.create(totalProductVariants);
+      await this.productVariantsRepository.upsert(productVaraintsEntities, ['id']);
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(error.message, error.stack, this.syncProducts.name);
     }
+  };
+  private extractIdFromGraphQLId(graphqlId: string, prefix?: string, removeSuffix: boolean = false): number | null {
+    try {
+      if (!graphqlId) {
+        return null;
+      }
+
+      // Remove the prefix if provided
+      const idPart = prefix ? graphqlId.replace(`gid://shopify/${prefix}/`, '') : graphqlId;
+      let id: number = parseInt(idPart);
+      if (removeSuffix) {
+        const numericMatch = idPart.match(/^\d+/);
+
+        if (!numericMatch) {
+          this.logger.warn(`No numeric ID found in: ${graphqlId}`, this.extractIdFromGraphQLId.name);
+          return null;
+        }
+
+        id = parseInt(numericMatch[0], 10);
+      }
+      if (isNaN(id)) {
+        this.logger.warn(`Invalid numeric ID extracted from: ${graphqlId}`, this.extractIdFromGraphQLId.name);
+        return null;
+      }
+
+      return id;
+    } catch (error) {
+      this.logger.error(`Failed to extract ID from ${graphqlId}: ${error.message}`, this.extractIdFromGraphQLId.name);
+      return null;
+    }
+  }
+  private mapProductsToDB = async (
+    productsData: ProductCreateResponse,
+    storeId: number,
+  ): Promise<{ products: any[]; productVariants: any[] }> => {
+    const products: Array<any> = [];
+    const productVariants: any[] = [];
+    for (const node of productsData.data.products.edges) {
+      const product = node.node;
+      for (const variantNode of product.variants.edges) {
+        const variant = variantNode.node;
+        const inventoryLevels: InventoryLevel[] = [];
+        for (const inventoryLevelNode of variant.inventoryItem.inventoryLevels.edges) {
+          const inventoryLevel = inventoryLevelNode.node;
+          const payload: InventoryLevel = {
+            id: this.extractIdFromGraphQLId(inventoryLevel.id, 'InventoryLevel', true),
+            location: {
+              id: this.extractIdFromGraphQLId(inventoryLevel.location.id, 'Location'),
+              isActive: inventoryLevel.location.isActive,
+            },
+            quantities: inventoryLevel.quantities.map((quantity: any) => ({
+              id: this.extractIdFromGraphQLId(quantity.id, 'InventoryQuantity'),
+              name: quantity.name,
+              quantity: quantity.quantity,
+              updatedAt: quantity.updatedAt,
+            })),
+          };
+          inventoryLevels.push(payload);
+        }
+        const payload = {
+          id: this.extractIdFromGraphQLId(variant.id, 'ProductVariant'),
+          product_id: this.extractIdFromGraphQLId(product.id, 'Product'),
+          title: variant.title,
+          displayName: variant.displayName,
+          price: variant.price,
+          sku: variant.sku,
+          inventoryQuantity: variant.inventoryQuantity,
+          compareAtPrice: variant.compareAtPrice,
+          inventory_item_id: this.extractIdFromGraphQLId(variant.inventoryItem.id, 'InventoryItem'),
+          inventory_item_sku: variant.inventoryItem.sku,
+          inventory_item_created_at: new Date(variant.inventoryItem.createdAt),
+          inventory_item_updated_at: new Date(variant.inventoryItem.updatedAt),
+          inventory_levels: inventoryLevels,
+          createdAt: new Date(variant.createdAt),
+          updatedAt: new Date(variant.updatedAt),
+        };
+        productVariants.push(payload);
+      }
+      const payload = {
+        id: this.extractIdFromGraphQLId(product.id, 'Product'),
+        store_id: storeId,
+        title: product.title,
+        category_id: product.category ? product.category.id : '',
+        vendor: product.vendor,
+        created_at: new Date(product.createdAt),
+        updated_at: new Date(product.updatedAt),
+        body_html: product.descriptionHtml,
+        handle: product.handle,
+        tags: product.tags.join(','),
+        product_type:
+          product.productType != ''
+            ? product.productType
+            : product.category != null
+              ? await this.cacheService.getMapField(
+                  product.category.id.substring(0, product.category.id.lastIndexOf('-')),
+                  product.category.id,
+                )
+              : '',
+        admin_graphql_api_id: product.legacyResourceId ? product.legacyResourceId : '',
+        inventoryTotal: product.totalInventory,
+        // variants: productVariants,
+      };
+      products.push(payload);
+    }
+    return { products, productVariants };
   };
   public storeProductDB = async (product: Product): Promise<Product | null> => {
     let productCreated: Product = undefined;

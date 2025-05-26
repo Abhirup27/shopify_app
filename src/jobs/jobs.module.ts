@@ -28,12 +28,23 @@ import { StoreLocations } from 'src/database/entities/storeLocations.entity';
 import { ProductType } from 'src/database/entities/productType.entity';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { CacheProvider } from './providers/cache-redis.provider';
+import { ProductVariant } from 'src/database/entities/productVariant.entity';
 
 @Module({
   imports: [
     UtilsModule,
     AuthModule,
-    TypeOrmModule.forFeature([Store, Product, ProductType, Order, Customer, UserStore, User, StoreLocations]),
+    TypeOrmModule.forFeature([
+      Store,
+      Product,
+      ProductType,
+      ProductVariant,
+      Order,
+      Customer,
+      UserStore,
+      User,
+      StoreLocations,
+    ]),
 
     BullModule.forRootAsync({
       imports: [ConfigModule],
