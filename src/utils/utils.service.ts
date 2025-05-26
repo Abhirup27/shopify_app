@@ -15,6 +15,9 @@ import { NonceProvider } from './providers/nonce.provider';
 import { GetInstallCodeDto } from 'src/installation/dtos/get-code-query.dto';
 import { GetInstallInitQueryDto } from 'src/installation/dtos/get-install-query.dto';
 
+/**
+ * Here all the utility functions are defined. These are used throughout the app.
+ * */
 @Injectable()
 export class UtilsService {
   private readonly logger = new Logger(UtilsService.name);
@@ -133,16 +136,40 @@ export class UtilsService {
     return this.configService.get('shopify_app_embedded');
   };
 
-  //These first two functions are the other way the function can be called. It can be called like in the PHP code too
+  /**
+   * For reqyests where body/data is not required. ShopifyRequestOptions object type is used.
+   * Returns ShopifyResponse
+   * @param options data is ommited. Refer to ShopifyRequestOptions and ShopifyResponse.
+   * @param method The HTTP request method. This tells the server what action needs to be performed with the specified resource. Valid: get, post, delete, put, patch
+   * @returns It returns the entire response. The response body is returned in the type specified during the call to this function. If type T is not specified, then response body is of any type and you get no type safety. Note that you will get errors if the returned response differs in key names.
+   * */
+
   public async requestToShopify<T extends ResponseBodyType>(
     method: 'get' | 'delete',
     options: Omit<ShopifyRequestOptions, 'data'>,
   ): Promise<ShopifyResponse<T>>;
 
+  /**
+   * For requests where body/data is required. ShopifyRequestOptions object type is used.
+   * Returns ShopifyResponse
+   * @param options data is included. Refer to ShopifyRequestOptions and ShopifyResponse.
+   * @param method The HTTP request method. This tells the server what action needs to be performed with the specified resource. Valid: get, post, delete, put, patch
+   * @returns It returns the entire response. The response body is returned in the type specified during the call to this function. If type T is not specified, then response body is of any type and you get no type safety. Note that you will get errors if the returned response differs in key names.
+   * */
+
   public async requestToShopify<T extends ResponseBodyType>(
     method: 'post' | 'put' | 'patch',
     options: ShopifyRequestOptions,
   ): Promise<ShopifyResponse<T>>;
+
+  /**
+   *For requests of all method types. It accepts headers, url/endpoint, payload individually.
+   * @param headers The headers for the request. Include the required key value pairs.
+   * @param payload The data/body that will be sent with the request. It is dropped if the method is either GET or DELETE.
+   * @param endpoint The url endpoint to which the request will be sent.
+   * @param method The HTTP request method. This tells the server what action needs to be performed with the specified resource. Valid: get, post, delete, put, patch
+   * @returns It returns the entire response. The response body is returned in the type specified during the call to this function. If type T is not specified, then response body is of any type and you get no type safety. Note that you will get errors if the returned response differs in key names.
+   */
 
   public async requestToShopify<T extends ResponseBodyType>(
     method: Method,
@@ -151,7 +178,10 @@ export class UtilsService {
     payload?: Record<string, any>,
   ): Promise<ShopifyResponse<T>>;
 
-  //one implementation handles all the overloads
+  /**one implementation handles all the overloads
+   *
+   * */
+
   public async requestToShopify<T extends ResponseBodyType>(
     method: Method,
     endpointOrOptions: string | ShopifyRequestOptions,

@@ -14,6 +14,10 @@ import { RedisModule } from '@nestjs-modules/ioredis';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { NonceProvider } from './providers/nonce.provider';
 
+/**
+ *This module handles all the tasks specific to installing the shopify app
+ *
+ * */
 @Module({
   imports: [
     UtilsModule,
@@ -25,13 +29,12 @@ import { NonceProvider } from './providers/nonce.provider';
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         type: 'single',
-        //url: configService.get<string>('REDIS_URL'), 
-        url: `redis://${configService.get('REDIS_HOST')}:${configService.get('REDIS_PORT')}`
+        //url: configService.get<string>('REDIS_URL'),
+        url: `redis://${configService.get('REDIS_HOST')}:${configService.get('REDIS_PORT')}`,
       }),
     }),
   ],
   providers: [InstallationService, CreateStoreProvider, CreateSuperAdmin, NonceProvider],
-  controllers: [InstallationController]
-
+  controllers: [InstallationController],
 })
-export class InstallationModule { }
+export class InstallationModule {}

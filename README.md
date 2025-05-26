@@ -93,6 +93,19 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## View Documentation
+
+```bash
+# install compodoc
+$ npm install -g @compodoc/compodoc
+
+# build and serve documentation
+npm run doc
+
+```
+
+go to http://127.0.0.1:3001
+
 ## Run tests
 
 ```bash

@@ -21,6 +21,9 @@ import { UnauthorizedExceptionFilter } from '../filters/hmac.exception.filter';
 import { JobsService } from 'src/jobs/jobs.service';
 import { Store } from '../database/entities/store.entity';
 
+/**
+ * These routes need to be allowed in the shopify app's configuration
+ * */
 @Controller() //@Controller('/shopify/auth')
 @UseFilters(UnauthorizedExceptionFilter)
 export class InstallationController {
@@ -41,6 +44,9 @@ export class InstallationController {
     this.redirectUri = configService.get('app_install_URL');
   }
 
+  /**
+   *temorary route for testing.
+   * */
   @Get('/test')
   public async test(@Res() res) {
     const shop: string = 'abhirups-store.myshopify.com';
@@ -50,6 +56,10 @@ export class InstallationController {
   }
   // I have enabled global pipes, I may need to have custom ValidationPipes for some routes.
   //@Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+  /**
+   *Initial route that shopify sends request to when a store owner wants to install the app.
+   *It checks if the store already exists in the database or not. If not, it redirects to /shopify/auth/redirect to carry out the installation.
+   * */
   @Get('/')
   public async startInstallation(@Request() request: Request, @Query() query: GetInstallInitQueryDto, @Res() response) {
     try {
@@ -113,7 +123,9 @@ export class InstallationController {
       }
     }
   }
-
+  /**
+   * This route handles the installation.
+   * */
   @Get('/redirect')
   public async install(@Request() request: Request, @Query() query: GetInstallCodeDto, @Res() response) {
     //console.log(request)
@@ -184,6 +196,9 @@ export class InstallationController {
       }
     }
   }
+  /**
+   * I use this route to re authenticate the access token for a store when a query to shopify return 401 error code.
+   * */
   @Get('/updateStoreToken')
   public async updateToken(@Req() request: Request, @Res() response, @Query() query) {
     try {
