@@ -6,7 +6,7 @@ export class Migration1748270191631 implements MigrationInterface {
    
     await queryRunner.query(`
       ALTER TABLE "product_variant" 
-      DROP CONSTRAINT "FK_ca67dd080aac5ecf99609960cd2" -- Replace with your actual FK name
+      DROP CONSTRAINT "FK_ca67dd080aac5ecf99609960cd2" 
     `);
 
     //foreign key with ON DELETE CASCADE

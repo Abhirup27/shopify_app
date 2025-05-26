@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
-import { ProductsType } from '../consumers/products.consumer';
+
 @Injectable()
 export class CacheProvider {
   constructor(@InjectRedis() private readonly redis: Redis) {}
@@ -21,5 +21,10 @@ export class CacheProvider {
   async mapFieldExists(key: string, field: string): Promise<boolean> {
     const exists = await this.redis.hexists(key, field);
     return exists === 1;
+  }
+
+  async getCategoryName(id: string): Promise<string> {
+    const parent = id.substring(0, id.lastIndexOf('-'));
+    return await this.redis.hget(parent, id);
   }
 }

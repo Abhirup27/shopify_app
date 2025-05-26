@@ -434,10 +434,7 @@ export class ProductsConsumer extends WorkerHost {
           product.productType != ''
             ? product.productType
             : product.category != null
-              ? await this.cacheService.getMapField(
-                  product.category.id.substring(0, product.category.id.lastIndexOf('-')),
-                  product.category.id,
-                )
+              ? this.cacheService.getCategoryName(product.category.id)
               : '',
         admin_graphql_api_id: product.legacyResourceId ? product.legacyResourceId : '',
         inventoryTotal: product.totalInventory,
@@ -747,8 +744,9 @@ export class ProductsConsumer extends WorkerHost {
   ): Promise<{ query: string }> => {
     console.log(product.title, product.vendor, product.desc, JSON.stringify(product.tags));
     const category = product.product_type;
-    const p_categoy = category.substring(0, category.lastIndexOf('-'));
-    const categoryName = await this.cacheService.getMapField(p_categoy, category);
+    // const p_categoy = category.substring(0, category.lastIndexOf('-'));
+    //const categoryName = await this.cacheService.getMapField(p_categoy, category);
+    const categoryName = await this.cacheService.getCategoryName(category);
     console.log(categoryName);
     const productData = `(input: {category: "${category}", productType: "${categoryName}", title:"${product.title}",vendor:"${product.vendor}", descriptionHtml:"${product.desc}", tags:${JSON.stringify(product.tags)}})`;
     try {
