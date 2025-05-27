@@ -1,5 +1,8 @@
 import { registerAs } from '@nestjs/config';
 
+/**
+ * A new confiruation referenced by the name routes. Returns a key value pair object which is used in the RouteService provider.
+ * */
 export default registerAs('routes', (): Record<string, string> => {
   return {
     home: '/dashboard',

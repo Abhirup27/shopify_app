@@ -28,6 +28,10 @@ export type ProductsType = {
   name: string;
   level: number;
 };
+
+/**
+ *The expected response of taxonomy query.
+ * */
 type ProductTypesResponse = {
   data: {
     taxonomy: {
@@ -38,6 +42,9 @@ type ProductTypesResponse = {
   };
 };
 
+/**
+ * Expected Response type of ProductCreate mutation.
+ * */
 type ProductCreateResponse = {
   data: {
     products: {

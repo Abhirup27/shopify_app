@@ -4,12 +4,13 @@ import { Product } from 'src/database/entities/product.entity';
 import { ProductType } from 'src/database/entities/productType.entity';
 import { Store } from 'src/database/entities/store.entity';
 import { StoreLocations } from 'src/database/entities/storeLocations.entity';
-import { User } from 'src/database/entities/user.entity';
 import { UserStore } from 'src/database/entities/userstore.entity';
 import { newProductDto } from 'src/web-app/dtos/new-product.dto';
 import { RegisterUserDto } from 'src/web-app/dtos/register-member.dto';
-import { ProductsType } from '../consumers/products.consumer';
 
+/**
+ * all the queues used in jobs module. Immutable.
+ * */
 export const QUEUES = {
   PRODUCTS: 'products',
   ORDERS: 'orders',
@@ -19,6 +20,9 @@ export const QUEUES = {
   CONFIGURE: 'configure',
 } as const;
 
+/**
+ * All job type constants
+ * */
 export const JOB_TYPES = {
   SYNC_PRODUCTS: 'sync-products',
   GET_PRODUCTS: 'retrieve-products',
@@ -50,6 +54,10 @@ export const JOB_TYPES = {
   CACHE_PRODUCT_TYPES: 'cache-product-types',
 } as const;
 
+/**
+ * This type is used for addJob function in the jobs service and the respective consumers.
+ * It acts as a single source of truth. Avoids mismatches and reduces lines of code in jobs service.
+ * */
 export type JobRegistry = {
   /** for product jobs*/
   [JOB_TYPES.SYNC_PRODUCTS]: {
@@ -174,7 +182,12 @@ export type JobRegistry = {
     result: void;
   };
 };
+
 export type JobType = keyof JobRegistry;
+
+/**
+ *Union of all queue names which are used in the Job registry.
+ * */
 export type QueueName = JobRegistry[JobType]['queue'];
 
 export const jobToQueueMap: { [K in JobType]: QueueName } = {
@@ -204,8 +217,22 @@ export const jobToQueueMap: { [K in JobType]: QueueName } = {
   [JOB_TYPES.UPDATE_STORE_TOKEN]: QUEUES.STORES,
   // Add other mappings...
 };
+
+/**
+ * A mapped type which only accepts queue names from JobRegistry which are there in QueueName, if  yes then it returns the job name. queue names which do not match won't be accepted by any of the queues.
+ * The [Job type] turns the object into a union type.
+ * */
 export type QueueJobTypes<Q extends QueueName> = {
   [K in JobType]: JobRegistry[K]['queue'] extends Q ? K : never;
 }[JobType];
+
+/**
+ * This type gets all the jobs registry for a Queue and extracts the data, creating a union of their data types.
+ * */
 export type QueueData<Q extends QueueName> = JobRegistry[QueueJobTypes<Q>]['data'];
+
+/**
+ * This type gets all the jobs registry for a Queue and extracts the result, creating a union of their return/result types.
+ */
+
 export type QueueResult<Q extends QueueName> = JobRegistry[QueueJobTypes<Q>]['result'];

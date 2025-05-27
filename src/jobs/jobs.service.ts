@@ -15,9 +15,19 @@ import { Store } from 'src/database/entities/store.entity';
 import { RegisterUserDto } from 'src/web-app/dtos/register-member.dto';
 import { newProductDto } from 'src/web-app/dtos/new-product.dto';
 
+/**
+ *This Service exposes all the functions required to launch tasks in worker threads.
+ * */
 @Injectable()
 export class JobsService {
+  /**
+   * A key value pair variable that is used by the addJob function to add a job to the correct queue instance.
+   * */
   private queues: Record<QueueName, Queue>;
+
+  /**
+   * To instance and store all the QueueEvent objects required to detect when the job is finished.
+   * */
   private queueEventsMap: Record<string, QueueEvents> = {};
 
   constructor(
@@ -48,6 +58,12 @@ export class JobsService {
       this.queueEventsMap[queueName] = new QueueEvents(queueName);
     });
   }
+  /**
+   * A single function to add any valid job to it's respective queue.
+   * @param type Any Job which is a key in JobRegistry.
+   * @param data data which is of the type defined in the JobRegistry.
+   * @param opts optional parameter, can also be used to manually set jobId, priority of a job, delay, parent Job
+   * */
   async addJob<T extends JobType>(
     type: T,
     data: JobRegistry[T]['data'],
