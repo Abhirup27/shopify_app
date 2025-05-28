@@ -32,7 +32,7 @@ export class Product {
   @JoinColumn({ name: 'store_id', referencedColumnName: 'table_id' })
   store: Store;
 
-  @OneToMany(() => ProductVariant, variant => variant.product, { cascade: ['remove'] })
+  @OneToMany(() => ProductVariant, variant => variant.product)
   variants: ProductVariant[];
 
   @Column({

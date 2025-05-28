@@ -142,30 +142,31 @@ export class CustomersConsumer extends WorkerHost {
         };
       });
       console.log(formattedCustomers);
-      // customersCreated =  this.customersRepository.create(formattedCustomers);
-      //customersCreated = await this.customersRepository.save(formattedCustomers);
-      await this.customersRepository
-        .createQueryBuilder()
-        .insert()
-        .into(Customer)
-        .values(formattedCustomers)
-        .orUpdate(
-          [
-            'email',
-            'first_name',
-            'last_name',
-            'created_at',
-            'updated_at',
-            'tags',
-            'phone',
-            'default_address',
-            'accepts_marketing',
-          ],
-          ['id', 'store_id'],
-        )
-        .execute();
+      customersCreated = this.customersRepository.create(formattedCustomers);
+      await this.customersRepository.upsert(formattedCustomers, ['id', 'store_id']);
+      /* await this.customersRepository
+         .createQueryBuilder()
+         .insert()
+         .into(Customer)
+         .values(formattedCustomers)
+         .orUpdate(
+           [
+             'email',
+             'first_name',
+             'last_name',
+             'created_at',
+             'updated_at',
+             'tags',
+             'phone',
+             'default_address',
+             'accepts_marketing',
+           ],
+           ['id', 'store_id'],
+         )
+         .execute();
+     */
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(error.message, error.stack);
       return null;
     }
 

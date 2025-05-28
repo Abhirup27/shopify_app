@@ -30,8 +30,8 @@ export class WebAppService {
 
   public async syncProductTypes(store: Store) {
     try {
-      await this.jobsService.syncProductTypes(store);
-      // await this.jobsService.cacheProductTypes();
+      //this.jobsService.syncProductTypes(store);
+      await this.jobsService.cacheProductTypes();
     } catch (error) {
       this.logger.error(error, this.syncProductTypes.name);
     }
@@ -80,7 +80,6 @@ export class WebAppService {
 
   public getDashboardPayload = async (user: UserDto): Promise<object> => {
     let dashboard: object = {};
-
     try {
       const recentOrders: Order[] = await this.jobsService.getOrders(user.store_id);
       const customers: Customer[] = await this.jobsService.getCustomers(user.store_id);
@@ -91,9 +90,18 @@ export class WebAppService {
           return sum + orderPrice;
         }, 0);
       }
-      console.log(recentOrders);
       const isPublic: boolean = !this.utilsService.checkIfStoreIsPrivate(user.store);
 
+      const recentSales: any[] = [];
+      for (const order of recentOrders) {
+        recentSales.push({
+          id: order.id,
+          customer: order.customer['firstName'] + ' ' + order.customer['lastName'],
+          product: order.line_items[0]['name'] + ' , ' + order.line_items[1]['name'],
+          price: order.total_price,
+          status: order.financial_status,
+        });
+      }
       dashboard = {
         storeId: user.store_id,
         showSidebar: true,
@@ -117,47 +125,8 @@ export class WebAppService {
         isEmbedded: false,
         orders_count: recentOrders.length,
         orders_revenue: totalRevenue,
-        customers_count: 3, // customers.length,
-        recentSales:
-          recentOrders.length > 0
-            ? [
-                {
-                  id: recentOrders[0].id,
-                  customer: recentOrders[0].customer['firstName'] + ' ' + recentOrders[0].customer['lastName'],
-                  product: recentOrders[0].line_items[0]['name'] + ' , ' + recentOrders[0].line_items[1]['name'],
-                  price: recentOrders[0].total_price,
-                  status: recentOrders[0].financial_status,
-                },
-                {
-                  id: recentOrders[1].id,
-                  customer: recentOrders[1].customer['firstName'] + ' ' + recentOrders[1].customer['lastName'],
-                  product: recentOrders[1].line_items[0]['name'],
-                  price: recentOrders[1].total_price,
-                  status: 'Pending',
-                },
-                {
-                  id: recentOrders[2].id,
-                  customer: recentOrders[1].customer['firstName'] + ' ' + recentOrders[1].customer['lastName'],
-                  product: 'Headphones',
-                  price: recentOrders[2].total_price,
-                  status: 'Rejected',
-                },
-                /* {
-id: recentOrders[3].id,
-customer: recentOrders[3].customer['firstName'] + ' ' + recentOrders[3].customer['lastName'],
-product:
-recentOrders[3].line_items[0]['name'] +
-' , ' +
-recentOrders[3].line_items[1]['name'] +
-' , ' +
-recentOrders[3].line_items[2]['name'] +
-' , ' +
-recentOrders[3].line_items[3]['name'],
-price: recentOrders[3].total_price,
-status: 'Approved',
-}, */
-              ]
-            : '',
+        customers_count: customers.length,
+        recentSales: recentOrders.length > 0 ? [...recentSales] : '',
         topSelling: [
           {
             image: '/path/to/laptop-image.jpg',
@@ -205,7 +174,29 @@ status: 'Approved',
 
     return dashboard;
   };
-
+  public getStoresPayload = async (user: UserDto): Promise<object> => {
+    //const allStores: Store[] = await this.jobsService.getStores(user.user_id);
+    return {
+      stores: [],
+      storeId: user.store_id,
+      isEmbedded: false,
+      showSidebar: false,
+      isStorePublic: !user.store.IsPrivate(),
+      style: '',
+      appName: 'Shopify App',
+      user: {
+        name: user.name,
+        id: user.user_id,
+        permissions: user.permissions,
+        can: (permissions: string[]) => user.can(permissions),
+        hasRole: (role: string) => user.hasRole(role),
+      },
+      session: {
+        success: '',
+      },
+      body: '',
+    };
+  };
   public getOrders = async (user: UserDto): Promise<object> => {
     let payload: object = {};
     try {

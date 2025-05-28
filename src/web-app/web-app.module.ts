@@ -11,6 +11,7 @@ import { JobsModule } from 'src/jobs/jobs.module';
 import { WebAppService } from './web-app.service';
 import routesConfig from './config/routes.config';
 import { RouteService } from './providers/routes.provider';
+import { IsAppPublicMiddleware } from 'src/middlewares/is-app-public.middleware';
 
 /**
  * This module will import submodules which will serve different pages of the website.
@@ -49,6 +50,7 @@ export class WebAppModule implements NestModule {
         { path: 'taxonomy', method: RequestMethod.GET },
         { path: 'product-categories/children/:id', method: RequestMethod.GET },
         { path: 'syncProducts', method: RequestMethod.GET },
+        { path: 'stores', method: RequestMethod.GET },
       );
   }
 }

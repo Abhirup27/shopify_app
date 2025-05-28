@@ -29,7 +29,7 @@ export class ProductVariant {
   })
   product_id: number;
 
-  @ManyToOne(() => Product, { nullable: false })
+  @ManyToOne(() => Product, { nullable: false, onDelete: 'CASCADE', cascade: ['remove'] })
   @JoinColumn({ name: 'product_id', referencedColumnName: 'id' })
   product: Product;
 

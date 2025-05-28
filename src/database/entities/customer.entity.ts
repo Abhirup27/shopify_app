@@ -6,18 +6,22 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  PrimaryColumn,
 } from 'typeorm';
 import { Store } from './store.entity';
 
 @Entity('customer')
 export class Customer {
-  @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
-  table_id: number;
+  // @PrimaryGeneratedColumn({ type: 'bigint', unsigned: true })
+  // table_id: number;
 
-  @Column({ type: 'bigint', nullable: false, unsigned: true })
+  @PrimaryColumn({ type: 'bigint', nullable: false, unsigned: true })
   id: number;
 
-  @Column({})
+  @PrimaryColumn({
+    type: 'bigint',
+    unsigned: true,
+  })
   store_id: number;
 
   @ManyToOne(() => Store)

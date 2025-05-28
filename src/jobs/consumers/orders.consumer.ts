@@ -194,13 +194,12 @@ export class OrdersConsumer extends WorkerHost {
           //job.remove()
           throw Error('401');
         }
-        console.log(response.respBody);
         //throw Error('401');
         if (response.statusCode == 200) {
           //console.log(response.respBody["data"]['orders']['edges']);
           await this.saveOrdersInDB(store.table_id, response.respBody['data']['orders']['edges']);
         }
-        console.log(response);
+        //console.log(response.respBody['extensions']['cost']['fields']);
         // console.log(response.respBody["data"]['orders']['edges']);
         // await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
         //console.log(response.respBody);

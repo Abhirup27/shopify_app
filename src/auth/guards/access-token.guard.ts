@@ -8,6 +8,10 @@ import { REQUEST_USER_KEY } from '../constants/auth.constants';
 import { Reflector } from '@nestjs/core';
 import { UserService } from 'src/web-app/user/user.service';
 
+/**
+ * Marks the route as a public route. This route can be accessed publicly. The AccessToken Guard will be skipped (return true).
+ * The StoreContext Guard will also return true and not bind the default UserStore or if a specific store from the URL's query if specified. (?storeId=123).
+ * */
 export const Public = () => SetMetadata('isPublic', true);
 
 @Injectable()

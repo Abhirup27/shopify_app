@@ -96,4 +96,21 @@ export class Store {
 
   @Column({ type: 'text', nullable: true })
   zip: string;
+
+  public IsPrivate(): boolean {
+    if (
+      (this.api_key == undefined || this.api_key == null) &&
+      (this.api_secret_key == undefined || this.api_secret_key == null)
+    ) {
+      return false;
+    }
+    return (
+      'api_key' in this &&
+      'api_secret_key' in this &&
+      this.api_key !== null &&
+      this.api_secret_key !== null &&
+      this.api_key.length > 0 &&
+      this.api_secret_key.length > 0
+    );
+  }
 }

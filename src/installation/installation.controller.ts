@@ -100,6 +100,7 @@ export class InstallationController {
             signed: true,
             maxAge: 60 * 60 * 1000, // 1 hour expiry
           });
+          console.log(url);
 
           return response.redirect(303, url);
         }
@@ -139,6 +140,7 @@ export class InstallationController {
         const accessToken = await this.installationService.getAccessTokenForStore(shop, code);
         if (accessToken != false && accessToken.length > 0) {
           const shopDetails = (await this.installationService.getShopDetailsFromShopify(shop, accessToken)).respBody;
+          console.log(shopDetails);
           const storeToDB = await this.installationService.saveStoreDetails(shopDetails['shop'], accessToken);
 
           this.jobsService.configure(storeToDB.table_id);

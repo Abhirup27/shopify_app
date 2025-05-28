@@ -107,6 +107,27 @@ export class WebAppController {
     //console.log(recentOrders[0].id)
   }
 
+  /**
+   * Only for the super admin
+   * */
+
+  @Get('/stores')
+  public async getStores(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response) {
+    try {
+      let payload;
+      //if the logged in user is a super admin in any one stores
+      for (const userStore of req['roles']) {
+        if (userStore.role == 'SUPER_ADMIN') {
+          payload = await this.webAppService.getStoresPayload(user);
+          res.render('superadmin/stores/index', payload);
+        }
+      }
+      res.status(401).send('the user is not a super admin.');
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+    }
+  }
+
   @Get('/orders')
   public async getOrders(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query) {
     let payload: object = {};
