@@ -9,7 +9,7 @@ import { Job } from 'bullmq';
 import { HashingProvider } from 'src/auth/providers/hashing.provider';
 import { ADMIN, ADMIN_PERMS, SUB_USER } from 'src/database/entities/constants/user-roles.constants';
 
-type UserJobNames = typeof JOB_TYPES.GET_USERS | typeof JOB_TYPES.CREATE_USER;
+type UserJobNames = typeof JOB_TYPES.GET_USERS | typeof JOB_TYPES.CREATE_USER | typeof JOB_TYPES.GET_STORES_FOR_USER;
 
 type UserQueueJobs = {
   [K in UserJobNames]: Job<JobRegistry[K]['data'], JobRegistry[K]['result']> & { name: K };
@@ -41,12 +41,27 @@ export class UsersConsumer extends WorkerHost {
           //  throw new Error('Invalid data provided, expected an Object with RegisterUserDto and a number');
           // }
           return await this.createUser({ user: job.data.user, storeId: job.data.storeId });
+
+        case JOB_TYPES.GET_STORES_FOR_USER:
+          return await this.retrieveAllStoresForUser(job.data);
+
         default:
           throw Error('Invalid job');
       }
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(error.message, error.stack, this.process.name);
     }
+  };
+
+  private retrieveAllStoresForUser = async (
+    data: JobRegistry[typeof JOB_TYPES.GET_STORES_FOR_USER]['data'],
+  ): Promise<JobRegistry[typeof JOB_TYPES.GET_STORES_FOR_USER]['result']> => {
+    const stores: UserStore[] = await this.userStoresRepository.find({
+      where: { user_id: data.userId },
+      relations: ['store'],
+    });
+    console.log(stores[0].store.IsPrivate());
+    return stores;
   };
 
   private retrieveUsersForStore = async (

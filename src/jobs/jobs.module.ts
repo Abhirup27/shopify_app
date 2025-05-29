@@ -89,6 +89,7 @@ import { ProductVariant } from 'src/database/entities/productVariant.entity';
     CustomersQueueEvents,
     StoresQueueEvents,
     UsersQueueEvents,
+    ProductsQueueEvents,
 
     CacheProvider,
   ],

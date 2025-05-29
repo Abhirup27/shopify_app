@@ -6,7 +6,7 @@ import jwtConfiguration from '../config/jwt.config';
 import { Request } from 'express';
 import { REQUEST_USER_KEY } from '../constants/auth.constants';
 import { Reflector } from '@nestjs/core';
-import { UserService } from 'src/web-app/user/user.service';
+import { DataService } from 'src/data/data.service';
 
 /**
  * Marks the route as a public route. This route can be accessed publicly. The AccessToken Guard will be skipped (return true).
@@ -23,7 +23,7 @@ export class AccessTokenGuard implements CanActivate {
     @Inject(jwtConfiguration.KEY)
     private readonly jwtConfig: ConfigType<typeof jwtConfiguration>,
 
-    private userService: UserService,
+    private dataService: DataService,
   ) {}
 
   private extractToken = (request: Request): string | undefined => {
@@ -58,7 +58,7 @@ export class AccessTokenGuard implements CanActivate {
       request[REQUEST_USER_KEY] = payload;
       //console.log('the payload is ', payload);
 
-      const { User, UserStore } = await this.userService.findOneByEmail(payload.email);
+      const { User, UserStore } = await this.dataService.findOneByEmail(payload.email);
       //console.log(User, UserStore);
       request.user = User;
       request.roles = UserStore;

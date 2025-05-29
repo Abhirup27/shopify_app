@@ -119,7 +119,9 @@ export class WebAppController {
       for (const userStore of req['roles']) {
         if (userStore.role == 'SUPER_ADMIN') {
           payload = await this.webAppService.getStoresPayload(user);
+          payload['csrfToken'] = this.utilsService.generateToken(req, res);
           res.render('superadmin/stores/index', payload);
+          return;
         }
       }
       res.status(401).send('the user is not a super admin.');

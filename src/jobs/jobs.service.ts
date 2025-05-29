@@ -72,12 +72,13 @@ export class JobsService {
     const queueName = jobToQueueMap[type];
     const queue = this.queues[queueName];
     const event = this.queueEventsMap[queueName];
-    const job = await queue.add(type, data, opts);
+    const job = await queue.add(type, data, { attempts: 3, backoff: { delay: 5000, type: 'exponential' } });
 
     try {
       const result = (await job.waitUntilFinished(event, 30000)) as Promise<JobRegistry[T]['result']>;
       return result;
     } catch (error) {
+      job.addJob;
       if (error.message == '401') {
         console.log(await job.isFailed());
         //job.moveToFailed(error, job.token)
@@ -98,20 +99,30 @@ export class JobsService {
   public syncCustomers = async (store: Store) => await this.addJob(JOB_TYPES.SYNC_CUSTOMERS, { store: store });
   public getCustomers = async (store: number) => this.addJob(JOB_TYPES.GET_CUSTOMERS, { storeId: store });
   public getStore = async (storeId: number) => this.addJob(JOB_TYPES.GET_STORE, { storeId: storeId });
+
   public updateStoreToken = async (store: Store, accessToken: string) =>
     await this.addJob(JOB_TYPES.UPDATE_STORE_TOKEN, { store: store, accessToken: accessToken });
+
   public syncStoreLocations = async (store: number | Store) =>
     await this.addJob(JOB_TYPES.SYNC_STORE_LOCATIONS, { store: store });
+
   public getStoreLocations = async (storeId: number) =>
     await this.addJob(JOB_TYPES.GET_STORE_LOCATIONS, { storeId: storeId });
+
   public getMembers = async (storeId: number) => await this.addJob(JOB_TYPES.GET_USERS, { storeId: storeId });
+
+  public getAllStoresForUser = async (userId: number) =>
+    await this.addJob(JOB_TYPES.GET_STORES_FOR_USER, { userId: userId });
+
   public createMember = async (newMember: RegisterUserDto, storeId: number) =>
     await this.addJob(JOB_TYPES.CREATE_USER, { user: newMember, storeId: storeId });
+
   public createProduct = async (store: Store, product: newProductDto) =>
     await this.addJob(JOB_TYPES.CREATE_PRODUCT, { product: product, store: store });
 
   public syncProductTypes = async (store: Store) => await this.addJob(JOB_TYPES.SYNC_PRODUCT_TYPES, { store: store });
   public getProductTypes = async (id?: string) => await this.addJob(JOB_TYPES.GET_PRODUCT_TYPES, { id: id });
+
   public getProductTypesNames = async (level: number) =>
     await this.addJob(JOB_TYPES.GET_PRODUCT_TYPE_NAMES, { level: level });
 

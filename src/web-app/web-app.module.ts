@@ -12,12 +12,14 @@ import { WebAppService } from './web-app.service';
 import routesConfig from './config/routes.config';
 import { RouteService } from './providers/routes.provider';
 import { IsAppPublicMiddleware } from 'src/middlewares/is-app-public.middleware';
+import { DataModule } from 'src/data/data.module';
 
 /**
  * This module will import submodules which will serve different pages of the website.
  */
 @Module({
   imports: [
+    DataModule,
     JobsModule,
     UtilsModule,
     UserModule,

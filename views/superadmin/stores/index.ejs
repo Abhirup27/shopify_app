@@ -39,12 +39,12 @@
                 <% if (typeof stores !== 'undefined' && stores) { %>
                     <% stores.forEach(function(store) { %>
                         <tr>
-                            <th scope="row"><%= store.id %></th>
-                            <td><%= store.name %></td>
-                            <td><%= store.isPublic ? 'Public' : 'Private' %></td>
-                            <td><%= store.myshopify_domain %></td>
-                          <!--  <td><%= new Date(store.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %></td>
-                            -->
+                            <th scope="row"><%= store.store.id %></th>
+                            <td><%= store.store.name %></td>
+                            <td><%= !store.isStorePrivate() ? 'Public' : 'Private' %></td>
+                            <td><%= store.store.myshopify_domain %></td>
+                           <td><%= new Date(store.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %></td>
+                           
                        </tr>
                     <% }); %>
                 <% } %>
@@ -82,4 +82,4 @@
   })
 </script>
 
-<%- include('layouts/footer') %>
+<%- include('../../layouts/footer') %>

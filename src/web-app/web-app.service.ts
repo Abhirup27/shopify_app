@@ -17,6 +17,7 @@ import { Response } from 'express';
 import { newProductDto } from './dtos/new-product.dto';
 import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 import { ProductType } from 'src/database/entities/productType.entity';
+import { DataService } from 'src/data/data.service';
 
 @Injectable()
 export class WebAppService {
@@ -26,6 +27,8 @@ export class WebAppService {
     private readonly utilsService: UtilsService,
     private readonly configService: ConfigService,
     private readonly jobsService: JobsService,
+
+    private readonly dataService: DataService,
   ) {}
 
   public async syncProductTypes(store: Store) {
@@ -48,7 +51,7 @@ export class WebAppService {
     let dashboard: object = {};
 
     try {
-      const isPublic: boolean = !this.utilsService.checkIfStoreIsPrivate(user.store);
+      const isPublic: boolean = !user.store.IsPrivate();
       dashboard = {
         storeId: user.store_id,
         showSidebar: true,
@@ -81,8 +84,8 @@ export class WebAppService {
   public getDashboardPayload = async (user: UserDto): Promise<object> => {
     let dashboard: object = {};
     try {
-      const recentOrders: Order[] = await this.jobsService.getOrders(user.store_id);
-      const customers: Customer[] = await this.jobsService.getCustomers(user.store_id);
+      const recentOrders: Order[] = await this.dataService.getAllOrdersForStore(user.store_id);
+      const customers: Customer[] = await this.dataService.getAllCustomersForStore(user.store_id);
       let totalRevenue = 0;
       if (recentOrders && recentOrders.length > 0) {
         totalRevenue = recentOrders.reduce((sum, order) => {
@@ -90,7 +93,7 @@ export class WebAppService {
           return sum + orderPrice;
         }, 0);
       }
-      const isPublic: boolean = !this.utilsService.checkIfStoreIsPrivate(user.store);
+      const isPublic: boolean = !user.store.IsPrivate();
 
       const recentSales: any[] = [];
       for (const order of recentOrders) {
@@ -175,9 +178,13 @@ export class WebAppService {
     return dashboard;
   };
   public getStoresPayload = async (user: UserDto): Promise<object> => {
-    //const allStores: Store[] = await this.jobsService.getStores(user.user_id);
+    const allStores: UserStore[] = await this.dataService.getAllStoresForUser(user.user_id);
+    console.log(allStores[0].store.IsPrivate());
+    /*const stores: Store[] = allStores.map(userStore => {
+      return userStore.store;
+    });*/
     return {
-      stores: [],
+      stores: [...allStores],
       storeId: user.store_id,
       isEmbedded: false,
       showSidebar: false,
@@ -202,10 +209,10 @@ export class WebAppService {
     try {
       payload = {
         storeId: user.store_id,
-        orders: await this.jobsService.getOrders(user.store_id),
+        orders: await this.dataService.getAllOrdersForStore(user.store_id),
         isEmbedded: false,
         showSidebar: true,
-        isStorePublic: !this.utilsService.checkIfStoreIsPrivate(user.store),
+        isStorePublic: !user.store.IsPrivate(),
         style: '',
         appName: 'Shopify App',
         user: {
@@ -227,8 +234,12 @@ export class WebAppService {
     return payload;
   };
   public syncOrders = async (storeId: number, res: Response): Promise<any> => {
-    const store: Store = await this.jobsService.getStore(storeId);
+    const store: Store = await this.dataService.getStore(storeId);
 
+    if (store == null) {
+      res.redirect(401, '/dashboard');
+      return;
+    }
     const result = await this.jobsService.syncOrders(store);
     if (typeof result != 'boolean' && result.status && result.status == 'AUTH_REQUIRED') {
       console.log('this is the result:', result.status);
@@ -250,10 +261,10 @@ export class WebAppService {
       payload = {
         storeId: user.store_id,
         user: user,
-        order: await this.jobsService.getOrder(orderId),
+        // order: await this.dataServiceService.getAllOrder(orderId),
         isEmbedded: false,
         showSidebar: true,
-        isStorePublic: !this.utilsService.checkIfStoreIsPrivate(user.store),
+        isStorePublic: !user.store.IsPrivate(),
         style: '',
         appName: 'Shopify App',
       };
@@ -273,7 +284,7 @@ export class WebAppService {
 
     try {
       if (user.hasRole(SUPER_ADMIN) || user.hasRole(ADMIN) || user.can(['read_products'])) {
-        const products: Product[] = await this.jobsService.getProducts(user.store_id);
+        const products: Product[] = await this.dataService.getAllProductsForStore(user.store_id);
         //console.log(products);
         payload = {
           storeId: user.store_id,
@@ -281,7 +292,7 @@ export class WebAppService {
           user: user,
           isEmbedded: false,
           showSidebar: true,
-          isStorePublic: !this.utilsService.checkIfStoreIsPrivate(user.store),
+          isStorePublic: !user.store.IsPrivate(),
           style: '',
           appName: 'Shopify App',
           body: '',
@@ -295,7 +306,7 @@ export class WebAppService {
   public createProductPagePayload = async (user: UserDto): Promise<object> => {
     let payload: object = {};
     try {
-      const locations: StoreLocations[] = await this.jobsService.getStoreLocations(user.store_id);
+      const locations: StoreLocations[] = await this.dataService.getAllLocationsOfStore(user.store_id);
       const level_one_categories: Record<string, string> = await this.jobsService.getProductTypes();
       //console.log(level_one_categories);
       payload = {
@@ -304,7 +315,7 @@ export class WebAppService {
         user: user,
         isEmbedded: false,
         showSidebar: true,
-        isStorePublic: !this.utilsService.checkIfStoreIsPrivate(user.store),
+        isStorePublic: !user.store.IsPrivate(),
         style: '',
         appName: 'Shopify App',
         body: '',
@@ -319,7 +330,7 @@ export class WebAppService {
   public getMembers = async (storeId: number): Promise<UserStore[]> => {
     let members: UserStore[];
     try {
-      members = await this.jobsService.getMembers(storeId);
+      members = await this.dataService.getUsersForStore(storeId);
     } catch (error) {
       this.logger.error(error.message, this.getMembers.name);
     }

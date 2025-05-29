@@ -20,6 +20,7 @@ import { CsrfMiddleware } from './middlewares/csrf.middleware';
 import { CsrfExceptionFilter } from './filters/csrf.exception.filter';
 import { JobsModule } from './jobs/jobs.module';
 import { moduleOptions } from './database/typeorm.config';
+import { DataModule } from './data/data.module';
 
 //we pass this value through the command line/system variables
 const ENV = process.env.NODE_ENV;
@@ -75,7 +76,8 @@ const ENV = process.env.NODE_ENV;
     AuthModule,
     WebhooksModule,
     WebAppModule,
-    JobsModule
+    JobsModule,
+    DataModule
   ],
   controllers: [],
 

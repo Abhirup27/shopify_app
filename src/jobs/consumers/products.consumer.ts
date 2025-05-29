@@ -1,11 +1,11 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { JOB_TYPES, JobRegistry, QUEUES } from '../constants/jobs.constants';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { UtilsService } from 'src/utils/utils.service';
 import { Store } from 'src/database/entities/store.entity';
 import { DataSource, EntityManager, Repository } from 'typeorm';
-import { Job } from 'bullmq';
+import { Job, UnrecoverableError } from 'bullmq';
 import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 import { AxiosHeaders } from 'axios';
 import { Product } from 'src/database/entities/product.entity';
@@ -17,6 +17,7 @@ import { CacheProvider } from '../providers/cache-redis.provider';
 import { ProductType } from 'src/database/entities/productType.entity';
 import { VariantDto } from 'src/web-app/dtos/product-variant.dto';
 import { InventoryLevel, ProductVariant } from 'src/database/entities/productVariant.entity';
+import { TokenExpiredException } from '../token-expired.exception';
 
 export type ProductsType = {
   id: string;
@@ -191,6 +192,9 @@ export class ProductsConsumer extends WorkerHost {
       }
     } catch (error) {
       this.logger.error(error.message);
+      await job.retry('failed');
+      // job.discard;
+      console.log(await job.moveToFailed(error, '0', true));
     }
   };
   private isJobOfType<T extends keyof JobRegistry>(
@@ -285,70 +289,108 @@ export class ProductsConsumer extends WorkerHost {
   private syncProducts = async (
     data: JobRegistry[typeof JOB_TYPES.SYNC_PRODUCTS]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.SYNC_PRODUCTS]['result']> => {
-    try {
-      // const store = store ?? null;
-      const totalProducts: any[] = [];
-      const totalProductVariants: any[] = [];
-      let cursor: string | null = null;
-      //      let since_id: number = 0;
-      const requestOptions: ShopifyRequestOptions = { url: null, headers: null };
-      requestOptions.headers = new AxiosHeaders()
-        .set('Content-Type', 'application/json')
-        .set('X-Shopify-Access-Token', data.store.access_token);
+    //  try {
+    // const store = store ?? null;
+    const totalProducts: any[] = [];
+    const totalProductVariants: any[] = [];
+    let cursor: string | null = null;
+    //      let since_id: number = 0;
+    const requestOptions: ShopifyRequestOptions = { url: null, headers: null };
+    requestOptions.headers = new AxiosHeaders()
+      .set('Content-Type', 'application/json')
+      .set('X-Shopify-Access-Token', data.store.access_token);
 
-      /* requestOptions.url = await this.utilsService.getShopifyURLForStore(
-         `products.json?since_id=${since_id}`,
-         data.store,
-       );*/
-      requestOptions.url = await this.utilsService.getShopifyURLForStore('graphql.json', data.store);
-      requestOptions.data = this.syncProductsQuery('');
+    /* requestOptions.url = await this.utilsService.getShopifyURLForStore(
+       `products.json?since_id=${since_id}`,
+       data.store,
+     );*/
+    requestOptions.url = await this.utilsService.getShopifyURLForStore('graphql.json', data.store);
+    requestOptions.data = this.syncProductsQuery('');
 
-      let response = await this.utilsService.requestToShopify<ProductCreateResponse>('post', requestOptions);
-      //if(response.error == false && response.statusCode == 200){
-      // this.logger.debug(JSON.stringify(response.respBody));
-      // }
-      const products: Product[] = [];
-      do {
-        //response.statusCode == 200 ? products.push(...response.respBody['products']) : null;
-        const hasNextPage: boolean = response.respBody['data']['products']['pageInfo']['hasNextPage'];
-        if (hasNextPage == true) {
-          cursor = response.respBody['data']['products']['pageInfo']['endCursor'];
-        } else {
-          cursor = null;
-        }
-        const { products, productVariants } = await this.mapProductsToDB(response.respBody, data.store.table_id);
-        totalProducts.push(...products);
-        totalProductVariants.push(...productVariants);
+    let response = await this.utilsService.requestToShopify<ProductCreateResponse>('post', requestOptions);
+    //if(response.error == false && response.statusCode == 200){
+    // this.logger.debug(JSON.stringify(response.respBody));
+    // }
+    if (response.statusCode == 401) {
+      console.log(response.respBody);
 
-        requestOptions.data = this.syncProductsQuery(cursor);
-        response = await this.utilsService.requestToShopify<ProductCreateResponse>('post', requestOptions);
-      } while (cursor !== null);
+      //throw new UnrecoverableError('errror error');
+      throw new TokenExpiredException(`Token expired for ${data.store}`, {
+        shop: data.store.table_id.toString(),
+        jobId: '123',
+      });
+    }
+    const products: Product[] = [];
+    do {
+      //response.statusCode == 200 ? products.push(...response.respBody['products']) : null;
+      const hasNextPage: boolean = response.respBody['data']['products']['pageInfo']['hasNextPage'];
+      if (hasNextPage == true) {
+        cursor = response.respBody['data']['products']['pageInfo']['endCursor'];
+      } else {
+        cursor = null;
+      }
+      const { products, productVariants } = await this.mapProductsToDB(response.respBody, data.store.table_id);
+      totalProducts.push(...products);
+      totalProductVariants.push(...productVariants);
 
-      const shopifyProductIds = totalProducts.map(p => p.id);
-      const shopifyVariantIds = totalProductVariants.map(v => v.id);
+      requestOptions.data = this.syncProductsQuery(cursor);
+      response = await this.utilsService.requestToShopify<ProductCreateResponse>('post', requestOptions);
+    } while (cursor !== null);
 
-      /*  await this.productVariantsRepository
-          .createQueryBuilder()
-          .delete()
-          // .where('product_id IN (SELECT id FROM product WHERE store_id = :storeId)', { storeId: data.store.table_id })
-          .where('id NOT IN (:...variantIds)', { variantIds: shopifyVariantIds })
-          .execute();
-  */
-      await this.productsRepository
+    const shopifyProductIds = totalProducts.map(p => p.id);
+    const shopifyVariantIds = totalProductVariants.map(v => v.id);
+
+    /*  await this.productVariantsRepository
         .createQueryBuilder()
         .delete()
-        .where('store_id = :storeId', { storeId: data.store.table_id })
-        .andWhere('id NOT IN (:...productIds)', { productIds: shopifyProductIds })
+        // .where('product_id IN (SELECT id FROM product WHERE store_id = :storeId)', { storeId: data.store.table_id })
+        .where('id NOT IN (:...variantIds)', { variantIds: shopifyVariantIds })
         .execute();
-      const productEntities: Product[] = this.productsRepository.create(totalProducts);
-      await this.productsRepository.upsert(productEntities, ['id']);
+*/
+    await this.productsRepository
+      .createQueryBuilder()
+      .delete()
+      .where('store_id = :storeId', { storeId: data.store.table_id })
+      .andWhere('id NOT IN (:...productIds)', { productIds: shopifyProductIds })
+      .execute();
+    const productEntities: Product[] = this.productsRepository.create(totalProducts);
+    await this.productsRepository.upsert(productEntities, ['id']);
 
-      const productVaraintsEntities: ProductVariant[] = this.productVariantsRepository.create(totalProductVariants);
-      await this.productVariantsRepository.upsert(productVaraintsEntities, ['id']);
-    } catch (error) {
-      this.logger.error(error.message, error.stack, this.syncProducts.name);
-    }
+    const productVaraintsEntities: ProductVariant[] = this.productVariantsRepository.create(totalProductVariants);
+    await this.productVariantsRepository.upsert(productVaraintsEntities, ['id']);
+    /* } catch (error) {
+       console.log(error['code']);
+       this.logger.error(error.message, error.stack, this.syncProducts.name);
+ 
+     }*/
   };
+  /* @OnWorkerEvent('failed')
+   async handleFailedJob(job: Job, error: Error) {
+     console.log(error);
+     //console.log(job.data);
+     if (error['isTokenExpired']) {
+       console.log('true');
+       const { shop, jobId } = error['meta'];
+ 
+       // Pause job and notify main module
+       await job.updateData({
+         ...job.data,
+         paused: true,
+         pausedAt: new Date(),
+       });
+ 
+       // Move to custom "paused" state
+       await job.moveToFailed(error, jobId, true);
+ 
+       // Emit global event
+       /* this.eventEmitter.emit('token_expired', {
+          shop,
+          jobId,
+          queue: job.queueName
+        }); 
+     }
+   } */
+
   private extractIdFromGraphQLId(graphqlId: string, prefix?: string, removeSuffix: boolean = false): number | null {
     try {
       if (!graphqlId) {
@@ -503,7 +545,8 @@ export class ProductsConsumer extends WorkerHost {
     //console.log(await products[0].getAddToCartStatus())
     //return Promise.resolve(products);
 
-    return Promise.resolve(
+    return products;
+    /*return Promise.resolve(
       products.map(entity => {
         //console.log(entity);
         const targetTag: string = this.configService.get<string>('AddToCartTagProduct') ?? 'buy-now';
@@ -528,7 +571,7 @@ export class ProductsConsumer extends WorkerHost {
           },
         };
       }),
-    );
+    );*/
   };
   private isArray(array: unknown): array is string[] {
     return Array.isArray(array) && array.every(item => typeof item === 'string');

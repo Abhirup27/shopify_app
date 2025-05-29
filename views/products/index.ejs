@@ -54,11 +54,11 @@
                                         <td><%= product.vendor %></td>
                                         <td><%= new Date(product.created_at).toISOString().split('T')[0] %></td>
                                          <td>
-                                             <%const data = product.getAddToCartStatus.message; %>
+                                             <%const data = product.getAddToCartStatus().message; %>
                                           <a href="<%= route('change.product.addToCart', {storeId: storeId, product_id: product.id}) %>" class="btn btn-primary">
                                               
                                                 <%= data %>
-                                            </a>
+
                                         </td>
                                         
                                     </tr>

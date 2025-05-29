@@ -10,7 +10,7 @@ export default registerAs('routes', (): Record<string, string> => {
     logout: '/logout',
     'stores.index': '/stores',
     'stores.create': '/stores/create',
-
+    'search.store': '/stores/search',
     'billing.index': '/billing',
 
     show2FASettings: '/auth-settings',

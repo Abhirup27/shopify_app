@@ -47,6 +47,7 @@ export const JOB_TYPES = {
   GET_CUSTOMERS: 'retrieve-customers',
 
   GET_USERS: 'retrieve-users',
+  GET_STORES_FOR_USER: 'retrieve-stores-users',
   CREATE_USER: 'create-user',
   UPDATE_STORE_TOKEN: 'update-store-token',
 
@@ -132,6 +133,7 @@ export type JobRegistry = {
     data: { storeId: number };
     result: Store;
   };
+  //This job is not defined in stores.consumer
   [JOB_TYPES.GET_STORES]: {
     queue: typeof QUEUES.STORES;
     data: { userId: number };
@@ -164,6 +166,11 @@ export type JobRegistry = {
   [JOB_TYPES.GET_USERS]: {
     queue: typeof QUEUES.USERS;
     data: { storeId: number };
+    result: UserStore[];
+  };
+  [JOB_TYPES.GET_STORES_FOR_USER]: {
+    queue: typeof QUEUES.USERS;
+    data: { userId: number };
     result: UserStore[];
   };
   [JOB_TYPES.CREATE_USER]: {
@@ -201,7 +208,6 @@ export const jobToQueueMap: { [K in JobType]: QueueName } = {
   [JOB_TYPES.CACHE_PRODUCT_TYPES]: QUEUES.PRODUCTS,
   [JOB_TYPES.CHECK_PRODUCT_TYPE]: QUEUES.PRODUCTS,
 
-  [JOB_TYPES.CREATE_USER]: QUEUES.USERS,
   [JOB_TYPES.SYNC_CUSTOMERS]: QUEUES.CUSTOMERS,
   [JOB_TYPES.SYNC_STORE]: QUEUES.STORES,
   [JOB_TYPES.SYNC_STORE_LOCATIONS]: QUEUES.STORES,
@@ -211,9 +217,14 @@ export const jobToQueueMap: { [K in JobType]: QueueName } = {
   [JOB_TYPES.GET_STORE_LOCATIONS]: QUEUES.STORES,
   [JOB_TYPES.GET_ORDER]: QUEUES.ORDERS,
   [JOB_TYPES.GET_ORDERS]: QUEUES.ORDERS,
+
   [JOB_TYPES.GET_USERS]: QUEUES.USERS,
+  [JOB_TYPES.GET_STORES_FOR_USER]: QUEUES.USERS,
+  [JOB_TYPES.CREATE_USER]: QUEUES.USERS,
+
   [JOB_TYPES.GET_CUSTOMERS]: QUEUES.CUSTOMERS,
   [JOB_TYPES.GET_PRODUCTS]: QUEUES.PRODUCTS,
+
   [JOB_TYPES.UPDATE_STORE_TOKEN]: QUEUES.STORES,
   // Add other mappings...
 };

@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from './user.entity';
 import { Product } from './product.entity';
 import { Order } from './order.entity';
@@ -96,6 +96,12 @@ export class Store {
 
   @Column({ type: 'text', nullable: true })
   zip: string;
+
+  @CreateDateColumn({
+    type: 'timestamp with time zone',
+    //default: () => 'CURRENT_TIMESTAMP'
+  })
+  created_at_date: Date;
 
   public IsPrivate(): boolean {
     if (
