@@ -219,7 +219,9 @@ export class InstallationController {
               store = await this.installationService.getShopDetailsFromShopify(shop, accessToken);
             }
             const updateAccessToken = await this.installationService.updateAccessToken(store, accessToken);
-            console.log(updateAccessToken);
+            //console.log(updateAccessToken);
+            console.log(accessToken);
+            await this.jobsService.resumePausedJobsForStore(shop, accessToken);
             response.redirect('/dashboard');
           } else {
             //store doesn't exist in DB

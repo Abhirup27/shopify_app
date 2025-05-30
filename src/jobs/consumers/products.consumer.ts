@@ -171,7 +171,7 @@ export class ProductsConsumer extends WorkerHost {
     try {
       switch (job.name) {
         case JOB_TYPES.SYNC_PRODUCTS:
-          return await this.syncProducts(job.data);
+          return await this.syncProducts(job.data, job);
         case JOB_TYPES.GET_PRODUCTS:
           return await this.retrieveProducts(job.data);
         case JOB_TYPES.CREATE_PRODUCT:
@@ -191,10 +191,14 @@ export class ProductsConsumer extends WorkerHost {
           break;
       }
     } catch (error) {
-      this.logger.error(error.message);
-      await job.retry('failed');
+      this.logger.error(error);
+      // await job.retry('failed');
+      //console.log(error['isTokenExpired']);
+
       // job.discard;
-      console.log(await job.moveToFailed(error, '0', true));
+      // console.log(await job.moveToFailed(error, '0', true));
+      await job.moveToFailed(new UnrecoverableError(`401`), job.token);
+      //job.discard();
     }
   };
   private isJobOfType<T extends keyof JobRegistry>(
@@ -288,6 +292,7 @@ export class ProductsConsumer extends WorkerHost {
   };
   private syncProducts = async (
     data: JobRegistry[typeof JOB_TYPES.SYNC_PRODUCTS]['data'],
+    job: Job,
   ): Promise<JobRegistry[typeof JOB_TYPES.SYNC_PRODUCTS]['result']> => {
     //  try {
     // const store = store ?? null;
@@ -304,21 +309,34 @@ export class ProductsConsumer extends WorkerHost {
        `products.json?since_id=${since_id}`,
        data.store,
      );*/
-    requestOptions.url = await this.utilsService.getShopifyURLForStore('graphql.json', data.store);
+    requestOptions.url = this.utilsService.getShopifyURLForStore('graphql.json', data.store);
     requestOptions.data = this.syncProductsQuery('');
 
     let response = await this.utilsService.requestToShopify<ProductCreateResponse>('post', requestOptions);
     //if(response.error == false && response.statusCode == 200){
     // this.logger.debug(JSON.stringify(response.respBody));
     // }
+    //
+    console.log('products ran');
     if (response.statusCode == 401) {
-      console.log(response.respBody);
+      //  console.log(JSON.stringify(response));
+      //console.log(job.token);
+      console.log('in syncproduct', job.data);
+      //await job.moveToFailed(new UnrecoverableError(`token expired for ${data.store.table_id}`), job.token);
+      //job.discard();
+      throw new TokenExpiredException(`Token expired for ${data.store.table_id}`, {
+        shop: data.store.table_id.toString(),
+        jobId: job.id,
+      });
+      //await job.remove();
+      //return;
+      //await job.remove();
 
       //throw new UnrecoverableError('errror error');
-      throw new TokenExpiredException(`Token expired for ${data.store}`, {
-        shop: data.store.table_id.toString(),
-        jobId: '123',
-      });
+      // throw new TokenExpiredException(`Token expired for ${data.store}`, {
+      // shop: data.store.table_id.toString(),
+      // jobId: '123',
+      //});
     }
     const products: Product[] = [];
     do {
@@ -346,7 +364,7 @@ export class ProductsConsumer extends WorkerHost {
         // .where('product_id IN (SELECT id FROM product WHERE store_id = :storeId)', { storeId: data.store.table_id })
         .where('id NOT IN (:...variantIds)', { variantIds: shopifyVariantIds })
         .execute();
-*/
+    */
     await this.productsRepository
       .createQueryBuilder()
       .delete()
@@ -554,17 +572,17 @@ export class ProductsConsumer extends WorkerHost {
         let message: string = 'Remove Add to Cart';
         if (entity.tags.length > 0) {
           const tags: Array<string> = entity.tags.split(',');
-
+  
           if (tags !== null && this.isArray(tags)) {
             if (tags.includes(targetTag)) {
               (status = true), (message = 'Enable Add to Cart');
             }
           }
         }
-
+  
         return {
           ...entity,
-
+  
           getAddToCartStatus: {
             status: status,
             message: message,

@@ -29,6 +29,7 @@ import { ProductType } from 'src/database/entities/productType.entity';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { CacheProvider } from './providers/cache-redis.provider';
 import { ProductVariant } from 'src/database/entities/productVariant.entity';
+import { Queue } from 'bullmq';
 
 @Module({
   imports: [
@@ -77,6 +78,16 @@ import { ProductVariant } from 'src/database/entities/productVariant.entity';
   ],
 
   providers: [
+    {
+      inject: [ConfigService],
+      provide: 'BullQueue_PAUSED_QUEUE',
+      useFactory: async configService =>
+        new Queue('PAUSED_QUEUE', {
+          connection: {
+            url: `redis://${configService.get('redis.host')}:${configService.get('redis.port')}`,
+          },
+        }),
+    },
     JobsService,
     ConfigWebhookConsumer,
     ProductsConsumer,

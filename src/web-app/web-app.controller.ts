@@ -280,8 +280,8 @@ export class WebAppController {
   public async syncProducts(@Req() req: Request, @CurrentUser() user: UserDto, @Res() res: Response) {
     try {
       if (user.can(['all_access', 'write_products'])) {
-        const result = await this.webAppService.syncProducts(user);
-        res.redirect('/products');
+        const result = await this.webAppService.syncProducts(user, res);
+        //res.redirect('/products');
       }
     } catch (error) {
       this.logger.error(error.message);

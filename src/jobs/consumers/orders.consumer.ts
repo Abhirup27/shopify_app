@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { JOB_TYPES, JobRegistry, QUEUES } from '../constants/jobs.constants';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
+import { Job, UnrecoverableError } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { UtilsService } from 'src/utils/utils.service';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -9,6 +9,7 @@ import { Order } from 'src/database/entities/order.entity';
 import { Repository } from 'typeorm';
 import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 import { ShopifyResponse } from 'src/types/ShopifyResponse';
+import { TokenExpiredException } from '../token-expired.exception';
 
 interface Money {
   amount: string;
@@ -154,7 +155,7 @@ export class OrdersConsumer extends WorkerHost {
             throw new Error('Invalid job data, Store expected recieved number type.');
           }
 
-          return await this.syncOrders(job.data);
+          return await this.syncOrders(job.data, job);
 
         case JOB_TYPES.GET_ORDERS:
           return await this.retrieveOrders(job.data);
@@ -164,6 +165,8 @@ export class OrdersConsumer extends WorkerHost {
           throw new Error('Invalid job name');
       }
     } catch (error) {
+      await job.moveToFailed(new UnrecoverableError(`401`), job.token);
+
       if (error.message == '401') {
         console.log('yes');
         // job.moveToCompleted(error, undefined);
@@ -175,6 +178,7 @@ export class OrdersConsumer extends WorkerHost {
 
   private syncOrders = async (
     data: JobRegistry[typeof JOB_TYPES.SYNC_ORDERS]['data'],
+    job: Job,
   ): Promise<JobRegistry[typeof JOB_TYPES.SYNC_ORDERS]['result']> => {
     const store = data.store;
     try {
@@ -192,7 +196,12 @@ export class OrdersConsumer extends WorkerHost {
           // job.moveToFailed(Error('401'), job.token)
           //job.moveToCompleted(Error('401'), job.token);
           //job.remove()
-          throw Error('401');
+          throw new TokenExpiredException(`Token expired for ${data.store.table_id}`, {
+            shop: data.store.table_id.toString(),
+            jobId: job.id,
+          });
+
+          //          throw Error('401');
         }
         //throw Error('401');
         if (response.statusCode == 200) {
@@ -283,7 +292,7 @@ export class OrdersConsumer extends WorkerHost {
         .execute(); 
       */
       const query = this.ordersRepository.create(formattedOrders);
-      const result: Order[] = await this.ordersRepository.save(query);
+      await this.ordersRepository.upsert(query, ['id']);
     } catch (error) {
       this.logger.error(`Failed to save orders: ${error.message}`, error.stack);
       throw error;

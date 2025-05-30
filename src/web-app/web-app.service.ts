@@ -274,9 +274,15 @@ export class WebAppService {
 
     return payload;
   };
-  public syncProducts = async (user: UserDto): Promise<void> => {
+  public syncProducts = async (user: UserDto, res: Response): Promise<void> => {
     try {
-      await this.jobsService.syncProducts(user.store);
+      const result = await this.jobsService.syncProducts(user.store);
+      if (result['status'] == 'AUTH_REQUIRED') {
+        const url = await this.getOAuthURL(user.store.myshopify_domain, `/orders?storeId=${user.store.id}`);
+        console.log(url);
+        res.redirect(url);
+        return;
+      }
     } catch (error) {}
   };
   public getProducts = async (user: UserDto): Promise<object> => {

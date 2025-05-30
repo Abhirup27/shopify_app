@@ -31,6 +31,9 @@ export class JobsService {
   private queueEventsMap: Record<string, QueueEvents> = {};
 
   constructor(
+    @InjectQueue('PAUSED_QUEUE')
+    private pausedQueue: Queue,
+
     @InjectQueue(QUEUES.CONFIGURE)
     private configQueue: Queue<QueueData<typeof QUEUES.CONFIGURE>, QueueResult<typeof QUEUES.CONFIGURE>>,
     @InjectQueue(QUEUES.PRODUCTS)
@@ -73,21 +76,30 @@ export class JobsService {
     const queue = this.queues[queueName];
     const event = this.queueEventsMap[queueName];
     const job = await queue.add(type, data, { attempts: 3, backoff: { delay: 5000, type: 'exponential' } });
-
+    //job.token = 'my-token';
     try {
       const result = (await job.waitUntilFinished(event, 30000)) as Promise<JobRegistry[T]['result']>;
       return result;
     } catch (error) {
-      job.addJob;
-      if (error.message == '401') {
-        console.log(await job.isFailed());
+      console.log(JSON.stringify(error));
+      if (error.message == '401' || job.failedReason == '401') {
+        console.log('in if statement');
+        //console.log(await job.isFailed());
         //job.moveToFailed(error, job.token)
         //job.remove();
+
+        const pausedJob = await this.pausedQueue.add(
+          job.queueName + ':' + job.data['store'].myshopify_domain + ':' + type,
+          { queue: job.queueName, jobName: job.name, id: job.id, task_type: type },
+          { jobId: job.data['store']['myshopify_domain'] },
+        );
+        //console.log(pausedJob);
         return {
           status: 'AUTH_REQUIRED',
           shopDomain: job.data.myshopify_domain,
         };
       }
+      console.log('does not return');
     }
   }
   public configure = async (storeId: number) => await this.addJob(JOB_TYPES.CONFIGURE_WEBHOOKS, { storeId: storeId });
@@ -127,4 +139,36 @@ export class JobsService {
     await this.addJob(JOB_TYPES.GET_PRODUCT_TYPE_NAMES, { level: level });
 
   public cacheProductTypes = async () => await this.addJob(JOB_TYPES.CACHE_PRODUCT_TYPES, null);
+
+  public resumePausedJobsForStore = async (store_domain: string, accssToken: string) => {
+    try {
+      const pausedJob = await this.pausedQueue.getJob(store_domain);
+      const requiredId = pausedJob.data.id;
+      const queueName = pausedJob.data.queue;
+      // const failedProductJobs = await this.productQueue.getFailed();
+      // const failedOrderJobs = await this.ordersQueue.getFailed();
+      let job: Job;
+      console.log(pausedJob.data.queue);
+      switch (queueName) {
+        case QUEUES.PRODUCTS:
+          console.log('this');
+          job = await this.productQueue.getJob(requiredId);
+          break;
+        case QUEUES.ORDERS:
+          job = await this.ordersQueue.getJob(requiredId);
+          break;
+      }
+      //const job = await this.productQueue.getJob(requiredId);
+      job.data['store']['access_token'] = accssToken;
+      await job.updateData(job.data);
+      console.log('updated', job.data);
+
+      await job.extendLock(job.token, 10000);
+
+      await job.retry('failed');
+      this.pausedQueue.remove(store_domain);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 }
