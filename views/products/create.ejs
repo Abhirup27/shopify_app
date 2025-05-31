@@ -97,6 +97,50 @@
 </section>
 
 <script>
+function saveFormData() {
+    const formData = {
+        title: document.getElementById('floatingName').value,
+        desc: document.getElementById('floatingTextarea').value,
+        vendor: document.getElementById('floatingVendor').value,
+        tags: document.getElementById('floatingCostPerItem').value,
+        categories: [],
+        variants: []
+    };
+
+    // Save categories
+    document.querySelectorAll('.product-category').forEach(select => {
+        formData.categories.push({
+            level: select.dataset.level,
+            value: select.value
+        });
+    });
+
+    // Save variants
+    document.querySelectorAll('.variant-container').forEach(container => {
+        const variant = {
+            title: container.querySelector('.variant-title').value,
+            sku: container.querySelector('.variant-sku').value,
+            price: container.querySelector('.variant-price').value,
+            compareAtPrice: container.querySelector('.variant-compare-price').value,
+            inventory: []
+        };
+
+        // Save inventory
+        container.querySelectorAll('.inventory-input').forEach(input => {
+            variant.inventory.push({
+                location: input.dataset.location,
+                quantity: input.value
+            });
+        });
+
+        formData.variants.push(variant);
+    });
+
+    sessionStorage.setItem('unsavedProductForm', JSON.stringify(formData));
+}
+
+// Restore form data from session storage
+
 document.addEventListener('DOMContentLoaded', function () {
     let variantCount = 0;
     // Initialize locations from EJS data
@@ -280,42 +324,52 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Sync locations functionality
-    const syncLocationsBtn = document.querySelector('#syncLocations');
-    if (syncLocationsBtn) {
-        syncLocationsBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            syncLocationsBtn.innerHTML = 'Syncing...';
-            syncLocationsBtn.disabled = true;
-            
-            fetch(this.href, {
+const syncLocationsBtn = document.querySelector('#syncLocations');
+if (syncLocationsBtn) {
+    syncLocationsBtn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        
+        syncLocationsBtn.innerHTML = 'Syncing...';
+        syncLocationsBtn.disabled = true;
+        
+        try {
+            const response = await fetch(this.href, {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data && Array.isArray(data)) {
-                    locations = data;
-                    updateAllVariantsWithLocations();
-                    alert('Locations synced successfully!');
-                } else {
-                    throw new Error('Invalid response format');
-                }
-            })
-            .catch(error => {
-                console.error('Error syncing locations:', error);
-                alert('Failed to sync locations. Please try again.');
-            })
-            .finally(() => {
-                syncLocationsBtn.innerHTML = 'Sync Locations';
-                syncLocationsBtn.disabled = false;
             });
-        });
-    }
+            
+            // Handle HTTP errors (401 Unauthorized), server sends an Oauth url.
+            if (response.status === 401) {
+                saveFormData();
+                
+                const redirectUrl = await response.text();
+                window.location.href = redirectUrl;  // Full page redirect
+                return;
+            }
+            
+            // Handle successful responses
+            const data = await response.json();
+            
+            if (Array.isArray(data)) {
+                locations = data;
+                updateAllVariantsWithLocations();
+                alert('Locations synced successfully!');
+            } else {
+                throw new Error('Invalid response format');
+            }
+        } catch (error) {
+            console.error('Error syncing locations:', error);
+            alert('Failed to sync locations. Please try again.');
+        } finally {
+            syncLocationsBtn.innerHTML = 'Sync Locations';
+            syncLocationsBtn.disabled = false;
+        }
+    });
+}
 
-    function updateAllVariantsWithLocations() {
+function updateAllVariantsWithLocations() {
         const variantContainers = document.querySelectorAll('.variant-container');
         variantContainers.forEach(container => {
             const variantNumber = container.getAttribute('data-variant');
@@ -380,6 +434,7 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(response => {
             if (response.ok) {
+                sessionStorage.removeItem('unsavedProductForm');
                 return response.json();
             }
             throw new Error('Network response was not ok');
@@ -449,6 +504,55 @@ document.addEventListener('DOMContentLoaded', function () {
         
         return variants;
     }
+    function restoreFormData() {
+    const savedData = sessionStorage.getItem('unsavedProductForm');
+    if (!savedData) return false;
 
+    try {
+        const formData = JSON.parse(savedData);
+        
+        // Restore basic fields
+        document.getElementById('floatingName').value = formData.title || '';
+        document.getElementById('floatingTextarea').value = formData.desc || '';
+        document.getElementById('floatingVendor').value = formData.vendor || '';
+        document.getElementById('floatingCostPerItem').value = formData.tags || '';
+        
+        // Restore categories
+        formData.categories.forEach(category => {
+            const select = document.querySelector(`.product-category[data-level="${category.level}"]`);
+            if (select) select.value = category.value;
+        });
+        
+        // Remove existing variants
+        document.querySelectorAll('.variant-container').forEach(el => el.remove());
+        
+        // Restore variants
+        formData.variants.forEach(variantData => {
+            addVariant();
+            const containers = document.querySelectorAll('.variant-container');
+            const container = containers[containers.length - 1];
+            
+            container.querySelector('.variant-title').value = variantData.title || '';
+            container.querySelector('.variant-sku').value = variantData.sku || '';
+            container.querySelector('.variant-price').value = variantData.price || '';
+            container.querySelector('.variant-compare-price').value = variantData.compareAtPrice || '';
+            
+            // Restore inventory
+            variantData.inventory.forEach(inv => {
+                const input = container.querySelector(`.inventory-input[data-location="${inv.location}"]`);
+                if (input) input.value = inv.quantity || 0;
+            });
+        });
+        
+        return true;
+    } catch (error) {
+        console.error('Error restoring form data:', error);
+        return false;
+    }
+}
+
+    if (restoreFormData()) {
+        console.log('Form data restored');
+    }
 });
 </script>

@@ -47,4 +47,32 @@ export class ProductsQueueEvents extends QueueEventsHost {
   {
   console.log(args);
   }
+
+    /* @OnWorkerEvent('failed')
+   async handleFailedJob(job: Job, error: Error) {
+     console.log(error);
+     //console.log(job.data);
+     if (error['isTokenExpired']) {
+       console.log('true');
+       const { shop, jobId } = error['meta'];
+ 
+       // Pause job and notify main module
+       await job.updateData({
+         ...job.data,
+         paused: true,
+         pausedAt: new Date(),
+       });
+ 
+       // Move to custom "paused" state
+       await job.moveToFailed(error, jobId, true);
+ 
+       // Emit global event
+       /* this.eventEmitter.emit('token_expired', {
+          shop,
+          jobId,
+          queue: job.queueName
+        }); 
+     }
+   } */
+
 }

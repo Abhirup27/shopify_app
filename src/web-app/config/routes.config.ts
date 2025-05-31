@@ -12,7 +12,8 @@ export default registerAs('routes', (): Record<string, string> => {
     'stores.create': '/stores/create',
     'search.store': '/stores/search',
     'billing.index': '/billing',
-
+    'plan.buy': '/buyPlan/:planid',
+    'consume.credits': '/consumeCredits',
     show2FASettings: '/auth-settings',
 
     'shopify.order': '/order',

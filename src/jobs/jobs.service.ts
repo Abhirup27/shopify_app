@@ -115,7 +115,7 @@ export class JobsService {
   public updateStoreToken = async (store: Store, accessToken: string) =>
     await this.addJob(JOB_TYPES.UPDATE_STORE_TOKEN, { store: store, accessToken: accessToken });
 
-  public syncStoreLocations = async (store: number | Store) =>
+  public syncStoreLocations = async (store: Store) =>
     await this.addJob(JOB_TYPES.SYNC_STORE_LOCATIONS, { store: store });
 
   public getStoreLocations = async (storeId: number) =>
@@ -148,14 +148,16 @@ export class JobsService {
       // const failedProductJobs = await this.productQueue.getFailed();
       // const failedOrderJobs = await this.ordersQueue.getFailed();
       let job: Job;
-      console.log(pausedJob.data.queue);
+      console.log('in resumePausedJobsForStore, queue name to resumse', pausedJob.data.queue);
       switch (queueName) {
         case QUEUES.PRODUCTS:
-          console.log('this');
           job = await this.productQueue.getJob(requiredId);
           break;
         case QUEUES.ORDERS:
           job = await this.ordersQueue.getJob(requiredId);
+          break;
+        case QUEUES.STORES:
+          job = await this.storesQueue.getJob(requiredId);
           break;
       }
       //const job = await this.productQueue.getJob(requiredId);

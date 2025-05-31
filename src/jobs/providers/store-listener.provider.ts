@@ -15,9 +15,9 @@ export class StoresQueueEvents extends QueueEventsHost {
     job.moveToFailed(err, job.token);
   }
 
-  @OnQueueEvent('failed')
-  onFail(job: Job) {
-    job.remove();
-    return job;
-  }
+  // @OnQueueEvent('failed')
+  //onFail(job: Job) {
+  //job.remove();
+  // return job;
+  // }
 }

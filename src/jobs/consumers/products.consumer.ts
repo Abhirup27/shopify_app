@@ -175,7 +175,7 @@ export class ProductsConsumer extends WorkerHost {
         case JOB_TYPES.GET_PRODUCTS:
           return await this.retrieveProducts(job.data);
         case JOB_TYPES.CREATE_PRODUCT:
-          return await this.createProduct(job.data);
+          return await this.createProduct(job.data, job);
         case JOB_TYPES.GET_PRODUCT_TYPES:
           return await this.getProductTypes(job.data);
         case JOB_TYPES.GET_PRODUCT_TYPES_DB:
@@ -191,13 +191,15 @@ export class ProductsConsumer extends WorkerHost {
           break;
       }
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(error.message, error.stack);
       // await job.retry('failed');
       //console.log(error['isTokenExpired']);
 
       // job.discard;
       // console.log(await job.moveToFailed(error, '0', true));
-      await job.moveToFailed(new UnrecoverableError(`401`), job.token);
+      if (error['isTokenExpired']) {
+        await job.moveToFailed(new UnrecoverableError(`401`), job.token);
+      }
       //job.discard();
     }
   };
@@ -382,32 +384,6 @@ export class ProductsConsumer extends WorkerHost {
  
      }*/
   };
-  /* @OnWorkerEvent('failed')
-   async handleFailedJob(job: Job, error: Error) {
-     console.log(error);
-     //console.log(job.data);
-     if (error['isTokenExpired']) {
-       console.log('true');
-       const { shop, jobId } = error['meta'];
- 
-       // Pause job and notify main module
-       await job.updateData({
-         ...job.data,
-         paused: true,
-         pausedAt: new Date(),
-       });
- 
-       // Move to custom "paused" state
-       await job.moveToFailed(error, jobId, true);
- 
-       // Emit global event
-       /* this.eventEmitter.emit('token_expired', {
-          shop,
-          jobId,
-          queue: job.queueName
-        }); 
-     }
-   } */
 
   private extractIdFromGraphQLId(graphqlId: string, prefix?: string, removeSuffix: boolean = false): number | null {
     try {
@@ -771,36 +747,40 @@ export class ProductsConsumer extends WorkerHost {
 
   private createProduct = async (
     data: JobRegistry[typeof JOB_TYPES.CREATE_PRODUCT]['data'],
+    job: Job,
   ): Promise<JobRegistry[typeof JOB_TYPES.CREATE_PRODUCT]['result']> => {
     const store: Store = data.store;
     const product: newProductDto = data.product;
     const locations: StoreLocations[] = [];
-    try {
-      const options: ShopifyRequestOptions = {
-        url: this.utilsService.getShopifyURLForStore('graphql.json', store),
-        headers: this.utilsService.getGraphQLHeadersForStore(store),
-      };
-      options.data = await this.getCreateProductPayload(store, product, locations);
-      const response = await this.utilsService.requestToShopify('post', options);
+    const options: ShopifyRequestOptions = {
+      url: this.utilsService.getShopifyURLForStore('graphql.json', store),
+      headers: this.utilsService.getGraphQLHeadersForStore(store),
+    };
+    options.data = await this.getCreateProductPayload(store, product, locations);
+    const response = await this.utilsService.requestToShopify('post', options);
 
-      //console.log(response);
-      // console.log(response.respBody);
-      console.log(response.respBody['data']['productCreate']);
-      if (response.statusCode === 200) {
-        //create the variants which get associated with the productID
-        options.data = this.getProductVariantsPayload(
-          response.respBody['data']['productCreate']['product']['id'],
-          data.product.variants,
-        );
-        const variantsResponse = await this.utilsService.requestToShopify('post', options);
-        console.log(
-          'this is the variants response',
-          variantsResponse.respBody['data']['productVariantsBulkCreate']['productVariants'],
-        );
-        this.logger.debug(JSON.stringify(variantsResponse));
-      }
-    } catch (error) {
-      this.logger.error(error, this.getCreateProductPayload.name);
+    //console.log(response);
+    // console.log(response.respBody);
+    console.log(response.respBody['data']['productCreate']);
+
+    if (response.statusCode === 401) {
+      throw new TokenExpiredException(`Token expired for ${data.store.table_id}`, {
+        shop: data.store.table_id.toString(),
+        jobId: job.id,
+      });
+    }
+    if (response.statusCode === 200) {
+      //create the variants which get associated with the productID
+      options.data = this.getProductVariantsPayload(
+        response.respBody['data']['productCreate']['product']['id'],
+        data.product.variants,
+      );
+      const variantsResponse = await this.utilsService.requestToShopify('post', options);
+      console.log(
+        'this is the variants response',
+        variantsResponse.respBody['data']['productVariantsBulkCreate']['productVariants'],
+      );
+      this.logger.debug(JSON.stringify(variantsResponse));
     }
 
     return true;

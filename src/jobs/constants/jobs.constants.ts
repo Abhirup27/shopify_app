@@ -141,8 +141,8 @@ export type JobRegistry = {
   };
   [JOB_TYPES.SYNC_STORE_LOCATIONS]: {
     queue: typeof QUEUES.STORES;
-    data: { store: number | Store };
-    result: StoreLocations[] | null;
+    data: { store: Store };
+    result: StoreLocations[] | null | { status: string; shopDomain: string };
   };
   [JOB_TYPES.GET_STORE_LOCATIONS]: {
     queue: typeof QUEUES.STORES;

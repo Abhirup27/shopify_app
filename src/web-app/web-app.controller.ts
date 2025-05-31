@@ -28,6 +28,7 @@ import { UserDto } from './dtos/user.dto';
 import { ADMIN, SUPER_ADMIN } from 'src/database/entities/constants/user-roles.constants';
 import { RegisterUserDto } from './dtos/register-member.dto';
 import { newProductDto } from './dtos/new-product.dto';
+import { unwatchFile } from 'fs';
 
 @UseGuards(AccessTokenGuard, StoreContextGuard)
 @Controller()
@@ -264,12 +265,17 @@ export class WebAppController {
 
   @Get('/syncStoreLocations')
   public async syncLocations(@Req() req: Request, @CurrentUser() user: UserDto, @Res() res: Response) {
-    //console.log(req['user']);// console.log(user);
+    //console.log(req['user']);
+    console.log(user);
     try {
       if (user.can(['all_access', 'write_locations'])) {
-        const result = await this.webAppService.syncLocations(user);
-        console.log(result);
-        res.json(result);
+        const result = await this.webAppService.syncLocations(user, res);
+        console.log('in controller', result);
+        if (result != undefined) {
+          res.json(result);
+          return;
+        }
+        return;
       }
     } catch (error) {
       this.logger.error(error.message, this.syncLocations.name);
@@ -300,7 +306,21 @@ export class WebAppController {
         const result: boolean = await this.webAppService.createProduct(user, product);
       }
     } catch (error) {
-      this.logger.error(error.message, this.createProduct.name);
+      this.logger.error(error.message, error.stack, this.createProduct.name);
+    }
+  }
+
+  //for public apps
+  @Get('/billing')
+  public async billing(@Req() req: Request, @CurrentUser() user: UserDto, @Res() res: Response) {
+    try {
+      if (user.hasRole('ADMIN')) {
+        const pagePayload = await this.webAppService.getBillingPagePayload(user.store);
+      } else {
+        throw new UnauthorizedException(Error, 'Logged in user is not an admin for the specified store');
+      }
+    } catch (error) {
+      this.logger.error(error.message, error.stack, this.billing.name);
     }
   }
 }

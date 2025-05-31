@@ -18,6 +18,7 @@ import { newProductDto } from './dtos/new-product.dto';
 import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 import { ProductType } from 'src/database/entities/productType.entity';
 import { DataService } from 'src/data/data.service';
+import { isArray } from 'class-validator';
 
 @Injectable()
 export class WebAppService {
@@ -243,16 +244,25 @@ export class WebAppService {
     const result = await this.jobsService.syncOrders(store);
     if (typeof result != 'boolean' && result.status && result.status == 'AUTH_REQUIRED') {
       console.log('this is the result:', result.status);
-      const url = await this.getOAuthURL(store.myshopify_domain, `/orders?storeId=${store.id}`);
+      const url = await this.getOAuthURL(store.myshopify_domain);
       console.log(url);
       res.redirect(url);
     } else {
       res.redirect(`/orders?storeId=${store.id}`);
     }
   };
-  public syncLocations = async (user: UserDto): Promise<StoreLocations[]> => {
+  public syncLocations = async (user: UserDto, res: Response): Promise<StoreLocations[] | void> => {
     // console.log(user);
-    return await this.jobsService.syncStoreLocations(user.store);
+    const result = await this.jobsService.syncStoreLocations(user.store);
+    if (result['status'] && result['status'] == 'AUTH_REQUIRED') {
+      const url = await this.getOAuthURL(user.store.myshopify_domain);
+      //res.setHeader('Access-Control-Allow-Origin', `http://localhost:3000`);
+      //res.redirect(url);
+      res.status(401).send(url);
+      return;
+    } else {
+      return result as StoreLocations[];
+    }
   };
   public getOrderDetails = async (user: UserDto, orderId: number): Promise<object> => {
     let payload: object = {};
@@ -278,7 +288,7 @@ export class WebAppService {
     try {
       const result = await this.jobsService.syncProducts(user.store);
       if (result['status'] == 'AUTH_REQUIRED') {
-        const url = await this.getOAuthURL(user.store.myshopify_domain, `/orders?storeId=${user.store.id}`);
+        const url = await this.getOAuthURL(user.store.myshopify_domain);
         console.log(url);
         res.redirect(url);
         return;
@@ -351,7 +361,7 @@ export class WebAppService {
     }
     return newUser;
   };
-  private getOAuthURL = async (shopDomain: string, endpoint: string): Promise<string> => {
+  private getOAuthURL = async (shopDomain: string): Promise<string> => {
     const nonce: string = await this.utilsService.createNonce(shopDomain);
 
     const clientId: string = this.configService.get<string>('shopify_api_key');
@@ -371,5 +381,13 @@ export class WebAppService {
     const result = await this.jobsService.createProduct(user.store, product);
 
     return true;
+  };
+
+  public getBillingPagePayload = async (store: Store): Promise<object> => {
+    try {
+      //call the DataService methods
+    } catch (error) {
+      this.logger.error(error.message, error.stack, this.getBillingPagePayload.name);
+    }
   };
 }

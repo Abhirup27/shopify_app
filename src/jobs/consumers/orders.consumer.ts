@@ -181,43 +181,38 @@ export class OrdersConsumer extends WorkerHost {
     job: Job,
   ): Promise<JobRegistry[typeof JOB_TYPES.SYNC_ORDERS]['result']> => {
     const store = data.store;
-    try {
-      const options: ShopifyRequestOptions = {
-        url: this.utilsService.getShopifyURLForStore('graphql.json', store),
-        headers: this.utilsService.getGraphQLHeadersForStore(store),
-      };
-      //const headers: AxiosHeaders = this.utilsService.getGraphQLHeadersForStore(store);
-      let cursor: string | null = null;
+    const options: ShopifyRequestOptions = {
+      url: this.utilsService.getShopifyURLForStore('graphql.json', store),
+      headers: this.utilsService.getGraphQLHeadersForStore(store),
+    };
+    //const headers: AxiosHeaders = this.utilsService.getGraphQLHeadersForStore(store);
+    let cursor: string | null = null;
 
-      do {
-        options.data = this.getQueryObjectForOrders(cursor);
-        const response: ShopifyResponse = await this.utilsService.requestToShopify('post', options);
-        if (response.statusCode == 401) {
-          // job.moveToFailed(Error('401'), job.token)
-          //job.moveToCompleted(Error('401'), job.token);
-          //job.remove()
-          throw new TokenExpiredException(`Token expired for ${data.store.table_id}`, {
-            shop: data.store.table_id.toString(),
-            jobId: job.id,
-          });
+    do {
+      options.data = this.getQueryObjectForOrders(cursor);
+      const response: ShopifyResponse = await this.utilsService.requestToShopify('post', options);
+      if (response.statusCode == 401) {
+        // job.moveToFailed(Error('401'), job.token)
+        //job.moveToCompleted(Error('401'), job.token);
+        //job.remove()
+        throw new TokenExpiredException(`Token expired for ${data.store.table_id}`, {
+          shop: data.store.table_id.toString(),
+          jobId: job.id,
+        });
 
-          //          throw Error('401');
-        }
-        //throw Error('401');
-        if (response.statusCode == 200) {
-          //console.log(response.respBody["data"]['orders']['edges']);
-          await this.saveOrdersInDB(store.table_id, response.respBody['data']['orders']['edges']);
-        }
-        //console.log(response.respBody['extensions']['cost']['fields']);
-        // console.log(response.respBody["data"]['orders']['edges']);
-        // await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
-        //console.log(response.respBody);
-        cursor = this.getCursorFromResponse(response.respBody['data']['orders']['pageInfo']);
-      } while (cursor !== null);
-    } catch (error) {
-      this.logger.error(error.message, this.syncOrders.name);
-      throw error;
-    }
+        //          throw Error('401');
+      }
+      //throw Error('401');
+      if (response.statusCode == 200) {
+        //console.log(response.respBody["data"]['orders']['edges']);
+        await this.saveOrdersInDB(store.table_id, response.respBody['data']['orders']['edges']);
+      }
+      //console.log(response.respBody['extensions']['cost']['fields']);
+      // console.log(response.respBody["data"]['orders']['edges']);
+      // await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
+      //console.log(response.respBody);
+      cursor = this.getCursorFromResponse(response.respBody['data']['orders']['pageInfo']);
+    } while (cursor !== null);
     return true;
   };
   /**
