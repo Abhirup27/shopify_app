@@ -18,6 +18,7 @@ import { ProductType } from 'src/database/entities/productType.entity';
 import { VariantDto } from 'src/web-app/dtos/product-variant.dto';
 import { InventoryLevel, ProductVariant } from 'src/database/entities/productVariant.entity';
 import { TokenExpiredException } from '../token-expired.exception';
+import { DataService } from 'src/data/data.service';
 
 export type ProductsType = {
   id: string;
@@ -148,6 +149,7 @@ export class ProductsConsumer extends WorkerHost {
   private readonly logger = new Logger(ProductsConsumer.name);
 
   constructor(
+    private readonly dataService: DataService,
     private readonly cacheService: CacheProvider,
     private readonly configService: ConfigService,
     private readonly utilsService: UtilsService,
@@ -575,9 +577,9 @@ export class ProductsConsumer extends WorkerHost {
     data: JobRegistry[typeof JOB_TYPES.GET_PRODUCT_TYPES]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.GET_PRODUCT_TYPES]['result']> => {
     if (data.id != null) {
-      return await this.cacheService.getMap(data.id);
+      return await this.dataService.getProductCategoryMap(data.id);
     }
-    const result = await this.cacheService.getMap('product-types');
+    const result = await this.dataService.getProductCategoryMap('product-types');
 
     return result;
   };
@@ -652,7 +654,8 @@ export class ProductsConsumer extends WorkerHost {
         }
 
         // Cache the map for the current level
-        await this.cacheService.storeMap(currentCacheKey, currentLevelMap);
+        // await this.cacheService.storeMap(currentCacheKey, currentLevelMap);
+        await this.dataService.setProductCategoryMap(currentCacheKey, currentLevelMap);
       }
     } catch (error) {
       this.logger.error(
@@ -721,7 +724,8 @@ export class ProductsConsumer extends WorkerHost {
       }
 
       // Cache the map for the current level
-      await this.cacheService.storeMap(cacheKey, currentLevelMap);
+      await this.dataService.setProductCategoryMap(cacheKey, currentLevelMap);
+      //await this.cacheService.storeMap(cacheKey, currentLevelMap);
     } catch (error) {
       this.logger.error(`Error syncing product level with parent ID ${parentId}: ${error}`, this.syncProductLevel.name);
     }

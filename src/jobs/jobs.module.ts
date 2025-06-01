@@ -30,9 +30,11 @@ import { RedisModule } from '@nestjs-modules/ioredis';
 import { CacheProvider } from './providers/cache-redis.provider';
 import { ProductVariant } from 'src/database/entities/productVariant.entity';
 import { Queue } from 'bullmq';
+import { DataModule } from 'src/data/data.module';
 
 @Module({
   imports: [
+    DataModule,
     UtilsModule,
     AuthModule,
     TypeOrmModule.forFeature([

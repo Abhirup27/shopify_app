@@ -3,6 +3,7 @@ import { Inject, Injectable, Logger, RequestTimeoutException, UnauthorizedExcept
 import { InjectRepository } from '@nestjs/typeorm';
 import { Customer } from 'src/database/entities/customer.entity';
 import { Order } from 'src/database/entities/order.entity';
+import { Plan } from 'src/database/entities/plans.entity';
 import { Product } from 'src/database/entities/product.entity';
 import { ProductType } from 'src/database/entities/productType.entity';
 import { ProductVariant } from 'src/database/entities/productVariant.entity';
@@ -10,16 +11,19 @@ import { Store } from 'src/database/entities/store.entity';
 import { StoreLocations } from 'src/database/entities/storeLocations.entity';
 import { Subscription } from 'src/database/entities/subscription.entity';
 import { User } from 'src/database/entities/user.entity';
+import { UserPlan } from 'src/database/entities/userPlans.entity';
 import { UserStore } from 'src/database/entities/userstore.entity';
 import { RequestExceptionFilter } from 'src/filters/timeout.exception.filter';
 import { Repository } from 'typeorm';
+import { CacheService } from './cache/cache.service';
 
 @Injectable()
 export class DataService {
   private readonly logger = new Logger(DataService.name);
 
   constructor(
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    //@Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly cacheService: CacheService,
 
     @InjectRepository(Store) private readonly storeRepository: Repository<Store>,
     @InjectRepository(UserStore) private readonly userStoreRepository: Repository<UserStore>,
@@ -31,6 +35,8 @@ export class DataService {
     @InjectRepository(Customer) private readonly customerRepository: Repository<Customer>,
     @InjectRepository(StoreLocations) private readonly storeLocationsRepository: Repository<StoreLocations>,
     @InjectRepository(Subscription) private readonly subscriptionRepository: Repository<Subscription>,
+    @InjectRepository(Plan) private readonly planRepository: Repository<Plan>,
+    @InjectRepository(UserPlan) private readonly userPlanRepository: Repository<UserPlan>,
   ) {}
 
   public getStore = async (storeId: number): Promise<Store | null> => {
@@ -251,6 +257,26 @@ export class DataService {
     }
   };
 
+  public getPlans = async (): Promise<Plan[]> => {
+    try {
+      const cachedPlans = await this.cacheService.get<Plan[]>('plans');
+      if (cachedPlans == undefined) {
+        const plans: Plan[] = await this.planRepository.find();
+        await this.cacheService.set('plans', plans, '1h');
+        return plans;
+      }
+      return cachedPlans;
+    } catch (error) {
+      this.logger.error(error.message, error.stack, this.getPlans.name);
+    }
+  };
+
+  public setProductCategoryMap = async (key: string, map: Map<string, string>): Promise<boolean> => {
+    return await this.cacheService.set(key, map, '10h');
+  };
+  public getProductCategoryMap = async (key: string): Promise<Record<string, string>> => {
+    return await this.cacheService.get<Record<string, string>>(key);
+  };
   /**
    * This function is specifically used in guards to authorize
    * */

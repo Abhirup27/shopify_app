@@ -324,6 +324,7 @@ export class WebAppService {
     try {
       const locations: StoreLocations[] = await this.dataService.getAllLocationsOfStore(user.store_id);
       const level_one_categories: Record<string, string> = await this.jobsService.getProductTypes();
+      console.log(level_one_categories);
       //console.log(level_one_categories);
       payload = {
         storeId: user.store_id,
@@ -386,6 +387,11 @@ export class WebAppService {
   public getBillingPagePayload = async (store: Store): Promise<object> => {
     try {
       //call the DataService methods
+      const plans = await this.dataService.getPlans();
+      console.log(plans);
+
+      return plans;
+      
     } catch (error) {
       this.logger.error(error.message, error.stack, this.getBillingPagePayload.name);
     }
