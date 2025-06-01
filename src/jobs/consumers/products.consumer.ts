@@ -639,11 +639,10 @@ export class ProductsConsumer extends WorkerHost {
         }
         if (!children.length) continue;
 
-        const currentLevelMap = new Map<string, string>();
+        const currentLevelMap: Record<string, string> = {};
 
         for (const product of children) {
-          currentLevelMap.set(product.id, product.name);
-
+          currentLevelMap[product.id] = product.name;
           // If this node has children (not a leaf), add it to the stack for processing
           if (product.isLeaf === false) {
             stack.push({
@@ -711,10 +710,10 @@ export class ProductsConsumer extends WorkerHost {
       productTypes = this.productTypesRepository.create(productTypes);
       productTypes = await this.productTypesRepository.save(productTypes);
 
-      const currentLevelMap = new Map<string, string>();
+      const currentLevelMap: Record<string, string> = {};
 
       for (const product of productTypes) {
-        currentLevelMap.set(product.id, product.name);
+        currentLevelMap[product.id] = product.name;
 
         // If this node has children (not a leaf), recursively process the next level
         if (product.isLeaf === false) {
@@ -727,7 +726,11 @@ export class ProductsConsumer extends WorkerHost {
       await this.dataService.setProductCategoryMap(cacheKey, currentLevelMap);
       //await this.cacheService.storeMap(cacheKey, currentLevelMap);
     } catch (error) {
-      this.logger.error(`Error syncing product level with parent ID ${parentId}: ${error}`, this.syncProductLevel.name);
+      this.logger.error(
+        `Error syncing product level with parent ID ${parentId}: ${error}`,
+        error.stack,
+        this.syncProductLevel.name,
+      );
     }
   }
 

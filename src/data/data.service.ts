@@ -271,7 +271,7 @@ export class DataService {
     }
   };
 
-  public setProductCategoryMap = async (key: string, map: Map<string, string>): Promise<boolean> => {
+  public setProductCategoryMap = async (key: string, map: Record<string, string>): Promise<boolean> => {
     return await this.cacheService.set(key, map, '10h');
   };
   public getProductCategoryMap = async (key: string): Promise<Record<string, string>> => {
