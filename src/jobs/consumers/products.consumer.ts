@@ -47,7 +47,7 @@ type ProductTypesResponse = {
 /**
  * Expected Response type of ProductCreate mutation.
  * */
-type ProductCreateResponse = {
+type ProductSyncResponse = {
   data: {
     products: {
       edges: Array<{
@@ -129,6 +129,27 @@ type ProductCreateResponse = {
   };
 };
 
+type ProductCreateResponse = {
+  data: {
+    productCreate: {
+      product: {
+        id: string;
+        title: string;
+        publishedAt: string;
+        options: Array<{
+          id: string;
+          name: string;
+          position: number;
+          optionsValues: Array<{
+            id: string;
+            name: string;
+            hasVariants: boolean;
+          }>;
+        }>;
+      };
+    };
+  };
+};
 type ProductsQueueJobName =
   | typeof JOB_TYPES.SYNC_PRODUCTS
   | typeof JOB_TYPES.GET_PRODUCTS
@@ -316,7 +337,7 @@ export class ProductsConsumer extends WorkerHost {
     requestOptions.url = this.utilsService.getShopifyURLForStore('graphql.json', data.store);
     requestOptions.data = this.syncProductsQuery('');
 
-    let response = await this.utilsService.requestToShopify<ProductCreateResponse>('post', requestOptions);
+    let response = await this.utilsService.requestToShopify<ProductSyncResponse>('post', requestOptions);
     //if(response.error == false && response.statusCode == 200){
     // this.logger.debug(JSON.stringify(response.respBody));
     // }
@@ -356,7 +377,7 @@ export class ProductsConsumer extends WorkerHost {
       totalProductVariants.push(...productVariants);
 
       requestOptions.data = this.syncProductsQuery(cursor);
-      response = await this.utilsService.requestToShopify<ProductCreateResponse>('post', requestOptions);
+      response = await this.utilsService.requestToShopify<ProductSyncResponse>('post', requestOptions);
     } while (cursor !== null);
 
     const shopifyProductIds = totalProducts.map(p => p.id);
@@ -418,7 +439,7 @@ export class ProductsConsumer extends WorkerHost {
     }
   }
   private mapProductsToDB = async (
-    productsData: ProductCreateResponse,
+    productsData: ProductSyncResponse,
     storeId: number,
   ): Promise<{ products: any[]; productVariants: any[] }> => {
     const products: Array<any> = [];
@@ -479,7 +500,7 @@ export class ProductsConsumer extends WorkerHost {
           product.productType != ''
             ? product.productType
             : product.category != null
-              ? this.cacheService.getCategoryName(product.category.id)
+              ? this.dataService.getCategoryName(product.category.id)
               : '',
         admin_graphql_api_id: product.legacyResourceId ? product.legacyResourceId : '',
         inventoryTotal: product.totalInventory,
@@ -768,7 +789,6 @@ export class ProductsConsumer extends WorkerHost {
 
     //console.log(response);
     // console.log(response.respBody);
-    console.log(response.respBody['data']['productCreate']);
 
     if (response.statusCode === 401) {
       throw new TokenExpiredException(`Token expired for ${data.store.table_id}`, {
@@ -778,6 +798,7 @@ export class ProductsConsumer extends WorkerHost {
     }
     if (response.statusCode === 200) {
       //create the variants which get associated with the productID
+      this.logger.error(JSON.stringify(response.respBody));
       options.data = this.getProductVariantsPayload(
         response.respBody['data']['productCreate']['product']['id'],
         data.product.variants,
@@ -801,7 +822,8 @@ export class ProductsConsumer extends WorkerHost {
     const category = product.product_type;
     // const p_categoy = category.substring(0, category.lastIndexOf('-'));
     //const categoryName = await this.cacheService.getMapField(p_categoy, category);
-    const categoryName = await this.cacheService.getCategoryName(category);
+    console.log(category);
+    const categoryName = await this.dataService.getCategoryName(category);
     console.log(categoryName);
     const productData = `(input: {category: "${category}", productType: "${categoryName}", title:"${product.title}",vendor:"${product.vendor}", descriptionHtml:"${product.desc}", tags:${JSON.stringify(product.tags)}})`;
     try {

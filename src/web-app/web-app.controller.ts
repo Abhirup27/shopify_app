@@ -304,6 +304,7 @@ export class WebAppController {
     try {
       if (user.can(['all_access', 'write_products'])) {
         const result: boolean = await this.webAppService.createProduct(user, product);
+        res.redirect('/products');
       }
     } catch (error) {
       this.logger.error(error.message, error.stack, this.createProduct.name);

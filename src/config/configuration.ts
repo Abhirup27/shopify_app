@@ -6,9 +6,9 @@ export default () => ({
   logToFile: process.env.LOG_TO_FILE,
 
   app_secret: process.env.APP_SECRET,
-  app_url: 'https://89e8-223-233-76-152.ngrok-free.app',
-  app_install_URL: 'https://89e8-223-233-76-152.ngrok-free.app/shopify/auth/redirect',
-  refresh_token_URL: 'https://89e8-223-233-76-152.ngrok-free.app/shopify/auth/updateStoreToken',
+  app_url: 'https://b999-223-233-67-231.ngrok-free.app',
+  app_install_URL: 'https://b999-223-233-67-231.ngrok-free.app/shopify/auth/redirect',
+  refresh_token_URL: 'https://b999-223-233-67-231.ngrok-free.app/shopify/auth/updateStoreToken',
   shopify_api_version: '2024-07',
   shopify_api_key: process.env.API_KEY,
   shopify_api_secret: process.env.API_SECRET,

@@ -37,4 +37,5 @@ export class CacheService {
   async mset(args: [string, unknown][], ttl?: number) {
     await Promise.all(args.map(([key, value]) => this.set(key, value, ttl)));
   }
+
 }
