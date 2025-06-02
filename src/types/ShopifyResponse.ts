@@ -16,4 +16,5 @@ export type ShopifyResponse<T extends ResponseBodyType = ResponseBodyType> = {
   error?: boolean;
   respBody: T;
   statusCode?: number;
+  graphQLErrors?: any[];
 };

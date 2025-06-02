@@ -1,0 +1,15 @@
+overwrite: true
+schema: 'https://shopify.dev/admin-graphql-direct-proxy/2024-07'
+documents: './src/**/*.graphql'
+generates:
+  src/generated/graphql.ts:
+    plugins:
+      - 'typescript'
+      - 'typescript-operations'
+      - 'typescript-graphql-request'
+    config:
+      scalars:
+        DateTime: string
+        Decimal: string
+        HTML: string
+        URL: string

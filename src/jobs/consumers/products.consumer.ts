@@ -19,7 +19,8 @@ import { VariantDto } from 'src/web-app/dtos/product-variant.dto';
 import { InventoryLevel, ProductVariant } from 'src/database/entities/productVariant.entity';
 import { TokenExpiredException } from '../token-expired.exception';
 import { DataService } from 'src/data/data.service';
-
+import { SyncProductsDocument, SyncProductsQuery } from 'src/generated/graphql';
+import { print } from 'graphql';
 export type ProductsType = {
   id: string;
   isRoot: boolean;
@@ -47,109 +48,7 @@ type ProductTypesResponse = {
 /**
  * Expected Response type of ProductCreate mutation.
  * */
-type ProductSyncResponse = {
-  data: {
-    products: {
-      edges: Array<{
-        node: {
-          id: string;
-          title: string;
-          category: {
-            id: string;
-          };
-          descriptionHtml: string;
-          handle: string;
-          createdAt: string;
-          productType: string;
-          tags: string[];
-          status: string;
-          totalInventory: number;
-          vendor: string;
-          updatedAt: string;
-          legacyResourceId: string;
-          compareAtPriceRange: {
-            maxVariantCompareAtPrice: { amount: number };
-            minVariantCompareAtPrice: { amount: number };
-          };
-          priceRangeV2: {
-            maxVariantPrice: { amount: number };
-            minVariantPrice: { amount: number };
-          };
-          variantsCount: { count: number };
-          variants: {
-            edges: Array<{
-              node: {
-                compareAtPrice: number;
-                displayName: string;
-                id: string;
-                price: number;
-                sku: string;
-                title: string;
-                inventoryQuantity: number;
-                inventoryItem: {
-                  id: string;
-                  createdAt: string;
-                  sku: string;
-                  updatedAt: string;
 
-                  inventoryLevels: {
-                    edges: Array<{
-                      node: {
-                        id: string;
-                        location: {
-                          id: string;
-                          isActive: boolean;
-                        };
-                        quantities: Array<{
-                          id: string;
-                          name: string;
-                          quantity: number;
-                          updatedAt: string;
-                        }>;
-                      };
-                    }>;
-                  };
-                };
-                createdAt: string;
-                updatedAt: string;
-              };
-            }>;
-            pageInfo: {
-              hasNextPage: boolean;
-            };
-          };
-        };
-        cursor: string;
-      }>;
-      pageInfo: {
-        hasNextPage: boolean;
-        endCursor: string;
-      };
-    };
-  };
-};
-
-type ProductCreateResponse = {
-  data: {
-    productCreate: {
-      product: {
-        id: string;
-        title: string;
-        publishedAt: string;
-        options: Array<{
-          id: string;
-          name: string;
-          position: number;
-          optionsValues: Array<{
-            id: string;
-            name: string;
-            hasVariants: boolean;
-          }>;
-        }>;
-      };
-    };
-  };
-};
 type ProductsQueueJobName =
   | typeof JOB_TYPES.SYNC_PRODUCTS
   | typeof JOB_TYPES.GET_PRODUCTS
@@ -168,7 +67,7 @@ type ProductsQueueJob = {
 @Processor(QUEUES.PRODUCTS, { concurrency: 10 })
 export class ProductsConsumer extends WorkerHost {
   private readonly logger = new Logger(ProductsConsumer.name);
-
+  private readonly syncProductsQueryString: string = print(SyncProductsDocument);
   constructor(
     private readonly dataService: DataService,
     private readonly cacheService: CacheProvider,
@@ -232,89 +131,12 @@ export class ProductsConsumer extends WorkerHost {
   ): job is Job<JobRegistry[T]['data'], JobRegistry[T]['result']> {
     return job.name === name;
   }
-  private syncProductsQuery = (cursor: string = ''): { query: string } => {
-    const filter = cursor != '' ? `(first: 250, after: ${cursor})` : `(first: 250)`;
-    const query = `{
-      products${filter} {
-        edges {
-          node {
-            id
-            title
-            category{
-              id
-            }
-            descriptionHtml
-            handle
-            createdAt
-            productType
-	          tags
-            status
-            totalInventory
-            vendor
-            updatedAt
-            legacyResourceId
-            compareAtPriceRange{
-              maxVariantCompareAtPrice{amount}
-              minVariantCompareAtPrice{amount}
-            }
-            priceRangeV2{
-              maxVariantPrice{amount}
-              minVariantPrice{amount}
-            }
-            variantsCount{count}
-            variants(first: 15){
-              edges{
-                node {
-                  compareAtPrice
-                  displayName
-                  id
-                  price
-                  sku
-                  title
-                  inventoryQuantity
-                  inventoryItem {
-                    id
-                    createdAt
-                    sku
-                    updatedAt
-                    inventoryLevels(first: 10){
-                      edges{
-                        node{
-                          id
-                          location{
-                           id
-                          isActive
-                          }
-                          quantities(names: ["available"]){
-                            id
-                            name
-                            quantity
-                            updatedAt
-                          }
-                        }
-                      }
-                    }
-                  }
-                  createdAt
-                  updatedAt
-                }
-              }
-              pageInfo {
-                hasNextPage
-              }
-            }
-          }
-          cursor
-        }
-        pageInfo{
-          hasNextPage
-          endCursor
-        }
-      }
-    }`;
 
-    return { query };
-  };
+  private syncProductsQuery = (cursor: string | null = null) => ({
+    query: this.syncProductsQueryString, // Auto-generated document
+    variables: { cursor },
+  });
+
   private syncProducts = async (
     data: JobRegistry[typeof JOB_TYPES.SYNC_PRODUCTS]['data'],
     job: Job,
@@ -335,9 +157,9 @@ export class ProductsConsumer extends WorkerHost {
        data.store,
      );*/
     requestOptions.url = this.utilsService.getShopifyURLForStore('graphql.json', data.store);
-    requestOptions.data = this.syncProductsQuery('');
+    requestOptions.data = this.syncProductsQuery();
 
-    let response = await this.utilsService.requestToShopify<ProductSyncResponse>('post', requestOptions);
+    let response = await this.utilsService.requestToShopify<SyncProductsQuery>('post', requestOptions);
     //if(response.error == false && response.statusCode == 200){
     // this.logger.debug(JSON.stringify(response.respBody));
     // }
@@ -363,12 +185,11 @@ export class ProductsConsumer extends WorkerHost {
       // jobId: '123',
       //});
     }
-    const products: Product[] = [];
     do {
       //response.statusCode == 200 ? products.push(...response.respBody['products']) : null;
-      const hasNextPage: boolean = response.respBody['data']['products']['pageInfo']['hasNextPage'];
+      const hasNextPage: boolean = response.respBody.products.pageInfo.hasNextPage;
       if (hasNextPage == true) {
-        cursor = response.respBody['data']['products']['pageInfo']['endCursor'];
+        cursor = response.respBody['products']['pageInfo']['endCursor'];
       } else {
         cursor = null;
       }
@@ -377,7 +198,7 @@ export class ProductsConsumer extends WorkerHost {
       totalProductVariants.push(...productVariants);
 
       requestOptions.data = this.syncProductsQuery(cursor);
-      response = await this.utilsService.requestToShopify<ProductSyncResponse>('post', requestOptions);
+      response = await this.utilsService.requestToShopify<SyncProductsQuery>('post', requestOptions);
     } while (cursor !== null);
 
     const shopifyProductIds = totalProducts.map(p => p.id);
@@ -439,12 +260,12 @@ export class ProductsConsumer extends WorkerHost {
     }
   }
   private mapProductsToDB = async (
-    productsData: ProductSyncResponse,
+    productsData: SyncProductsQuery,
     storeId: number,
   ): Promise<{ products: any[]; productVariants: any[] }> => {
     const products: Array<any> = [];
     const productVariants: any[] = [];
-    for (const node of productsData.data.products.edges) {
+    for (const node of productsData.products.edges) {
       const product = node.node;
       for (const variantNode of product.variants.edges) {
         const variant = variantNode.node;
@@ -500,7 +321,7 @@ export class ProductsConsumer extends WorkerHost {
           product.productType != ''
             ? product.productType
             : product.category != null
-              ? this.dataService.getCategoryName(product.category.id)
+              ? await this.dataService.getCategoryName(product.category.id)
               : '',
         admin_graphql_api_id: product.legacyResourceId ? product.legacyResourceId : '',
         inventoryTotal: product.totalInventory,

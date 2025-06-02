@@ -221,6 +221,14 @@ export class UtilsService {
       reqResult.status = true;
       reqResult.respBody = response.data as T;
       reqResult.statusCode = response.status;
+
+      if (method === 'post' && typeof endpointOrOptions === 'object' && endpointOrOptions.url?.includes('graphql')) {
+        if (response.data.errors) {
+          reqResult.graphQLErrors = response.data.errors;
+        }
+        // Flatten response for GraphQL calls
+        reqResult.respBody = response.data.data; // Now respBody = actual query results
+      }
       return reqResult;
     } catch (error) {
       reqResult.error = true;

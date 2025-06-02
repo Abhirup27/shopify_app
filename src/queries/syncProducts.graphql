@@ -1,0 +1,88 @@
+query SyncProducts($cursor: String) {
+  products(first: 250, after: $cursor) {
+    edges {
+      node {
+        id
+        title
+        category {
+          id
+        }
+        descriptionHtml
+        handle
+        createdAt
+        productType
+        tags
+        status
+        totalInventory
+        vendor
+        updatedAt
+        legacyResourceId
+        compareAtPriceRange {
+          maxVariantCompareAtPrice {
+            amount
+          }
+          minVariantCompareAtPrice {
+            amount
+          }
+        }
+        priceRangeV2 {
+          maxVariantPrice {
+            amount
+          }
+          minVariantPrice {
+            amount
+          }
+        }
+        variantsCount {
+          count
+        }
+        variants(first: 15) {
+          edges {
+            node {
+              compareAtPrice
+              displayName
+              id
+              price
+              sku
+              title
+              inventoryQuantity
+              inventoryItem {
+                id
+                createdAt
+                sku
+                updatedAt
+                inventoryLevels(first: 10) {
+                  edges {
+                    node {
+                      id
+                      location {
+                        id
+                        isActive
+                      }
+                      quantities(names: ["available"]) {
+                        id
+                        name
+                        quantity
+                        updatedAt
+                      }
+                    }
+                  }
+                }
+              }
+              createdAt
+              updatedAt
+            }
+          }
+          pageInfo {
+            hasNextPage
+          }
+        }
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

@@ -31,6 +31,9 @@ A shopify stores management app.
 
 ```bash
 $ npm install
+
+# generate graphql types
+$ npm run graphql:types
 ```
 
 ### Environment file config:
@@ -83,8 +86,8 @@ Add these routes to your allowed redirection URLs:
 ## Compile and run the project
 
 ```bash
-# development
-$ npm run start
+# development watch mode
+$ npm run start:dev
 
 # watch mode
 $ npm run start:dev

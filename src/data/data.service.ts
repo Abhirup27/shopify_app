@@ -279,9 +279,15 @@ export class DataService {
   };
   async getCategoryName(id: string): Promise<string> {
     const parent = id.substring(0, id.lastIndexOf('-'));
-    return await this.cacheService.get<Record<string, string>>(parent).then(value => {
-      return value[id];
-    });
+    if (parent != '') {
+      return await this.cacheService.get<Record<string, string>>(parent).then(value => {
+        return value[id];
+      });
+    } else {
+      return await this.cacheService.get<Record<string, string>>('product-types').then(value => {
+        return value[id];
+      });
+    }
   }
   /**
    * This function is specifically used in guards to authorize
