@@ -1,0 +1,35 @@
+mutation CreateProductVariantsBulk($productId: ID!, $num_locs: Int = 10, $variants: [ProductVariantsBulkInput!]!) {
+  productVariantsBulkCreate(productId: $productId, variants: $variants) {
+    productVariants {
+      id
+      sku
+      displayName
+      inventoryItem {
+        id
+        createdAt
+        updatedAt
+        inventoryLevels(first: $num_locs) {
+          edges {
+            node {
+              id
+              location {
+                id
+                isActive
+              }
+            }
+          }
+        }
+      }
+      selectedOptions {
+        name
+        value
+      }
+      createdAt
+      updatedAt
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}

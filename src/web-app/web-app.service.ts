@@ -377,10 +377,16 @@ export class WebAppService {
     return url;
   };
 
-  public createProduct = async (user: UserDto, product: newProductDto): Promise<boolean> => {
+  public createProduct = async (user: UserDto, product: newProductDto): Promise<boolean | {status: string, url: string}> => {
     console.log(product);
     const result = await this.jobsService.createProduct(user.store, product);
-
+    if(result['status'] == 'AUTH_REQUIRED') {
+      const url = await this.getOAuthURL(user.store.myshopify_domain);
+      return { status: result['status'], url };
+    }
+    else if(result == false){
+      throw Error('unexpected error');
+    }
     return true;
   };
 

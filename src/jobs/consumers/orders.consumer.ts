@@ -205,13 +205,13 @@ export class OrdersConsumer extends WorkerHost {
       //throw Error('401');
       if (response.statusCode == 200) {
         //console.log(response.respBody["data"]['orders']['edges']);
-        await this.saveOrdersInDB(store.table_id, response.respBody['data']['orders']['edges']);
+        await this.saveOrdersInDB(store.table_id, response.respBody['orders']['edges']);
       }
       //console.log(response.respBody['extensions']['cost']['fields']);
       // console.log(response.respBody["data"]['orders']['edges']);
       // await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
       //console.log(response.respBody);
-      cursor = this.getCursorFromResponse(response.respBody['data']['orders']['pageInfo']);
+      cursor = this.getCursorFromResponse(response.respBody['orders']['pageInfo']);
     } while (cursor !== null);
     return true;
   };

@@ -161,7 +161,7 @@ export class StoresConsumer extends WorkerHost {
       }
       if (response.statusCode === 200) {
         const result: StoreLocations[] = await this.saveStoreLocations(
-          response.respBody['data']['locations']['edges'],
+          response.respBody['locations']['edges'],
           store.table_id,
         );
         locations.push(...result);

@@ -303,7 +303,15 @@ export class WebAppController {
   ) {
     try {
       if (user.can(['all_access', 'write_products'])) {
-        const result: boolean = await this.webAppService.createProduct(user, product);
+        const result= await this.webAppService.createProduct(user, product);
+        if (typeof result != 'boolean') {
+          if(result.status == 'AUTH_REQUIRED'){
+            res.redirect(result.url);
+            return;
+          }
+          res.send({error: result.status});
+          return;
+        }
         res.redirect('/products');
       }
     } catch (error) {

@@ -90,13 +90,13 @@ export class CustomersConsumer extends WorkerHost {
         const response: ShopifyResponse = await this.utilsService.requestToShopify('post', options);
 
         if (response.statusCode == 200) {
-          await this.storeCustomersDB(data.store.table_id, response.respBody['data']['customers']['edges']);
+          await this.storeCustomersDB(data.store.table_id, response.respBody['customers']['edges']);
         }
 
         // console.log(response.respBody['data']['customers']['edges']);
         // await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
         //console.log(response.respBody);
-        cursor = this.getCursorFromResponse(response.respBody['data']['customers']['pageInfo']);
+        cursor = this.getCursorFromResponse(response.respBody['customers']['pageInfo']);
       } while (cursor !== null);
     } catch (error) {
       this.logger.error(error.message, '', this.syncCustomers.name);

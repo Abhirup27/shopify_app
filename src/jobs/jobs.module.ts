@@ -27,7 +27,7 @@ import { AuthModule } from 'src/auth/auth.module';
 import { StoreLocations } from 'src/database/entities/storeLocations.entity';
 import { ProductType } from 'src/database/entities/productType.entity';
 import { RedisModule } from '@nestjs-modules/ioredis';
-import { CacheProvider } from './providers/cache-redis.provider';
+
 import { ProductVariant } from 'src/database/entities/productVariant.entity';
 import { Queue } from 'bullmq';
 import { DataModule } from 'src/data/data.module';
@@ -103,8 +103,6 @@ import { DataModule } from 'src/data/data.module';
     StoresQueueEvents,
     UsersQueueEvents,
     ProductsQueueEvents,
-
-    CacheProvider,
   ],
   controllers: [JobsController],
   exports: [JobsService],

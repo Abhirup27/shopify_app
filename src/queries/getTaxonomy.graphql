@@ -1,0 +1,22 @@
+query GetTaxonomy($childrenOf: ID) {
+    taxonomy {
+        categories(first: 250, childrenOf: $childrenOf) {
+            nodes {
+                id
+                fullName
+                name
+                isRoot
+                level
+                isLeaf
+                childrenIds
+                parentId
+            }
+            pageInfo {
+                hasNextPage
+                endCursor
+                hasPreviousPage
+                startCursor
+            }
+        }
+    }
+}

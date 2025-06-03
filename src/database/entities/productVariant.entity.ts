@@ -8,7 +8,7 @@ export interface InventoryLevel {
     isActive: boolean;
   };
   quantities: Array<{
-    id: number;
+    id: string;
     name: string;
     quantity: number;
     updatedAt: string;

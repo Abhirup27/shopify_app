@@ -1,0 +1,31 @@
+mutation CreateProduct($input: ProductInput!) {
+  productCreate(input: $input) {
+    product {
+      id
+      createdAt
+      updatedAt
+      legacyResourceId
+      handle
+      options {
+        id
+        name
+        optionValues {
+          id
+          name
+          hasVariants
+        }
+      }
+      variants(first: 1) {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}

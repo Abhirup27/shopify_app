@@ -4,7 +4,7 @@ import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { UtilsService } from 'src/utils/utils.service';
 import { Store } from 'src/database/entities/store.entity';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Job, UnrecoverableError } from 'bullmq';
 import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 import { AxiosHeaders } from 'axios';
@@ -13,13 +13,21 @@ import { ShopifyResponse } from 'src/types/ShopifyResponse';
 import { Logger } from '@nestjs/common';
 import { newProductDto } from 'src/web-app/dtos/new-product.dto';
 import { StoreLocations } from 'src/database/entities/storeLocations.entity';
-import { CacheProvider } from '../providers/cache-redis.provider';
 import { ProductType } from 'src/database/entities/productType.entity';
 import { VariantDto } from 'src/web-app/dtos/product-variant.dto';
 import { InventoryLevel, ProductVariant } from 'src/database/entities/productVariant.entity';
 import { TokenExpiredException } from '../token-expired.exception';
 import { DataService } from 'src/data/data.service';
-import { SyncProductsDocument, SyncProductsQuery } from 'src/generated/graphql';
+import {
+  CreateProductDocument,
+  CreateProductMutation,
+  CreateProductVariantsBulkDocument,
+  CreateProductVariantsBulkMutation,
+  ProductInput,
+  ProductVariantsBulkInput,
+  SyncProductsDocument,
+  SyncProductsQuery,
+} from 'src/generated/graphql';
 import { print } from 'graphql';
 export type ProductsType = {
   id: string;
@@ -56,8 +64,7 @@ type ProductsQueueJobName =
   | typeof JOB_TYPES.GET_PRODUCT_TYPES
   | typeof JOB_TYPES.GET_PRODUCT_TYPES_DB
   | typeof JOB_TYPES.SYNC_PRODUCT_TYPES
-  | typeof JOB_TYPES.CACHE_PRODUCT_TYPES
-  | typeof JOB_TYPES.CHECK_PRODUCT_TYPE;
+  | typeof JOB_TYPES.CACHE_PRODUCT_TYPES;
 
 // Create union type of Job objects for these jobs
 type ProductsQueueJob = {
@@ -67,10 +74,16 @@ type ProductsQueueJob = {
 @Processor(QUEUES.PRODUCTS, { concurrency: 10 })
 export class ProductsConsumer extends WorkerHost {
   private readonly logger = new Logger(ProductsConsumer.name);
+
+  /**
+   * Initialize all the graphql queries from AST to a string.
+   * */
   private readonly syncProductsQueryString: string = print(SyncProductsDocument);
+  private readonly createProductMutation: string = print(CreateProductDocument);
+  private readonly createProductVariantsBulk: string = print(CreateProductVariantsBulkDocument);
+
   constructor(
     private readonly dataService: DataService,
-    private readonly cacheService: CacheProvider,
     private readonly configService: ConfigService,
     private readonly utilsService: UtilsService,
 
@@ -106,8 +119,6 @@ export class ProductsConsumer extends WorkerHost {
           return await this.syncProductTypes(job.data);
         case JOB_TYPES.CACHE_PRODUCT_TYPES:
           return await this.cacheProductTypes();
-        case JOB_TYPES.CHECK_PRODUCT_TYPE:
-          return await this.checkProductTypeByName(job.data);
         default:
           throw new Error('Invalid job name');
           break;
@@ -168,7 +179,6 @@ export class ProductsConsumer extends WorkerHost {
     if (response.statusCode == 401) {
       //  console.log(JSON.stringify(response));
       //console.log(job.token);
-      console.log('in syncproduct', job.data);
       //await job.moveToFailed(new UnrecoverableError(`token expired for ${data.store.table_id}`), job.token);
       //job.discard();
       throw new TokenExpiredException(`Token expired for ${data.store.table_id}`, {
@@ -176,14 +186,6 @@ export class ProductsConsumer extends WorkerHost {
         jobId: job.id,
       });
       //await job.remove();
-      //return;
-      //await job.remove();
-
-      //throw new UnrecoverableError('errror error');
-      // throw new TokenExpiredException(`Token expired for ${data.store}`, {
-      // shop: data.store.table_id.toString(),
-      // jobId: '123',
-      //});
     }
     do {
       //response.statusCode == 200 ? products.push(...response.respBody['products']) : null;
@@ -279,7 +281,7 @@ export class ProductsConsumer extends WorkerHost {
               isActive: inventoryLevel.location.isActive,
             },
             quantities: inventoryLevel.quantities.map((quantity: any) => ({
-              id: this.extractIdFromGraphQLId(quantity.id, 'InventoryQuantity'),
+              id: quantity.id,
               name: quantity.name,
               quantity: quantity.quantity,
               updatedAt: quantity.updatedAt,
@@ -349,6 +351,8 @@ export class ProductsConsumer extends WorkerHost {
         options: product.options,
         images: product.images,
         tags: product.tags,
+        category_id: product.category_id,
+        inventoryTotal: product.inventoryTotal,
       };
       productCreated = this.productsRepository.create(payload);
       if (await this.productsRepository.existsBy({ id: productCreated.id })) {
@@ -576,24 +580,6 @@ export class ProductsConsumer extends WorkerHost {
     }
   }
 
-  private checkProductTypeByName = async (
-    data: JobRegistry[typeof JOB_TYPES.CHECK_PRODUCT_TYPE]['data'],
-  ): Promise<JobRegistry[typeof JOB_TYPES.CHECK_PRODUCT_TYPE]['result']> => {
-    try {
-      const result = await this.cacheService.mapFieldExists('product-types', data.name);
-      if (result == false) {
-        const resultDB = await this.productTypesRepository.existsBy({ fullName: data.name });
-        if (resultDB == true) {
-          return true;
-        }
-        return false;
-      }
-      return true;
-    } catch (error) {
-      this.logger.error(error, this.checkProductTypeByName.name);
-    }
-  };
-
   private createProduct = async (
     data: JobRegistry[typeof JOB_TYPES.CREATE_PRODUCT]['data'],
     job: Job,
@@ -606,10 +592,8 @@ export class ProductsConsumer extends WorkerHost {
       headers: this.utilsService.getGraphQLHeadersForStore(store),
     };
     options.data = await this.getCreateProductPayload(store, product, locations);
-    const response = await this.utilsService.requestToShopify('post', options);
-
-    //console.log(response);
-    // console.log(response.respBody);
+    const response = await this.utilsService.requestToShopify<CreateProductMutation>('post', options);
+    this.logger.error(JSON.stringify(response));
 
     if (response.statusCode === 401) {
       throw new TokenExpiredException(`Token expired for ${data.store.table_id}`, {
@@ -617,19 +601,40 @@ export class ProductsConsumer extends WorkerHost {
         jobId: job.id,
       });
     }
-    if (response.statusCode === 200) {
+    if (response.statusCode === 200 && response.respBody?.productCreate?.product) {
+      const createdProduct = response.respBody.productCreate.product;
       //create the variants which get associated with the productID
-      this.logger.error(JSON.stringify(response.respBody));
-      options.data = this.getProductVariantsPayload(
-        response.respBody['data']['productCreate']['product']['id'],
-        data.product.variants,
-      );
-      const variantsResponse = await this.utilsService.requestToShopify('post', options);
-      console.log(
-        'this is the variants response',
-        variantsResponse.respBody['data']['productVariantsBulkCreate']['productVariants'],
+
+      options.data = this.getProductVariantsPayload(response.respBody.productCreate.product.id, data.product.variants);
+      const variantsResponse = await this.utilsService.requestToShopify<CreateProductVariantsBulkMutation>(
+        'post',
+        options,
       );
       this.logger.debug(JSON.stringify(variantsResponse));
+      if (
+        variantsResponse.statusCode !== 200 ||
+        !variantsResponse.respBody?.productVariantsBulkCreate?.productVariants
+      ) {
+        throw new Error(`Variant creation failed: ${variantsResponse.statusCode}, ${variantsResponse.error}`);
+      }
+
+      const createdVariants = variantsResponse.respBody.productVariantsBulkCreate.productVariants;
+
+      // 3. Map to DB entities
+      const { product: productEntity, variants: variantEntities } = await this.mapCreatedProductToDB(
+        createdProduct,
+        createdVariants,
+        data.product,
+        store.table_id,
+      );
+
+      // 4. Save to database
+      // await this.storeProductDB(productEntity);
+      await this.productsRepository.upsert(productEntity, ['id']);
+
+      for (const variant of variantEntities) {
+        await this.productVariantsRepository.upsert(variant, ['id']);
+      }
     }
 
     return true;
@@ -638,95 +643,138 @@ export class ProductsConsumer extends WorkerHost {
     store: Store,
     product: newProductDto,
     location: StoreLocations[],
-  ): Promise<{ query: string }> => {
+  ): Promise<{ query: string; variables: object }> => {
     console.log(product.title, product.vendor, product.desc, JSON.stringify(product.tags));
     const category = product.product_type;
-    // const p_categoy = category.substring(0, category.lastIndexOf('-'));
-    //const categoryName = await this.cacheService.getMapField(p_categoy, category);
-    console.log(category);
     const categoryName = await this.dataService.getCategoryName(category);
-    console.log(categoryName);
-    const productData = `(input: {category: "${category}", productType: "${categoryName}", title:"${product.title}",vendor:"${product.vendor}", descriptionHtml:"${product.desc}", tags:${JSON.stringify(product.tags)}})`;
-    try {
-      const query = `mutation {
-      productCreate${productData} {
-        product {
-            id
-            title
-          options {
-              id
-              name
-            optionValues {
-                id
-                name
-                hasVariants
-              }
-            }
-          }
-        userErrors {
-            field
-            message
-          }
-        }
-      } `;
+    // const productData = `(input: {category: "${category}", productType: "${categoryName}", title:"${product.title}",vendor:"${product.vendor}", descriptionHtml:"${product.desc}", tags:${JSON.stringify(product.tags)}})`;
 
-      return { query };
-    } catch (error) {
-      this.logger.error(error, this.getCreateProductPayload.name);
-      throw error; // Re-throw the error or return a default value
-    }
+    const input: ProductInput = {
+      category: category,
+      productType: categoryName, // instead of taking a custom name, I just use the category name.
+      title: product.title,
+      vendor: product.vendor,
+      descriptionHtml: product.desc,
+      tags: product.tags,
+    };
+    return {
+      query: this.createProductMutation,
+      variables: { input: input },
+    };
   };
-  private getProductVariantsPayload = (productId: string, data: VariantDto[]): { query: string } => {
+  private getProductVariantsPayload = (productId: string, data: VariantDto[]): { query: string; variables: object } => {
     try {
-      console.log(data);
-      const variantsInput = data
-        .map(variant => {
-          // Build inventory quantities array
-          const inventoryQuantities = variant.inventory
-            .map(
-              inv => `{
-            availableQuantity: ${inv.quantity}
-            locationId: "gid://shopify/Location/${inv.locationId}"
-          }`,
-            )
-            .join('\n          ');
-
-          return `{
-          optionValues: [{
-            name: "${variant.title}",
-            optionName: "Title"
-          }],
-          inventoryItem: {
-            sku: "${variant.sku}",
+      const variants = data.map(variant => ({
+        optionValues: [
+          {
+            name: variant.title,
+            optionName: 'Title',
           },
-          price: "${variant.price}",
-          compareAtPrice: "${variant.compareAtPrice}",
-          inventoryQuantities: [${inventoryQuantities}]
-        }`;
-        })
-        .join('\n        ');
+        ],
+        inventoryItem: {
+          sku: variant.sku,
+        },
+        price: variant.price,
+        compareAtPrice: variant.compareAtPrice,
+        inventoryQuantities: variant.inventory.map(inv => ({
+          availableQuantity: inv.quantity,
+          locationId: `gid://shopify/Location/${inv.locationId}`,
+        })),
+      }));
 
-      const query = `mutation {
-      productVariantsBulkCreate(productId: "${productId}", variants: [${variantsInput}]){
-        productVariants {
-          id
-          title
-          selectedOptions {
-            name
-            value
-          }
-        }
-        userErrors {
-          field
-          message
-        }
-      }
-    }`;
-
-      return { query };
+      return {
+        query: this.createProductVariantsBulk,
+        variables: {
+          productId: productId,
+          variants,
+        },
+      };
     } catch (error) {
       console.error('Error building product variants payload:', error);
       throw error;
     }
+  };
+
+  private mapCreatedProductToDB = async (
+    shopifyProduct: CreateProductMutation['productCreate']['product'],
+    shopifyVariants: CreateProductVariantsBulkMutation['productVariantsBulkCreate']['productVariants'],
+    dto: newProductDto,
+    storeId: number,
+  ): Promise<{ product: Product; variants: ProductVariant[] }> => {
+    // Map product
+
+    const productEntity: Product = new Product();
+    productEntity.id = this.extractIdFromGraphQLId(shopifyProduct.id, 'Product');
+    productEntity.store_id = storeId;
+    productEntity.title = dto.title;
+    productEntity.vendor = dto.vendor;
+    productEntity.body_html = dto.desc || '';
+    productEntity.handle = shopifyProduct.handle;
+    productEntity.created_at = new Date(shopifyProduct.createdAt);
+    productEntity.updated_at = new Date(shopifyProduct.updatedAt);
+    productEntity.product_type = (await this.dataService.getCategoryName(dto.product_type)) ?? '';
+    productEntity.tags = dto.tags?.join(',') || '';
+    productEntity.admin_graphql_api_id = shopifyProduct.legacyResourceId;
+    productEntity.category_id = dto.product_type;
+
+    // Compute inventory total from DTO
+    productEntity.inventoryTotal = dto.variants.reduce(
+      (total, variant) => total + (variant.inventory?.reduce((sum, inv) => sum + inv.quantity, 0) || 0),
+      0,
+    );
+
+    // Map variants
+    const variantEntities: ProductVariant[] = [];
+    const variantMap = new Map<string, VariantDto>();
+    dto.variants.forEach(v => variantMap.set(v.sku, v));
+
+    for (const shopifyVariant of shopifyVariants) {
+      const dtoVariant = variantMap.get(shopifyVariant.sku);
+      if (!dtoVariant) continue;
+      const inventoryLevels: InventoryLevel[] = [];
+      shopifyVariant.inventoryItem.inventoryLevels.edges.forEach(level => {
+        inventoryLevels.push({
+          id: this.extractIdFromGraphQLId(level.node.id, 'InventoryLevel', true),
+          location: {
+            id: this.extractIdFromGraphQLId(level.node.location.id, 'Location'),
+            isActive: level.node.location.isActive,
+          },
+          quantities: [
+            {
+              id:
+                'gid://shopify/InventoryQuantity/' +
+                this.extractIdFromGraphQLId(level.node.id, 'InventoryLevel', false) +
+                '&name=available',
+              name: 'Available',
+              quantity: dtoVariant.inventory.find(inv => inv.locationId === level.node.location.id)?.quantity || 0,
+              updatedAt: new Date().toDateString(),
+            },
+          ],
+        });
+      });
+
+      const variantEntity = new ProductVariant();
+      variantEntity.id = this.extractIdFromGraphQLId(shopifyVariant.id, 'ProductVariant');
+      variantEntity.product_id = productEntity.id;
+      variantEntity.title = dtoVariant.title;
+      variantEntity.displayName = shopifyVariant.displayName;
+      variantEntity.price = dtoVariant.price;
+      variantEntity.sku = dtoVariant.sku;
+      variantEntity.compareAtPrice = dtoVariant.compareAtPrice;
+      variantEntity.inventory_item_id = this.extractIdFromGraphQLId(shopifyVariant.inventoryItem.id, 'InventoryItem');
+      variantEntity.inventory_item_sku = dtoVariant.sku;
+      variantEntity.inventory_levels = [...inventoryLevels];
+      variantEntity.inventory_item_created_at = new Date(shopifyVariant.inventoryItem.createdAt);
+      variantEntity.inventory_item_updated_at = new Date(shopifyVariant.inventoryItem.updatedAt);
+      variantEntity.createdAt = new Date(shopifyVariant.createdAt);
+      variantEntity.updatedAt = new Date(shopifyVariant.updatedAt);
+
+      // Calculate inventory quantity
+      variantEntity.inventoryQuantity = dtoVariant.inventory?.reduce((sum, inv) => sum + inv.quantity, 0) || 0;
+
+      variantEntities.push(variantEntity);
+    }
+
+    return { product: productEntity, variants: variantEntities };
   };
 }

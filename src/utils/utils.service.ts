@@ -196,15 +196,6 @@ export class UtilsService {
       if (typeof endpointOrOptions === 'object') {
         const requestConfig: AxiosRequestConfig = { method: method, ...endpointOrOptions };
         response = await firstValueFrom(this.httpService.request(requestConfig));
-
-        //const { data, ...requestConfig } = endpointOrOptions;
-        // response = await firstValueFrom(
-        //     this.httpService.request({
-        //         method,
-        //         ...requestConfig,
-        //         ...(data && { data })
-        //     })
-        // );
       }
       // Handle the calls with where the second arguement is not an object, that is, the call includes endpoint, headers, payload as separate values, not an object.
       else {
@@ -227,7 +218,7 @@ export class UtilsService {
           reqResult.graphQLErrors = response.data.errors;
         }
         // Flatten response for GraphQL calls
-        reqResult.respBody = response.data.data; // Now respBody = actual query results
+        reqResult.respBody = response.data.data;
       }
       return reqResult;
     } catch (error) {
