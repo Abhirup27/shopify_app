@@ -13,13 +13,16 @@ import { AxiosHeaders } from 'axios';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { TokenExpiredException } from '../token-expired.exception';
+import { print } from 'graphql';
+import { AppSubscriptionCreateDocument } from '../../generated/graphql';
 
 type StoreJobNames =
   | typeof JOB_TYPES.GET_STORE
   | typeof JOB_TYPES.SYNC_STORE
   | typeof JOB_TYPES.GET_STORE_LOCATIONS
   | typeof JOB_TYPES.SYNC_STORE_LOCATIONS
-  | typeof JOB_TYPES.UPDATE_STORE_TOKEN;
+  | typeof JOB_TYPES.UPDATE_STORE_TOKEN
+  | typeof JOB_TYPES.BUY_STORE_PLAN;
 
 type StoreJobs = {
   [K in StoreJobNames]: Job<JobRegistry[K]['data'], JobRegistry[K]['result']> & { name: K };
@@ -28,6 +31,8 @@ type StoreJobs = {
 @Processor(QUEUES.STORES, { concurrency: 10 })
 export class StoresConsumer extends WorkerHost {
   private readonly logger = new Logger(StoresConsumer.name);
+
+  private readonly appSubscriptionCreateMutation: string = print(AppSubscriptionCreateDocument);
 
   constructor(
     @InjectRepository(Store)
@@ -54,6 +59,8 @@ export class StoresConsumer extends WorkerHost {
           return await this.syncStoreLocations(job.data, job);
         case JOB_TYPES.UPDATE_STORE_TOKEN:
           return await this.updateStoreToken(job.data);
+        case JOB_TYPES.BUY_STORE_PLAN:
+          return await this.buyPlan(job.data);
         default:
           throw new Error('Invalid job');
       }
@@ -73,6 +80,16 @@ export class StoresConsumer extends WorkerHost {
     return job.name === name;
   }
 */
+  private buyPlan = async (
+    data: JobRegistry[typeof JOB_TYPES.BUY_STORE_PLAN]['data'],
+  ): Promise<JobRegistry[typeof JOB_TYPES.BUY_STORE_PLAN]['result']> => {
+    let request: ShopifyRequestOptions;
+    request.data = {
+      query: this.appSubscriptionCreateMutation,
+      variables: {}
+    }
+    return true;
+  };
   private retrieveStore = async (
     data: JobRegistry[typeof JOB_TYPES.GET_STORE]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.GET_STORE]['result']> => {
@@ -304,60 +321,6 @@ export class StoresConsumer extends WorkerHost {
     } catch (error) {
       //log
       this.logger.error(`Failed to verify access token for the Shopify store. \n ${error}`);
-      return false;
-    }
-  };
-
-  private getOAuthURL = async (clientId: string, shopDomain: string): Promise<string> => {
-    const nonce = crypto.randomBytes(16).toString('hex');
-    //await this.nonceProvider.storeNonce(nonce, shopDomain);
-
-    const scopes: string = this.configService.get('accessScopes');
-    const redirect: string = this.configService.get('app_install_URL');
-
-    /**
-     * https://{shop}.myshopify.com/admin/oauth/authorize?client_id={client_id}&scope={scopes}&redirect_uri={redirect_uri}&state={nonce}&grant_options[]={access_mode}
-     */
-    const url = `https://${shopDomain}/admin/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${redirect}&state=${nonce}&grant_options[]=per-user`;
-
-    return url;
-  };
-  private getAccessTokenForStore = async (shop: any, code: string): Promise<string | false> => {
-    try {
-      const endpoint = `https://${shop}/admin/oauth/access_token`;
-      const headers = new AxiosHeaders().set('Content-Type', 'application/json');
-
-      const data = {
-        client_id: this.configService.get('shopify_api_key'),
-        //'scope': this.configService.get('accessScopes'),
-        client_secret: this.configService.get('shopify_api_secret'),
-        code: code,
-      };
-
-      //const response = await this.utilsService.requestToShopify("post", endpoint, headers, data); //need to change
-      const options: ShopifyRequestOptions = { data, url: endpoint, headers };
-
-      const response: ShopifyResponse = await this.utilsService.requestToShopify('post', options);
-
-      if ('statusCode' in response && response.statusCode === 200) {
-        //console.log(response.respBody);
-        // equal to (response.respBody.hasOwnProperty('access_token'))
-        if (response.respBody['access_token'] && response.respBody['access_token'] !== null) {
-          console.log(response.respBody);
-          return response.respBody['access_token'].toString();
-        }
-
-        this.logger.error(`Failed to retrieve access token from Shopify for ${shop} : ${response}`);
-        return false;
-      }
-
-      this.logger.error(`Failed to retrieve access token from Shopify for ${shop} : ${response}`);
-      return false;
-    } catch (error) {
-      //log
-      console.error(error);
-
-      this.logger.error(`Error retrieving access token for ${shop}: ${error.message}`);
       return false;
     }
   };

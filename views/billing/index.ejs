@@ -36,7 +36,7 @@
                             <% if (last_plan_info && last_plan_info.plan_id === plan.id) { %>
                             <a href="#" class="btn btn-success" style="width: 100%">Active</a>
                             <% } else { %>
-                            <a href="<%= route('plan.buy',, {planid: plan.id} ) %>" class="btn btn-primary" style="width: 100%">Buy</a>
+                            <a href="<%= route('plan.buy',{}, {planid: plan.id} ) %>" class="btn btn-primary" style="width: 100%">Buy</a>
                             <% } %>
                         </div>
                     </div>

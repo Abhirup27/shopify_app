@@ -109,6 +109,22 @@ npm run doc
 
 go to http://127.0.0.1:3001
 
+# Checklist and To-Do
+### Done
+- [x] View Products.
+- [x] Sync Products.
+- [x] Create Products.
+- [x] View and Sync Orders.
+- [x] View team store's team members.
+- [x] Create new members with privileges.
+
+### To be done
+- [ ] Billing.
+- [ ] Add private stores.
+- [ ] Fulfill paid orders.
+### What I might do
+- [ ] Add subscriptions/ stripe gateway (to charge private app usage).
+- [ ] Edit customer, product, order details
 ## Run tests
 
 ```bash

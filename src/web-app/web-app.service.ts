@@ -390,14 +390,23 @@ export class WebAppService {
     return true;
   };
 
-  public getBillingPagePayload = async (store: Store): Promise<object> => {
+  public getBillingPagePayload = async (user: UserDto): Promise<object> => {
     try {
       //call the DataService methods
       const plans = await this.dataService.getPlans();
       console.log(plans);
-
-      return plans;
-      
+      const payload = {
+        storeId: user.store.table_id,
+        user:user,
+        isEmbedded: false,
+        showSidebar: true,
+        plans: [...plans],
+        isStorePublic: !user.store.IsPrivate(),
+        style: '',
+        appName: 'Shopify App',
+        body: '',
+      };
+      return payload;
     } catch (error) {
       this.logger.error(error.message, error.stack, this.getBillingPagePayload.name);
     }

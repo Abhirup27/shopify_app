@@ -1,0 +1,12 @@
+mutation AppSubscriptionCreate($name: String!, $lineItems: [AppSubscriptionLineItemInput!]!, $returnUrl: URL!) {
+    appSubscriptionCreate(name: $name, returnUrl: $returnUrl, lineItems: $lineItems) {
+        userErrors {
+            field
+            message
+        }
+        appSubscription {
+            id
+        }
+        confirmationUrl
+    }
+}

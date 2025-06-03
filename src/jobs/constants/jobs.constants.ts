@@ -38,9 +38,11 @@ export const JOB_TYPES = {
   GET_ORDER: 'retrieve-order-details',
 
   SYNC_STORE: 'sync-store',
+  SYNC_STORE_LOCATIONS: 'sync-store-locations',
+  BUY_STORE_PLAN: 'buy-store-plan',
   GET_STORES: 'retrieve-stores',
   GET_STORE: 'retrieve-store',
-  SYNC_STORE_LOCATIONS: 'sync-store-locations',
+
   GET_STORE_LOCATIONS: 'retrieve-store-locations',
 
   SYNC_CUSTOMERS: 'sync-customers',
@@ -128,6 +130,16 @@ export type JobRegistry = {
     data: { storeId: number };
     result: void;
   };
+  [JOB_TYPES.SYNC_STORE_LOCATIONS]: {
+    queue: typeof QUEUES.STORES;
+    data: { store: Store };
+    result: StoreLocations[] | null | { status: string; shopDomain: string };
+  };
+  [JOB_TYPES.BUY_STORE_PLAN]: {
+    queue: typeof QUEUES.STORES;
+    data: {store: Store};
+    result: boolean;
+  }
   [JOB_TYPES.GET_STORE]: {
     queue: typeof QUEUES.STORES;
     data: { storeId: number };
@@ -138,11 +150,6 @@ export type JobRegistry = {
     queue: typeof QUEUES.STORES;
     data: { userId: number };
     result: Store[];
-  };
-  [JOB_TYPES.SYNC_STORE_LOCATIONS]: {
-    queue: typeof QUEUES.STORES;
-    data: { store: Store };
-    result: StoreLocations[] | null | { status: string; shopDomain: string };
   };
   [JOB_TYPES.GET_STORE_LOCATIONS]: {
     queue: typeof QUEUES.STORES;
@@ -211,6 +218,7 @@ export const jobToQueueMap: { [K in JobType]: QueueName } = {
   [JOB_TYPES.SYNC_CUSTOMERS]: QUEUES.CUSTOMERS,
   [JOB_TYPES.SYNC_STORE]: QUEUES.STORES,
   [JOB_TYPES.SYNC_STORE_LOCATIONS]: QUEUES.STORES,
+  [JOB_TYPES.BUY_STORE_PLAN]: QUEUES.STORES,
   [JOB_TYPES.SYNC_ORDERS]: QUEUES.ORDERS,
   [JOB_TYPES.GET_STORES]: QUEUES.STORES,
   [JOB_TYPES.GET_STORE]: QUEUES.STORES,

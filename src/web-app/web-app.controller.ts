@@ -324,7 +324,9 @@ export class WebAppController {
   public async billing(@Req() req: Request, @CurrentUser() user: UserDto, @Res() res: Response) {
     try {
       if (user.hasRole('ADMIN')) {
-        const pagePayload = await this.webAppService.getBillingPagePayload(user.store);
+        const pagePayload = await this.webAppService.getBillingPagePayload(user);
+        pagePayload['csrfToken'] = this.utilsService.generateToken(req, res);
+        res.render('billing/index', pagePayload);
       } else {
         throw new UnauthorizedException(Error, 'Logged in user is not an admin for the specified store');
       }
