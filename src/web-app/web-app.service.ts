@@ -35,8 +35,8 @@ export class WebAppService {
 
   public async syncProductTypes(store: Store) {
     try {
-      //this.jobsService.syncProductTypes(store);
-      await this.jobsService.cacheProductTypes();
+      this.jobsService.syncProductTypes(store);
+      //await this.jobsService.cacheProductTypes();
     } catch (error) {
       this.logger.error(error, this.syncProductTypes.name);
     }

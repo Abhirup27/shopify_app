@@ -191,6 +191,7 @@ export class OrdersConsumer extends WorkerHost {
     do {
       options.data = this.getQueryObjectForOrders(cursor);
       const response: ShopifyResponse = await this.utilsService.requestToShopify('post', options);
+      console.log(JSON.stringify(response))
       if (response.statusCode == 401) {
         // job.moveToFailed(Error('401'), job.token)
         //job.moveToCompleted(Error('401'), job.token);

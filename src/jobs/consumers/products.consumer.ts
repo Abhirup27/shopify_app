@@ -29,6 +29,7 @@ import {
   SyncProductsQuery,
 } from 'src/generated/graphql';
 import { print } from 'graphql';
+
 export type ProductsType = {
   id: string;
   isRoot: boolean;
@@ -44,13 +45,13 @@ export type ProductsType = {
  *The expected response of taxonomy query.
  * */
 type ProductTypesResponse = {
-  data: {
-    taxonomy: {
-      categories: {
-        nodes: ProductsType[];
-      };
+
+  taxonomy: {
+    categories: {
+      nodes: ProductsType[];
     };
   };
+
 };
 
 /**
@@ -86,22 +87,19 @@ export class ProductsConsumer extends WorkerHost {
     private readonly dataService: DataService,
     private readonly configService: ConfigService,
     private readonly utilsService: UtilsService,
-
     /**for protuct types table*/
     @InjectEntityManager()
     private entityManager: EntityManager,
-
     @InjectRepository(Product)
     private readonly productsRepository: Repository<Product>,
-
     @InjectRepository(ProductType)
     private readonly productTypesRepository: Repository<ProductType>,
-
     @InjectRepository(ProductVariant)
     private readonly productVariantsRepository: Repository<ProductVariant>,
   ) {
     super();
   }
+
   public process = async (job: ProductsQueueJob): Promise<JobRegistry[ProductsQueueJobName]['result']> => {
     try {
       switch (job.name) {
@@ -136,6 +134,7 @@ export class ProductsConsumer extends WorkerHost {
       //job.discard();
     }
   };
+
   private isJobOfType<T extends keyof JobRegistry>(
     job: Job<JobRegistry[keyof JobRegistry]['data'], JobRegistry[keyof JobRegistry]['result']>,
     name: T,
@@ -261,6 +260,7 @@ export class ProductsConsumer extends WorkerHost {
       return null;
     }
   }
+
   private mapProductsToDB = async (
     productsData: SyncProductsQuery,
     storeId: number,
@@ -415,6 +415,7 @@ export class ProductsConsumer extends WorkerHost {
       }),
     );*/
   };
+
   private isArray(array: unknown): array is string[] {
     return Array.isArray(array) && array.every(item => typeof item === 'string');
   }
@@ -463,9 +464,11 @@ export class ProductsConsumer extends WorkerHost {
 
     return { query };
   }
+
   private async cacheProductTypes(parentId: string | null = '', cacheKey: string = 'product-types'): Promise<void> {
     try {
       // Stack to store work items: [parentId, cacheKey]
+
       const stack: Array<{
         parentId: string | null;
         cacheKey: string;
@@ -501,6 +504,7 @@ export class ProductsConsumer extends WorkerHost {
         // Cache the map for the current level
         // await this.cacheService.storeMap(currentCacheKey, currentLevelMap);
         await this.dataService.setProductCategoryMap(currentCacheKey, currentLevelMap);
+        await this.dataService.setProductCategorySyncStatus(true);
       }
     } catch (error) {
       this.logger.error(
@@ -509,8 +513,11 @@ export class ProductsConsumer extends WorkerHost {
       );
     }
   }
+
   private getProductTypeUpdated = async (tableName: string = 'product_type'): Promise<Date | null> => {
-    const result = await this.entityManager.query(`SELECT last_updated FROM table_metadata WHERE table_name = $1`, [
+    const result = await this.entityManager.query(`SELECT last_updated
+                                                   FROM table_metadata
+                                                   WHERE table_name = $1`, [
       tableName,
     ]);
 
@@ -526,7 +533,7 @@ export class ProductsConsumer extends WorkerHost {
       console.log(lastUpdated);
       const minutes = lastUpdated !== null ? new Date().getTime() - lastUpdated.getTime() : null;
       if (minutes != null && minutes / (1000 * 60) < 30) {
-        // return;
+         return;
       }
 
       const options: ShopifyRequestOptions = {
@@ -549,9 +556,19 @@ export class ProductsConsumer extends WorkerHost {
       // Get sub product types for the parentId
       options.data = this.getTaxonomyPayload(parentId);
       const response = await this.utilsService.requestToShopify<ProductTypesResponse>('post', options);
-      let productTypes = response.respBody?.data?.taxonomy?.categories?.nodes || [];
+      if (response.statusCode === 401) {
+        throw new TokenExpiredException(`Token expired`, {
+          shop: '',
+          jobId: '',
+        });
+      }
+
+      let productTypes = response.respBody?.taxonomy?.categories?.nodes || [];
 
       if (!productTypes.length) return;
+
+      //starting to update the cache
+      await this.dataService.setProductCategorySyncStatus(false);
 
       productTypes = this.productTypesRepository.create(productTypes);
       productTypes = await this.productTypesRepository.save(productTypes);
@@ -570,13 +587,18 @@ export class ProductsConsumer extends WorkerHost {
 
       // Cache the map for the current level
       await this.dataService.setProductCategoryMap(cacheKey, currentLevelMap);
+      await this.dataService.setProductCategorySyncStatus(true);
       //await this.cacheService.storeMap(cacheKey, currentLevelMap);
     } catch (error) {
+      if (error instanceof TokenExpiredException) {
+        throw error;
+      }
       this.logger.error(
         `Error syncing product level with parent ID ${parentId}: ${error}`,
         error.stack,
         this.syncProductLevel.name,
       );
+
     }
   }
 

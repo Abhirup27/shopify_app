@@ -40,7 +40,7 @@ export class CsrfMiddleware implements NestMiddleware {
     //console.log(req.baseUrl);
     //console.log(req.cookies['x-csrf-token'])
     // Skip CSRF check for specific routes if needed
-    console.log(req);
+    //console.log(req);
     if (req.baseUrl === '/login' && req.method === 'POST') {
       return next();
     }

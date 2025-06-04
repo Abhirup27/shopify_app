@@ -21,6 +21,8 @@ import { CsrfExceptionFilter } from './filters/csrf.exception.filter';
 import { JobsModule } from './jobs/jobs.module';
 import { moduleOptions } from './database/typeorm.config';
 import { DataModule } from './data/data.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { StartupService } from './startup.service';
 
 //we pass this value through the command line/system variables
 const ENV = process.env.NODE_ENV;
@@ -43,34 +45,15 @@ const ENV = process.env.NODE_ENV;
         module: InstallationModule
       },]
     ),
+
+    // For running cron jobs.
+    ScheduleModule.forRoot(),
+
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
 
       useFactory: moduleOptions,
-      /** useFactory: async (configService: ConfigService) => ({
- 
-         host: configService.get('database.host'),
-         type: configService.get('database.type').toString(),
-         port: parseInt(configService.get('database.port'), 10),
-         database: configService.get<string>('database.name'),
-         username: configService.get<string>('database.username'),
-         password: configService.get<string>('database.password'),
- 
-         entities: [
-           Store,
-           User,
-           UserStore,
-           Product,
-           Order,
-           Customer
-         ],
- 
-         synchronize: configService.get<boolean>('database.synchronize'),
-         autoLoadEntities: configService.get<boolean>('database.autoload'),
-         migrations: ['src/database/migrations/*-migration.ts'],
-         migrationsRun: false
-       }), **/
     }),
     ThrottlerModule.forRoot({ throttlers: [throttlerConfig] }),
     AuthModule,
@@ -89,7 +72,9 @@ const ENV = process.env.NODE_ENV;
     {
       provide: APP_GUARD,
       useClass: RateLimitingGuard
-    }
+    },
+    // To run tasks which need to run once during startup.
+    StartupService
   ],
   exports: []
 })

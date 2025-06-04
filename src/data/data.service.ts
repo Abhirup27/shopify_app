@@ -345,8 +345,17 @@ console.log(selectedPlan);
     }
   };
 
+  /**
+   *  This function is used to set the full sync status of the product taxonomy in the cache
+   *  */
+  public setProductCategorySyncStatus = async(status: boolean): Promise<boolean> => {
+      return await this.cacheService.set('productCategorySyncStatus', status, 0);
+  };
+  public getProductCategorySyncStatus = async(): Promise<boolean> => {
+    return await this.cacheService.get<boolean>('productCategorySyncStatus');
+  };
   public setProductCategoryMap = async (key: string, map: Record<string, string>): Promise<boolean> => {
-    return await this.cacheService.set(key, map, '10h');
+    return await this.cacheService.set(key, map, 0);
   };
   public getProductCategoryMap = async (key: string): Promise<Record<string, string>> => {
     return await this.cacheService.get<Record<string, string>>(key);

@@ -323,7 +323,7 @@ export class WebAppController {
   @Get('/billing')
   public async billing(@Req() req: Request, @CurrentUser() user: UserDto, @Res() res: Response) {
     try {
-      if (user.hasRole('ADMIN')) {
+      if (user.hasRole('ADMIN') || user.hasRole('SUPER_ADMIN')) {
         const pagePayload = await this.webAppService.getBillingPagePayload(user);
         pagePayload['csrfToken'] = this.utilsService.generateToken(req, res);
         res.render('billing/index', pagePayload);

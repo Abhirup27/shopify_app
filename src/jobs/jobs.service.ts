@@ -1,5 +1,5 @@
 import { InjectQueue } from '@nestjs/bullmq';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Job, Queue, QueueEvents } from 'bullmq';
 import {
   JOB_TYPES,
@@ -15,12 +15,14 @@ import { Store } from 'src/database/entities/store.entity';
 import { RegisterUserDto } from 'src/web-app/dtos/register-member.dto';
 import { newProductDto } from 'src/web-app/dtos/new-product.dto';
 import { User } from '../database/entities/user.entity';
+import { Cron, CronExpression, Interval } from '@nestjs/schedule';
 
 /**
  *This Service exposes all the functions required to launch tasks in worker threads.
  * */
 @Injectable()
 export class JobsService {
+  private readonly logger = new Logger(JobsService.name);
   /**
    * A key value pair variable that is used by the addJob function to add a job to the correct queue instance.
    * */
@@ -89,11 +91,14 @@ export class JobsService {
         //job.moveToFailed(error, job.token)
         //job.remove();
 
-        const pausedJob = await this.pausedQueue.add(
-          job.queueName + ':' + job.data['store'].myshopify_domain + ':' + type,
-          { queue: job.queueName, jobName: job.name, id: job.id, task_type: type },
-          { jobId: job.data['store']['myshopify_domain'] },
-        );
+        //Since the SYNC_PRODUCT_TYPES is mainly a background/cron job, we don't add it to pause queue
+        if(job.name != JOB_TYPES.SYNC_PRODUCT_TYPES) {
+          const pausedJob = await this.pausedQueue.add(
+            job.queueName + ':' + job.data['store'].myshopify_domain + ':' + type,
+            { queue: job.queueName, jobName: job.name, id: job.id, task_type: type },
+            { jobId: job.data['store']['myshopify_domain'] },
+          );
+        }
         //console.log(pausedJob);
         return {
           status: 'AUTH_REQUIRED',
@@ -141,6 +146,11 @@ export class JobsService {
 
   public cacheProductTypes = async () => await this.addJob(JOB_TYPES.CACHE_PRODUCT_TYPES, null);
 
+  public activateTrial = async (store: Store, user: User) =>
+    await this.addJob(JOB_TYPES.ACTIVATE_TRIAL, { store: store, user: user });
+  public buyPlan = async (planId: number, userId: number, store: Store) =>
+    await this.addJob(JOB_TYPES.BUY_STORE_PLAN, { store: store, planId: planId, userId: userId });
+
   public resumePausedJobsForStore = async (store_domain: string, accssToken: string) => {
     try {
       const pausedJob = await this.pausedQueue.getJob(store_domain);
@@ -175,7 +185,21 @@ export class JobsService {
     }
   };
 
-  public activateTrial = async (store: Store, user: User) => await this.addJob(JOB_TYPES.ACTIVATE_TRIAL, { store: store, user: user });
-  public buyPlan = async (planId: number, userId: number, store: Store) =>
-    await this.addJob(JOB_TYPES.BUY_STORE_PLAN, { store: store, planId: planId, userId: userId });
+  //@Interval(5000)
+  @Cron(CronExpression.EVERY_2_HOURS, { name: JOB_TYPES.SYNC_PRODUCT_TYPES,  })
+  public async runSync() {
+    this.logger.error('this ran');
+    //a access token is required to fetch product types from shopify.
+    const store: Store = await this.getStore(1);
+    if (store && store != null) {
+      const result = await this.syncProductTypes(store);
+      if (result != null && result.status == 'AUTH_REQUIRED') {
+        this.logger.error("stub store's access token has expired, manual OAuth needed.");
+      }
+    } else {
+      this.logger.warn(
+        'The SUPER ADMIN/ stub store does not exist. The super admin has to manually start the sync of product types.',
+      );
+    }
+  }
 }
