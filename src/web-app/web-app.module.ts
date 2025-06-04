@@ -54,6 +54,7 @@ export class WebAppModule implements NestModule {
         { path: 'syncProducts', method: RequestMethod.GET },
         { path: 'stores', method: RequestMethod.GET },
         { path: 'billing', method: RequestMethod.GET },
+        { path: 'buyPlan/:id', method: RequestMethod.GET },
       );
   }
 }

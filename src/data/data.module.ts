@@ -14,7 +14,7 @@ import { DataService } from './data.service';
 import { CacheModule } from './cache/cache.module';
 import { CacheService } from './cache/cache.service';
 import { Plan } from 'src/database/entities/plans.entity';
-import { UserPlan } from 'src/database/entities/userPlans.entity';
+import { StorePlan } from '../database/entities/storePlans.entity';
 
 @Module({
   imports: [
@@ -48,7 +48,7 @@ import { UserPlan } from 'src/database/entities/userPlans.entity';
       StoreLocations,
       Subscription,
       Plan,
-      UserPlan,
+      StorePlan,
     ]),
   ],
   providers: [DataService, CacheService],

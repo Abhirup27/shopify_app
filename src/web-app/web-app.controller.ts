@@ -334,4 +334,18 @@ export class WebAppController {
       this.logger.error(error.message, error.stack, this.billing.name);
     }
   }
+  @Get('/buyPlan/:id')
+  public async buyPlan(
+    @Req() req: Request,
+    @Res() res: Response,
+    @CurrentUser() user: UserDto,
+    @Param('id') id: number,
+  ) {
+    try {
+      //const url = await this.webAppService.buyPlanForStore(user, id);
+      res.redirect(await this.webAppService.buyPlanForStore(user, id));
+    } catch (error) {
+      this.logger.error(error.message, error.stack, this.buyPlan.name);
+    }
+  }
 }

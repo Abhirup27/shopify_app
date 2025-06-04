@@ -7,7 +7,7 @@ export class CacheService {
 
   constructor(@Inject('CACHE_INSTANCE') private readonly cache: Cacheable) {}
 
-  public get = async <T>(key: string): Promise<T> => {
+  public get = async <T>(key: string): Promise<T | undefined> => {
     return await this.cache.get<T>(key);
   };
 

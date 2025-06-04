@@ -1,9 +1,19 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { User } from './user.entity';
 import { Product } from './product.entity';
 import { Order } from './order.entity';
 import { Customer } from './customer.entity';
 import { StoreLocations } from './storeLocations.entity';
+import { StorePlan } from './storePlans.entity';
 
 @Entity()
 export class Store {
@@ -29,8 +39,12 @@ export class Store {
     type: 'bigint',
     unsigned: true,
     nullable: false,
+    unique: true,
   })
   id: number;
+
+  @OneToOne(() => StorePlan, storePlan => storePlan.store)
+  storePlan: StorePlan;
 
   @Column({
     type: 'bigint',

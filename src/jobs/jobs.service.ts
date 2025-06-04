@@ -14,6 +14,7 @@ import {
 import { Store } from 'src/database/entities/store.entity';
 import { RegisterUserDto } from 'src/web-app/dtos/register-member.dto';
 import { newProductDto } from 'src/web-app/dtos/new-product.dto';
+import { User } from '../database/entities/user.entity';
 
 /**
  *This Service exposes all the functions required to launch tasks in worker threads.
@@ -173,4 +174,8 @@ export class JobsService {
       console.log(error);
     }
   };
+
+  public activateTrial = async (store: Store, user: User) => await this.addJob(JOB_TYPES.ACTIVATE_TRIAL, { store: store, user: user });
+  public buyPlan = async (planId: number, userId: number, store: Store) =>
+    await this.addJob(JOB_TYPES.BUY_STORE_PLAN, { store: store, planId: planId, userId: userId });
 }

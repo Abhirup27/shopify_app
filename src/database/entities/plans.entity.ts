@@ -1,5 +1,5 @@
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { UserPlan } from './userPlans.entity';
+import { StorePlan } from './storePlans.entity';
 
 @Entity()
 export class Plan {
@@ -22,6 +22,6 @@ export class Plan {
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updatedAt: Date;
 
-  @OneToMany(() => UserPlan, userplan => userplan.plan)
-  userplans: UserPlan[];
+  @OneToMany(() => StorePlan, storePlan => storePlan.plan)
+  storePlans: StorePlan[];
 }

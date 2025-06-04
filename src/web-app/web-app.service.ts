@@ -19,6 +19,7 @@ import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 import { ProductType } from 'src/database/entities/productType.entity';
 import { DataService } from 'src/data/data.service';
 import { isArray } from 'class-validator';
+import { StorePlan } from '../database/entities/storePlans.entity';
 
 @Injectable()
 export class WebAppService {
@@ -394,6 +395,7 @@ export class WebAppService {
     try {
       //call the DataService methods
       const plans = await this.dataService.getPlans();
+      const currentPlan: StorePlan = await this.dataService.getCurrentPlan(user.store.id);
       console.log(plans);
       const payload = {
         storeId: user.store.table_id,
@@ -401,6 +403,7 @@ export class WebAppService {
         isEmbedded: false,
         showSidebar: true,
         plans: [...plans],
+        last_plan_info: currentPlan,
         isStorePublic: !user.store.IsPrivate(),
         style: '',
         appName: 'Shopify App',
@@ -411,4 +414,8 @@ export class WebAppService {
       this.logger.error(error.message, error.stack, this.getBillingPagePayload.name);
     }
   };
+
+  async buyPlanForStore(user: UserDto, id: number) : Promise<string> {
+    return await this.jobsService.buyPlan(id, user.user_id, user.store);
+  }
 }

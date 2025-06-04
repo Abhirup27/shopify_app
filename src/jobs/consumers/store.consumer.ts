@@ -10,11 +10,17 @@ import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
 import { UtilsService } from 'src/utils/utils.service';
 import { ShopifyResponse } from 'src/types/ShopifyResponse';
 import { AxiosHeaders } from 'axios';
-import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { TokenExpiredException } from '../token-expired.exception';
 import { print } from 'graphql';
-import { AppSubscriptionCreateDocument } from '../../generated/graphql';
+import {
+  AppSubscriptionCreateDocument,
+  AppSubscriptionCreateMutation,
+  AppSubscriptionCreateMutationVariables,
+  CurrencyCode,
+} from '../../generated/graphql';
+import { DataService } from '../../data/data.service';
+import { Plan } from '../../database/entities/plans.entity';
 
 type StoreJobNames =
   | typeof JOB_TYPES.GET_STORE
@@ -22,7 +28,8 @@ type StoreJobNames =
   | typeof JOB_TYPES.GET_STORE_LOCATIONS
   | typeof JOB_TYPES.SYNC_STORE_LOCATIONS
   | typeof JOB_TYPES.UPDATE_STORE_TOKEN
-  | typeof JOB_TYPES.BUY_STORE_PLAN;
+  | typeof JOB_TYPES.BUY_STORE_PLAN
+  | typeof JOB_TYPES.ACTIVATE_TRIAL;
 
 type StoreJobs = {
   [K in StoreJobNames]: Job<JobRegistry[K]['data'], JobRegistry[K]['result']> & { name: K };
@@ -43,6 +50,7 @@ export class StoresConsumer extends WorkerHost {
 
     private readonly utilsService: UtilsService,
     private readonly configService: ConfigService,
+    private readonly dataService: DataService,
   ) {
     super();
   }
@@ -61,6 +69,8 @@ export class StoresConsumer extends WorkerHost {
           return await this.updateStoreToken(job.data);
         case JOB_TYPES.BUY_STORE_PLAN:
           return await this.buyPlan(job.data);
+        case JOB_TYPES.ACTIVATE_TRIAL:
+          return await this.activateTrialForStore(job.data);
         default:
           throw new Error('Invalid job');
       }
@@ -83,12 +93,64 @@ export class StoresConsumer extends WorkerHost {
   private buyPlan = async (
     data: JobRegistry[typeof JOB_TYPES.BUY_STORE_PLAN]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.BUY_STORE_PLAN]['result']> => {
-    let request: ShopifyRequestOptions;
-    request.data = {
+    //console.log(data.planId)
+    const plans = await this.dataService.getPlans();
+    const selectedPlan: Plan = plans.find(plan => {
+      console.log(data.planId);
+      if (plan.id == data.planId) return plan;
+    });
+   // console.log(plans);
+    const options: ShopifyRequestOptions = {
+      url: this.utilsService.getShopifyURLForStore('graphql.json', data.store),
+      headers: this.utilsService.getGraphQLHeadersForStore(data.store),
+    };
+    const variables: AppSubscriptionCreateMutationVariables = {
+      name: selectedPlan.name,
+      returnUrl: this.configService.get<string>('app_url'),
+      test: true,
+      lineItems: {
+        plan: {
+          appRecurringPricingDetails: {
+            price: {
+              amount: selectedPlan.price,
+              currencyCode: CurrencyCode.Usd,
+            },
+          },
+        },
+      },
+    };
+    options.data = {
       query: this.appSubscriptionCreateMutation,
-      variables: {}
+      variables: { ...variables },
+    };
+
+    const response = await this.utilsService.requestToShopify<AppSubscriptionCreateMutation>('post', options);
+
+    if (response.statusCode === 200) {
+      if(response.respBody.appSubscriptionCreate.userErrors[0] !== undefined) {
+        throw new Error(response.respBody.appSubscriptionCreate.userErrors[0].message);
+      }
+       const url: string = response.respBody.appSubscriptionCreate.confirmationUrl;
+
+
+      console.log(JSON.stringify(response));
+       return url;
+        //redirect to the confirmation shopify page
+    } else if (response.statusCode === 401) {
+      // Oauth failed, token expired
     }
-    return true;
+  };
+  private activateTrialForStore = async (
+    data: JobRegistry[typeof JOB_TYPES.ACTIVATE_TRIAL]['data'],
+  ): Promise<JobRegistry[typeof JOB_TYPES.ACTIVATE_TRIAL]['result']> => {
+    try {
+      const result = await this.dataService.setPlan(1, data.store.id, data.user.user_id);
+      if (result) {
+        return;
+      }
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+    }
   };
   private retrieveStore = async (
     data: JobRegistry[typeof JOB_TYPES.GET_STORE]['data'],

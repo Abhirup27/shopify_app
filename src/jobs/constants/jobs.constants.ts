@@ -7,6 +7,7 @@ import { StoreLocations } from 'src/database/entities/storeLocations.entity';
 import { UserStore } from 'src/database/entities/userstore.entity';
 import { newProductDto } from 'src/web-app/dtos/new-product.dto';
 import { RegisterUserDto } from 'src/web-app/dtos/register-member.dto';
+import { User } from '../../database/entities/user.entity';
 
 /**
  * all the queues used in jobs module. Immutable.
@@ -39,6 +40,7 @@ export const JOB_TYPES = {
 
   SYNC_STORE: 'sync-store',
   SYNC_STORE_LOCATIONS: 'sync-store-locations',
+  ACTIVATE_TRIAL: 'activate-trial',
   BUY_STORE_PLAN: 'buy-store-plan',
   GET_STORES: 'retrieve-stores',
   GET_STORE: 'retrieve-store',
@@ -135,11 +137,16 @@ export type JobRegistry = {
     data: { store: Store };
     result: StoreLocations[] | null | { status: string; shopDomain: string };
   };
+  [JOB_TYPES.ACTIVATE_TRIAL]: {
+    queue: typeof QUEUES.STORES;
+    data: { store: Store; user: User };
+    result: boolean;
+  };
   [JOB_TYPES.BUY_STORE_PLAN]: {
     queue: typeof QUEUES.STORES;
-    data: {store: Store};
-    result: boolean;
-  }
+    data: { store: Store; planId: number; userId: number };
+    result: string;
+  };
   [JOB_TYPES.GET_STORE]: {
     queue: typeof QUEUES.STORES;
     data: { storeId: number };
@@ -218,11 +225,14 @@ export const jobToQueueMap: { [K in JobType]: QueueName } = {
   [JOB_TYPES.SYNC_CUSTOMERS]: QUEUES.CUSTOMERS,
   [JOB_TYPES.SYNC_STORE]: QUEUES.STORES,
   [JOB_TYPES.SYNC_STORE_LOCATIONS]: QUEUES.STORES,
+  [JOB_TYPES.ACTIVATE_TRIAL]: QUEUES.STORES,
   [JOB_TYPES.BUY_STORE_PLAN]: QUEUES.STORES,
+
   [JOB_TYPES.SYNC_ORDERS]: QUEUES.ORDERS,
   [JOB_TYPES.GET_STORES]: QUEUES.STORES,
   [JOB_TYPES.GET_STORE]: QUEUES.STORES,
   [JOB_TYPES.GET_STORE_LOCATIONS]: QUEUES.STORES,
+
   [JOB_TYPES.GET_ORDER]: QUEUES.ORDERS,
   [JOB_TYPES.GET_ORDERS]: QUEUES.ORDERS,
 

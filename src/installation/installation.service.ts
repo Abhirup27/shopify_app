@@ -174,7 +174,7 @@ export class InstallationService {
     await this.jobsService.syncProducts(result.store);
     await this.jobsService.syncOrders(result.store);
     await this.jobsService.syncCustomers(result.store);
-
+    await this.jobsService.activateTrial(result.store, result.user);
     const createRelation: UserStore | false = await this.createSuperAdmin(result.user.user_id, result.store.table_id);
     if (typeof createRelation == 'boolean') {
       return { table_id: result.store.table_id, success: false };

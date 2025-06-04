@@ -1,4 +1,4 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { doubleCsrf, DoubleCsrfConfigOptions } from 'csrf-csrf';
 
@@ -40,10 +40,11 @@ export class CsrfMiddleware implements NestMiddleware {
     //console.log(req.baseUrl);
     //console.log(req.cookies['x-csrf-token'])
     // Skip CSRF check for specific routes if needed
+    console.log(req);
     if (req.baseUrl === '/login' && req.method === 'POST') {
       return next();
     }
-    else if (req.baseUrl == '/webhook/app/uninstalled') {
+      else if (req.baseUrl == '/webhook/app/uninstalled') {
       return next();
     }
     else if (req.baseUrl == '/webhook/orders/updated') {
