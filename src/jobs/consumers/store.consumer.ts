@@ -93,17 +93,16 @@ export class StoresConsumer extends WorkerHost {
   private buyPlan = async (
     data: JobRegistry[typeof JOB_TYPES.BUY_STORE_PLAN]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.BUY_STORE_PLAN]['result']> => {
-    console.log(data.planId)
     const plans = await this.dataService.getPlans();
     const selectedPlan: Plan = plans.find(plan => plan.id == data.planId);
-   // console.log(plans);
+
     const options: ShopifyRequestOptions = {
       url: this.utilsService.getShopifyURLForStore('graphql.json', data.store),
       headers: this.utilsService.getGraphQLHeadersForStore(data.store),
     };
     const variables: AppSubscriptionCreateMutationVariables = {
       name: selectedPlan.name,
-      returnUrl: this.configService.get<string>('app_url'),
+      returnUrl: (this.configService.get<string>('app_url') + '/billing'),
       test: true,
       lineItems: {
         plan: {
@@ -116,6 +115,7 @@ export class StoresConsumer extends WorkerHost {
         },
       },
     };
+    console.log(variables.returnUrl)
     options.data = {
       query: this.appSubscriptionCreateMutation,
       variables: { ...variables },

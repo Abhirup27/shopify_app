@@ -13,7 +13,7 @@ export class CsrfMiddleware implements NestMiddleware {
       cookieName: 'x-csrf-token',
       cookieOptions: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'strict',
         secure: process.env.NODE_ENV === 'production',
         path: '/',
         //signed: false,
@@ -46,8 +46,7 @@ export class CsrfMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     //console.log(req.baseUrl);
     //console.log(req.cookies['x-csrf-token'])
-    // Skip CSRF check for specific routes if needed
-    console.log(req.headers);
+    //console.log(req.headers);
 
     // instead of doing this, use .exclude in app.module.ts . exclude /webhook/*, post login route
     if (req.baseUrl === '/login' && req.method === 'POST') {

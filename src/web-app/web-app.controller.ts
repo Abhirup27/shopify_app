@@ -75,7 +75,7 @@ export class WebAppController {
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax', // access_token cookie will be sent to other redirected websites
       maxAge: 1 * 60 * 60 * 1000, // 1 hour
     });
 
@@ -284,6 +284,9 @@ export class WebAppController {
     try {
       if (user.can(['all_access', 'write_products'])) {
         const result = await this.webAppService.syncProducts(user, res);
+        if (result == true) {
+          res.redirect('/products');
+        }
         //res.redirect('/products');
       }
     } catch (error) {
@@ -300,15 +303,16 @@ export class WebAppController {
   ) {
     try {
       if (user.can(['all_access', 'write_products'])) {
-        const result= await this.webAppService.createProduct(user, product);
+        const result = await this.webAppService.createProduct(user, product);
         if (typeof result != 'boolean') {
           if(result.status == 'AUTH_REQUIRED'){
-            res.redirect(result.url);
+            res.send({redirect_url:result.url});
             return;
           }
           res.send({error: result.status});
           return;
         }
+        console.log('this');
         res.redirect('/products');
       }
     } catch (error) {

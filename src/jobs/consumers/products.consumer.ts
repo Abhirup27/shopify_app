@@ -151,8 +151,7 @@ export class ProductsConsumer extends WorkerHost {
     data: JobRegistry[typeof JOB_TYPES.SYNC_PRODUCTS]['data'],
     job: Job,
   ): Promise<JobRegistry[typeof JOB_TYPES.SYNC_PRODUCTS]['result']> => {
-    //  try {
-    // const store = store ?? null;
+
     const totalProducts: any[] = [];
     const totalProductVariants: any[] = [];
     let cursor: string | null = null;
@@ -170,16 +169,8 @@ export class ProductsConsumer extends WorkerHost {
     requestOptions.data = this.syncProductsQuery();
 
     let response = await this.utilsService.requestToShopify<SyncProductsQuery>('post', requestOptions);
-    //if(response.error == false && response.statusCode == 200){
-    // this.logger.debug(JSON.stringify(response.respBody));
-    // }
-    //
-    console.log('products ran');
+
     if (response.statusCode == 401) {
-      //  console.log(JSON.stringify(response));
-      //console.log(job.token);
-      //await job.moveToFailed(new UnrecoverableError(`token expired for ${data.store.table_id}`), job.token);
-      //job.discard();
       throw new TokenExpiredException(`Token expired for ${data.store.table_id}`, {
         shop: data.store.table_id.toString(),
         jobId: job.id,
@@ -223,11 +214,8 @@ export class ProductsConsumer extends WorkerHost {
 
     const productVaraintsEntities: ProductVariant[] = this.productVariantsRepository.create(totalProductVariants);
     await this.productVariantsRepository.upsert(productVaraintsEntities, ['id']);
-    /* } catch (error) {
-       console.log(error['code']);
-       this.logger.error(error.message, error.stack, this.syncProducts.name);
- 
-     }*/
+
+    return true;
   };
 
   private extractIdFromGraphQLId(graphqlId: string, prefix?: string, removeSuffix: boolean = false): number | null {
@@ -388,32 +376,7 @@ export class ProductsConsumer extends WorkerHost {
     //return Promise.resolve(products);
 
     return products;
-    /*return Promise.resolve(
-      products.map(entity => {
-        //console.log(entity);
-        const targetTag: string = this.configService.get<string>('AddToCartTagProduct') ?? 'buy-now';
-        let status: boolean = false;
-        let message: string = 'Remove Add to Cart';
-        if (entity.tags.length > 0) {
-          const tags: Array<string> = entity.tags.split(',');
-  
-          if (tags !== null && this.isArray(tags)) {
-            if (tags.includes(targetTag)) {
-              (status = true), (message = 'Enable Add to Cart');
-            }
-          }
-        }
-  
-        return {
-          ...entity,
-  
-          getAddToCartStatus: {
-            status: status,
-            message: message,
-          },
-        };
-      }),
-    );*/
+
   };
 
   private isArray(array: unknown): array is string[] {
@@ -517,9 +480,7 @@ export class ProductsConsumer extends WorkerHost {
   private getProductTypeUpdated = async (tableName: string = 'product_type'): Promise<Date | null> => {
     const result = await this.entityManager.query(`SELECT last_updated
                                                    FROM table_metadata
-                                                   WHERE table_name = $1`, [
-      tableName,
-    ]);
+                                                   WHERE table_name = $1`, [ tableName, ]);
 
     return result.length > 0 ? result[0].last_updated : null;
   };
@@ -615,7 +576,6 @@ export class ProductsConsumer extends WorkerHost {
     };
     options.data = await this.getCreateProductPayload(store, product, locations);
     const response = await this.utilsService.requestToShopify<CreateProductMutation>('post', options);
-    this.logger.error(JSON.stringify(response));
 
     if (response.statusCode === 401) {
       throw new TokenExpiredException(`Token expired for ${data.store.table_id}`, {
@@ -632,7 +592,6 @@ export class ProductsConsumer extends WorkerHost {
         'post',
         options,
       );
-      this.logger.debug(JSON.stringify(variantsResponse));
       if (
         variantsResponse.statusCode !== 200 ||
         !variantsResponse.respBody?.productVariantsBulkCreate?.productVariants

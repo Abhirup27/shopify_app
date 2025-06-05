@@ -285,15 +285,16 @@ export class WebAppService {
 
     return payload;
   };
-  public syncProducts = async (user: UserDto, res: Response): Promise<void> => {
+  public syncProducts = async (user: UserDto, res: Response): Promise<boolean> => {
     try {
       const result = await this.jobsService.syncProducts(user.store);
       if (result['status'] == 'AUTH_REQUIRED') {
         const url = await this.getOAuthURL(user.store.myshopify_domain);
         console.log(url);
         res.redirect(url);
-        return;
+        return false;
       }
+      return true;
     } catch (error) {}
   };
   public getProducts = async (user: UserDto): Promise<object> => {
@@ -396,7 +397,6 @@ export class WebAppService {
       //call the DataService methods
       const plans = await this.dataService.getPlans();
       const currentPlan: StorePlan = await this.dataService.getCurrentPlan(user.store.id);
-      console.log(plans);
       const payload = {
         storeId: user.store.table_id,
         user:user,
@@ -416,7 +416,7 @@ export class WebAppService {
   };
 
   async buyPlanForStore(user: UserDto, id: number) : Promise<string> {
-    console.log('in controller planId is ', id);
+
     return await this.jobsService.buyPlan(id, user.user_id, user.store);
   }
 }

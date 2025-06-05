@@ -2,6 +2,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { Job, Queue, QueueEvents } from 'bullmq';
 import {
+  errorResult,
   JOB_TYPES,
   JobRegistry,
   jobToQueueMap,
@@ -79,14 +80,12 @@ export class JobsService {
     const queue = this.queues[queueName];
     const event = this.queueEventsMap[queueName];
     const job = await queue.add(type, data, { attempts: 3, backoff: { delay: 5000, type: 'exponential' } });
-    //job.token = 'my-token';
     try {
       const result = (await job.waitUntilFinished(event, 30000)) as Promise<JobRegistry[T]['result']>;
       return result;
     } catch (error) {
       console.log(JSON.stringify(error));
       if (error.message == '401' || job.failedReason == '401') {
-        console.log('in if statement');
         //console.log(await job.isFailed());
         //job.moveToFailed(error, job.token)
         //job.remove();
@@ -99,17 +98,16 @@ export class JobsService {
             { jobId: job.data['store']['myshopify_domain'] },
           );
         }
-        //console.log(pausedJob);
         return {
           status: 'AUTH_REQUIRED',
           shopDomain: job.data.myshopify_domain,
-        };
+        } as errorResult;
       }
-      console.log('does not return');
+      this.logger.debug("The job error was not 401 so It didn't return.");
     }
   }
   public configure = async (storeId: number) => await this.addJob(JOB_TYPES.CONFIGURE_WEBHOOKS, { storeId: storeId });
-  public syncProducts = async (store: Store) => await this.addJob(JOB_TYPES.SYNC_PRODUCTS, { store: store });
+  public syncProducts = async (store: Store) : Promise<boolean | errorResult> => await this.addJob(JOB_TYPES.SYNC_PRODUCTS, { store: store });
   public getProducts = async (store: Store | number) => await this.addJob(JOB_TYPES.GET_PRODUCTS, { store: store });
   public syncOrders = async (store: Store) => await this.addJob(JOB_TYPES.SYNC_ORDERS, { store: store });
   public getOrders = async (store: number) => await this.addJob(JOB_TYPES.GET_ORDERS, { storeId: store });
@@ -159,7 +157,7 @@ export class JobsService {
       // const failedProductJobs = await this.productQueue.getFailed();
       // const failedOrderJobs = await this.ordersQueue.getFailed();
       let job: Job;
-      console.log('in resumePausedJobsForStore, queue name to resumse', pausedJob.data.queue);
+      console.log('in resumePausedJobsForStore, queue name to resume', pausedJob.data.queue);
       switch (queueName) {
         case QUEUES.PRODUCTS:
           job = await this.productQueue.getJob(requiredId);

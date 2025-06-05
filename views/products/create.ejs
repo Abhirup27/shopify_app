@@ -425,30 +425,73 @@ function updateAllVariantsWithLocations() {
 
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         // Send as JSON
-        fetch(this.action, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'text/html,application/json',
-                'x-csrf-token': csrfToken,
-            },
-            body: JSON.stringify(productData)
-        })
+      fetch(this.action, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/html, application/json',
+          'x-csrf-token': csrfToken,
+        },
+        body: JSON.stringify(productData)
+      })
         .then(response => {
-            if (response.ok) {
-                sessionStorage.removeItem('unsavedProductForm');
-                return response.json();
-            }
-            throw new Error('Network response was not ok');
-        })
-        .then(data => {
-            alert('Product created successfully!');
-            // Redirect or reset form as needed
+          const contentType = response.headers.get('content-type');
+
+          // Handles HTML response
+          if (contentType && contentType.includes('text/html')) {
+            sessionStorage.removeItem('unsavedProductForm');
             window.location.href = '<%= route("shopify.products") %>';
+            return new Promise(() => {}); // Prevents further then() calls
+          }
+
+          // Handles JSON responses where the client may need to be redirected to Oauth shopify URL or some other error has occurred
+          if (response.ok) {
+            return response.json().then(data => {
+
+              if (data.redirect_url) {
+                // Full redirect to JSON-specified URL, for OAuth
+                saveFormData();
+                if(confirm("Store's access token has expired. Redirect to shopify for new token? Form data is saved on the server.")){
+                  sessionStorage.removeItem('unsavedProductForm');
+                  window.location.href = data.redirect_url;
+                }
+
+              } else if(data.error != undefined){ //some other error occurred, do not delete form data
+                    saveFormData();
+                    alert("Error ", data.error);
+              }else {
+                //if no error is returned in the response JSON, assume it is created
+                sessionStorage.removeItem('unsavedProductForm');
+                alert('Product created successfully!');
+                window.location.href = '<%= route("shopify.products") %>';
+              }
+              return data;
+            });
+          }
+
+          // Handle HTTP errors
+          return response.json().then(errorData => {
+            saveFormData();
+            throw errorData; // Throw to trigger catch block
+          }).catch(() => {
+            throw new Error('Network response was not ok');
+          });
         })
         .catch(error => {
-            console.error('Error:', error);
+          console.error('Error:', error);
+
+          // Handle JSON error objects
+          if (error && typeof error === 'object') {
+            if (error.error) {
+              alert(`Error: ${error.error}`);
+            } else if (error.message) {
+              alert(`Error: ${error.message}`);
+            } else {
+              alert('Error creating product. Please try again.');
+            }
+          } else {
             alert('Error creating product. Please try again.');
+          }
         });
     });
 

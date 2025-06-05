@@ -63,7 +63,7 @@ export const JOB_TYPES = {
  * This type is used for addJob function in the jobs service and the respective consumers.
  * It acts as a single source of truth. Avoids mismatches and reduces lines of code in jobs service.
  * */
-type errorResult = {
+export type errorResult = {
   status: string;
   shopDomain: string;
 };
@@ -72,7 +72,7 @@ export type JobRegistry = {
   [JOB_TYPES.SYNC_PRODUCTS]: {
     queue: typeof QUEUES.PRODUCTS;
     data: { store: Store };
-    result: void;
+    result: boolean;
   };
   [JOB_TYPES.GET_PRODUCTS]: {
     queue: typeof QUEUES.PRODUCTS;

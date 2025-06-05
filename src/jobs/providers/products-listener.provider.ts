@@ -6,18 +6,18 @@ import { Job } from 'bullmq';
 export class ProductsQueueEvents extends QueueEventsHost {
   @OnQueueEvent('active')
   onActive() {
-    console.log('hello');
+    console.log('New products job in queue');
   }
 
   @OnQueueEvent('completed')
   onCompleted(job: Job) {
-    console.log('hello3');
+    console.log('Product Job completed');
     return job;
   }
 
   @OnQueueEvent('failed')
   async handleFailedJob(args: any, id: string) {
-    console.log('in failed event');
+    console.log('Product Job failed');
     console.log(args);
     //if (error['isTokenExpired']) {
     // console.log('yes2');
