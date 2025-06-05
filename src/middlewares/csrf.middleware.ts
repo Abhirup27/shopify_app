@@ -5,7 +5,7 @@ import { doubleCsrf, DoubleCsrfConfigOptions } from 'csrf-csrf';
 @Injectable()
 export class CsrfMiddleware implements NestMiddleware {
   private doubleCsrfProtection;
-
+  private generateCsrfToken;
   constructor() {
     //console.log(process.env.CSRF_SECRET)
     const config: DoubleCsrfConfigOptions = {
@@ -16,10 +16,16 @@ export class CsrfMiddleware implements NestMiddleware {
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
         path: '/',
-        signed: false
+        //signed: false,
       },
       size: 64,
-      getTokenFromRequest: (req) => { return req.cookies['x-csrf-token'].split('|')[0] },
+      //getTokenFromRequest: (req) => { return req.cookies['x-csrf-token'].split('|')[0] },
+      getCsrfTokenFromRequest: req => {
+        return req.header('x-csrf-token');
+      },
+      getSessionIdentifier: req => {
+        return req.header('access_token') ?? req.cookies['access_token'];
+      },
       errorConfig: { // Optional: Customize error properties if needed
         statusCode: 403,
         message: 'Invalid CSRF Token',
@@ -28,32 +34,27 @@ export class CsrfMiddleware implements NestMiddleware {
     };
 
     const {
-      generateToken,
+      generateCsrfToken,
       doubleCsrfProtection,
       invalidCsrfTokenError,
     } = doubleCsrf(config);
 
     this.doubleCsrfProtection = doubleCsrfProtection;
+    this.generateCsrfToken = generateCsrfToken;
   }
 
   use(req: Request, res: Response, next: NextFunction) {
     //console.log(req.baseUrl);
     //console.log(req.cookies['x-csrf-token'])
     // Skip CSRF check for specific routes if needed
-    //console.log(req);
+    console.log(req.headers);
+
+    // instead of doing this, use .exclude in app.module.ts . exclude /webhook/*, post login route
     if (req.baseUrl === '/login' && req.method === 'POST') {
+      //this.generateCsrfToken(req, res, next);
       return next();
-    }
-      else if (req.baseUrl == '/webhook/app/uninstalled') {
-      return next();
-    }
-    else if (req.baseUrl == '/webhook/orders/updated') {
-      return next();
-    }
-    else if (req.baseUrl == '/webhook/orders/create') {
-      return next();
-    }
-    else if (req.baseUrl == '/webhook/products/update') {
+    } else if(req.baseUrl === '/dashboard' && req.method === 'GET') {
+      this.generateCsrfToken(req,res, next);
       return next();
     }
     this.doubleCsrfProtection(req, res, next);

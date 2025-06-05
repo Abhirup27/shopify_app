@@ -423,12 +423,14 @@ function updateAllVariantsWithLocations() {
             variants: collectVariantData()
         };
 
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         // Send as JSON
         fetch(this.action, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'text/html,application/json'
+                'Accept': 'text/html,application/json',
+                'x-csrf-token': csrfToken,
             },
             body: JSON.stringify(productData)
         })

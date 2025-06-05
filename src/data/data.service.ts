@@ -332,7 +332,7 @@ console.log(selectedPlan);
   public getPlans = async (): Promise<Plan[]> => {
     try {
       const cachedPlans = await this.cacheService.get<Plan[] | undefined>('plans');
-      console.log("in get plans" ,cachedPlans);
+
       if (cachedPlans == undefined || cachedPlans.length == 0) {
         const plans: Plan[] = await this.planRepository.find();
 

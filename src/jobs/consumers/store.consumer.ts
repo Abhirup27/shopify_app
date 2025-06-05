@@ -93,12 +93,9 @@ export class StoresConsumer extends WorkerHost {
   private buyPlan = async (
     data: JobRegistry[typeof JOB_TYPES.BUY_STORE_PLAN]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.BUY_STORE_PLAN]['result']> => {
-    //console.log(data.planId)
+    console.log(data.planId)
     const plans = await this.dataService.getPlans();
-    const selectedPlan: Plan = plans.find(plan => {
-      console.log(data.planId);
-      if (plan.id == data.planId) return plan;
-    });
+    const selectedPlan: Plan = plans.find(plan => plan.id == data.planId);
    // console.log(plans);
     const options: ShopifyRequestOptions = {
       url: this.utilsService.getShopifyURLForStore('graphql.json', data.store),
@@ -125,7 +122,7 @@ export class StoresConsumer extends WorkerHost {
     };
 
     const response = await this.utilsService.requestToShopify<AppSubscriptionCreateMutation>('post', options);
-
+    console.log(JSON.stringify(response));
     if (response.statusCode === 200) {
       if(response.respBody.appSubscriptionCreate.userErrors[0] !== undefined) {
         throw new Error(response.respBody.appSubscriptionCreate.userErrors[0].message);

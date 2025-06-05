@@ -80,8 +80,7 @@ const ENV = process.env.NODE_ENV;
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(CsrfMiddleware)
-      .forRoutes('*')
+    consumer.apply(CsrfMiddleware).exclude('/webhook/*').forRoutes('*');
   }
 }
 

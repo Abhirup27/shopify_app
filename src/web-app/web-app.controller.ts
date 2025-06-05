@@ -53,12 +53,13 @@ export class WebAppController {
   @Get()
   @Render('login')
   public async loginPage(@Req() req: Request, @Res() res: Response) {
-    const token: string = this.utilsService.generateToken(req, res);
-    //console.log(token);
+    console.log('recieved');
+   // const token: string = this.utilsService.generateToken(req, res);
+   // console.log(token);
     return {
       appName: 'Shopify App',
       style: '',
-      csrfToken: token,
+      csrfToken: '',
       messages: '',
     };
   }
@@ -86,14 +87,9 @@ export class WebAppController {
   public async getDashboard(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response) {
     // console.log(req["user"],req["roles"]);
 
-    //console.log(req['userStore'].hasRole('Super Admin'))
-    //console.log(req["roles"][0].store_id)
-    // const recentOrders: Order[] = await this.jobsService.getOrders(user.store_id);
-    // const customers: Customer[] = await this.jobsService.getCustomers(user.store_id);
-    //console.log("by using the dto,", user.hasRole('Super Admin'));
-
+ // console.log('in dashboard')
     const token = this.utilsService.generateToken(req, res);
-
+    //const token = req['generateCsrfToken'](req, res);
     if (user.hasRole(SUPER_ADMIN)) {
       const payload = await this.webAppService.getSuperDashboardPayload(user);
       payload['csrfToken'] = token;
@@ -175,6 +171,7 @@ export class WebAppController {
   public async getProducts(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response, @Query() query) {
     const payload: object = await this.webAppService.getProducts(user);
     payload['csrfToken'] = this.utilsService.generateToken(req, res);
+
     res.render('products/index', payload);
   }
   @Get('/productCreate')

@@ -416,6 +416,7 @@ export class WebAppService {
   };
 
   async buyPlanForStore(user: UserDto, id: number) : Promise<string> {
+    console.log('in controller planId is ', id);
     return await this.jobsService.buyPlan(id, user.user_id, user.store);
   }
 }

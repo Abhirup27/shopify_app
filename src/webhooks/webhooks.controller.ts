@@ -25,5 +25,16 @@ export class WebhooksController {
     {
         //console.log(req);
     }
+    @Post('subscription_billing_attempts/success')
+  public async  createSubscriptionById(@Body() req: any)
+    {
+      console.log(req);
+    }
+  @Post('app_subscriptions/update')
+  public async updateSubscriptionById(@Body() req: any)
+  {
+    console.log(req);
+  }
+
 
 }

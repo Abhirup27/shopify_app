@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CsrfTokenCreator, doubleCsrf, DoubleCsrfConfigOptions, DoubleCsrfUtilities } from 'csrf-csrf';
+import { CsrfTokenGenerator, doubleCsrf, DoubleCsrfConfigOptions, DoubleCsrfUtilities } from 'csrf-csrf';
 import { Request, Response } from 'express';
 
 
@@ -19,10 +19,10 @@ export class CsrfProvider {
                 sameSite: 'lax',
                 secure: process.env.NODE_ENV === 'production',
                 path: '/',
-                signed: false
             },
             size: 64,
-            getTokenFromRequest: (req) => req.headers['x-csrf-token'],
+      getCsrfTokenFromRequest: req => req.headers['x-csrf-token'],
+          getSessionIdentifier: req => req.headers['access_token'] ?? req.cookies['access_token'],
         };
 
         this.utilities = doubleCsrf(this.config);
@@ -32,11 +32,11 @@ export class CsrfProvider {
         return this.utilities;
     }
     getGenerateToken = (): Function => {
-        return this.utilities.generateToken;
+        return this.utilities.generateCsrfToken;
     }
     generateToken = (req: Request, res: Response): string => {
 
         //console.log(this.config.getSecret())
-        return this.utilities.generateToken(req, res);
+        return this.utilities.generateCsrfToken(req, res);
     }
 }
