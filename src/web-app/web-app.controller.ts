@@ -232,12 +232,12 @@ export class WebAppController {
         payload['previousUrl'] = req.headers.origin;
         payload['user'] = user;
         payload['csrfToken'] = this.utilsService.generateToken(req, res);
-        payload['appName'] = 'SHopify App';
+        payload['appName'] = 'Shopify App';
         payload['style'] = '';
         payload['isEmbedded'] = false;
         payload['showSidebar'] = true;
         payload['body'] = '';
-        payload['isStorePublic'] = true;
+        payload['isStorePublic'] = !user.store.IsPrivate();
         payload['storeId'] = user.store_id;
 
         res.render('members/create', payload);

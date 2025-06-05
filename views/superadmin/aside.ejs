@@ -28,8 +28,49 @@
                             <i class="bi bi-circle"></i><span>Add Private Store</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="<%= route(`shopify.orders`,{storeId : storeId})%>">
+                            <i class="bi bi-circle"></i><span>Orders</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<%= route('shopify.products',{storeId : storeId}) %>">
+                            <i class="bi bi-circle"></i><span>Products</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<%= route('shopify.customers',{storeId : storeId}) %>">
+                            <i class="bi bi-circle"></i><span>Customers</span>
+                        </a>
+                    </li>
+
                 <% } %>
             </ul>
+            <% if (user.permissions.includes('all_access') || user.hasRole('SUPER_ADMIN')) { %>
+            <% if(isStorePublic) { %>
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="<%= route('members.index' ,{storeId : storeId}) %>">
+                <i class="bi bi-people"></i>
+                <span>My Team</span>
+            </a>
+        </li><!-- End Contact Page Nav -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="<%= route('billing.index',{storeId : storeId}) %>">
+                <i class="bi bi-cash"></i>
+                <span>Billing</span>
+            </a>
+        </li>
+        <% } else { %>
+
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="<%= route('subscriptions.index') %>">
+                    <i class="bi bi-cash"></i>
+                    <span>Subscriptions</span>
+                </a>
+            </li>
+
+            <% } %>
+        <% } %>
         </li>
     </ul>
 </aside>

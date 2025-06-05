@@ -57,7 +57,4 @@ export class RegisterUserDto {
   @Validate(IsPermissionValid, { each: true, message: 'Invalid Permission' })
   @Transform(({ value }) => (Array.isArray(value) ? [...new Set(value)] : value)) // The Set() handles the distinct validation
   permissions: string[];
-
-  @IsString()
-  _csrf: string;
 }

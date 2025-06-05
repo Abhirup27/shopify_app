@@ -358,9 +358,10 @@ export class WebAppService {
   public createMember = async (newMember: RegisterUserDto, storeId: number): Promise<UserStore> => {
     let newUser: UserStore;
     try {
+      //replace with a dataService function
       newUser = await this.jobsService.createMember(newMember, storeId);
     } catch (error) {
-      this.logger.error(error.message, this.createMember.name);
+      this.logger.error(error.message, error.stack,this.createMember.name);
     }
     return newUser;
   };

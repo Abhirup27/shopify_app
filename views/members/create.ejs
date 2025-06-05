@@ -4,134 +4,239 @@
   <%- include('../layouts/app') %>
 </head>
 <body>
-  <!-- <%- include('../layouts/header') %> -->
-  
-  <div class="pagetitle">
-    <div class="row">
-      <div class="col-8">
-        <h1>Add Team Member</h1>
-        <nav>
-          <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="<%= route('home') %>">Home</a></li>
-            <li class="breadcrumb-item">Add Team Member</li>
-          </ol>
-        </nav>
-      </div>
-      <div class="col-4">
-        <a href="<%= previousUrl %>" style="float: right" class="btn btn-primary">Back</a>
-      </div>
+<!-- <%- include('../layouts/header') %> -->
+
+<div class="pagetitle">
+  <div class="row">
+    <div class="col-8">
+      <h1>Add Team Member</h1>
+      <nav>
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="<%= route('home') %>">Home</a></li>
+          <li class="breadcrumb-item">Add Team Member</li>
+        </ol>
+      </nav>
     </div>
-  </div><!-- End Page Title -->
-  
-  <section class="section">
-    <div class="row">
-      <div class="col-lg-10 offset-lg-1">
-        <div class="card">
-          <div class="card-body mt-4">
-            <!-- Multi Columns Form -->
-            <form class="row g-3" method="POST" action="<%= route('members.create',{storeId: storeId}) %>">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              
-              <div class="col-md-6">
-                <label for="name" class="form-label" style="font-weight:bold">Name</label>
-                <input type="text" autofocus class="form-control" id="name" name="name" value="<%= locals.old && old.name %>" required>
-                <% if (locals.errors && errors.name) { %>
-                  <span class="badge border-primary border-1 text-danger"><%= errors.name.message %></span>
-                <% } %>
-              </div>
-              
-              <div class="col-md-6">
-                <label for="email" class="form-label" style="font-weight:bold">Email</label>
-                <input type="email" class="form-control" id="email" name="email" value="<%= locals.old && old.email %>" required>
-                <% if (locals.errors && errors.email) { %>
-                  <span class="badge border-primary border-1 text-danger"><%= errors.email.message %></span>
-                <% } %>
-              </div>
-              
-              <div class="col-md-6">
-                <label for="password" class="form-label" style="font-weight:bold">Password</label>
-                <input type="password" class="form-control" id="password" name="password" required>
-                <% if (locals.errors && errors.password) { %>
-                  <span class="badge border-primary border-1 text-danger"><%= errors.password.message %></span>
-                <% } %>
-              </div>
-             
-              <div class="col-6">
-                <label for="passwordConfirmation" class="form-label" style="font-weight:bold">Confirm Password</label>
-                <input type="password" class="form-control" id="passwordConfirmation" name="passwordConfirmation" required>
-              </div>
-              
-              <% if (locals.errors && errors.permissions) { %>
-                <span class="badge border-primary border-1 text-danger"><%= errors.permissions.message %></span>
+    <div class="col-4">
+      <a href="<%= previousUrl %>" style="float: right" class="btn btn-primary">Back</a>
+    </div>
+  </div>
+</div><!-- End Page Title -->
+
+<section class="section">
+  <div class="row">
+    <div class="col-lg-10 offset-lg-1">
+      <div class="card">
+        <div class="card-body mt-4">
+          <!-- Multi Columns Form -->
+          <form class="row g-3" id="addMemberForm">
+            <div class="col-md-6">
+              <label for="name" class="form-label" style="font-weight:bold">Name</label>
+              <input type="text" autofocus class="form-control" id="name" name="name" value="<%= locals.old && old.name %>" required>
+              <% if (locals.errors && errors.name) { %>
+                <span class="badge border-primary border-1 text-danger"><%= errors.name.message %></span>
               <% } %>
-              
-              <input type="hidden" name="isAdmin" value="false">
-              <div class="col-md-6">
-                <label for="isAdmin" class="form-label" style="font-weight:bold">Admin</label>
-                <input type="checkbox" class="" id="isAdmin" name="isAdmin">
-              </div>
+            </div>
 
+            <div class="col-md-6">
+              <label for="email" class="form-label" style="font-weight:bold">Email</label>
+              <input type="email" class="form-control" id="email" name="email" value="<%= locals.old && old.email %>" required>
+              <% if (locals.errors && errors.email) { %>
+                <span class="badge border-primary border-1 text-danger"><%= errors.email.message %></span>
+              <% } %>
+            </div>
 
-              <div class="col-8 offset-2">
-                <table class="table table-borderless">
-                  <thead>
-                    <tr>
-                      <th scope="col">Permission</th>
-                      <th scope="col" class="text-center">Read</th>
-                      <th scope="col" class="text-center">Write</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>Products</td>
-                      <td class="text-center">
-                        <input class="form-check-input" type="checkbox" id="gridCheck" name="permissions[]" value="read_products">
-                      </td>
-                      <td class="text-center">
-                        <input class="form-check-input" type="checkbox" id="gridCheck" name="permissions[]" value="write_products">
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>Customers</td>
-                      <td class="text-center">
-                        <input class="form-check-input" type="checkbox" id="gridCheck" name="permissions[]" value="read_customers">
-                      </td>
-                      <td class="text-center">
-                        <input class="form-check-input" type="checkbox" id="gridCheck" name="permissions[]" value="write_customers">
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>Orders</td>
-                      <td class="text-center">
-                        <input class="form-check-input" type="checkbox" id="gridCheck" name="permissions[]" value="read_orders">
-                      </td>
-                      <td class="text-center">
-                        <input class="form-check-input" type="checkbox" id="gridCheck" name="permissions[]" value="write_orders">
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>Team Members</td>
-                      <td class="text-center">
-                        <input class="form-check-input" type="checkbox" id="gridCheck" name="permissions[]" value="read_members">
-                      </td>
-                      <td class="text-center">
-                        <input class="form-check-input" type="checkbox" id="gridCheck" name="permissions[]" value="write_members">
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              
-              <div class="text-center">
-                <button type="submit" class="btn btn-primary">Pay $2 and Submit</button>
-              </div>
-            </form><!-- End Multi Columns Form -->
-          </div>
+            <div class="col-md-6">
+              <label for="password" class="form-label" style="font-weight:bold">Password</label>
+              <input type="password" class="form-control" id="password" name="password" required>
+              <% if (locals.errors && errors.password) { %>
+                <span class="badge border-primary border-1 text-danger"><%= errors.password.message %></span>
+              <% } %>
+            </div>
+
+            <div class="col-6">
+              <label for="passwordConfirmation" class="form-label" style="font-weight:bold">Confirm Password</label>
+              <input type="password" class="form-control" id="passwordConfirmation" name="passwordConfirmation" required>
+            </div>
+
+            <% if (locals.errors && errors.permissions) { %>
+              <span class="badge border-primary border-1 text-danger"><%= errors.permissions.message %></span>
+            <% } %>
+
+            <div class="col-md-6">
+              <label for="isAdmin" class="form-label" style="font-weight:bold">Admin</label>
+              <input type="checkbox" class="" id="isAdmin" name="isAdmin"
+                     <% if (locals.old && old.isAdmin === 'true') { %>checked<% } %>
+                     onchange="togglePermissions()">
+            </div>
+
+            <div class="col-8 offset-2">
+              <table class="table table-borderless">
+                <thead>
+                <tr>
+                  <th scope="col">Permission</th>
+                  <th scope="col" class="text-center">Read</th>
+                  <th scope="col" class="text-center">Write</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                  <td>Products</td>
+                  <td class="text-center">
+                    <input class="form-check-input permission-checkbox" type="checkbox"
+                           id="read_products" name="permissions[]" value="read_products"
+                           <% if (locals.old && old.permissions && old.permissions.includes('read_products')) { %>checked<% } %>>
+                  </td>
+                  <td class="text-center">
+                    <input class="form-check-input permission-checkbox" type="checkbox"
+                           id="write_products" name="permissions[]" value="write_products"
+                           <% if (locals.old && old.permissions && old.permissions.includes('write_products')) { %>checked<% } %>>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Customers</td>
+                  <td class="text-center">
+                    <input class="form-check-input permission-checkbox" type="checkbox"
+                           id="read_customers" name="permissions[]" value="read_customers"
+                           <% if (locals.old && old.permissions && old.permissions.includes('read_customers')) { %>checked<% } %>>
+                  </td>
+                  <td class="text-center">
+                    <input class="form-check-input permission-checkbox" type="checkbox"
+                           id="write_customers" name="permissions[]" value="write_customers"
+                           <% if (locals.old && old.permissions && old.permissions.includes('write_customers')) { %>checked<% } %>>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Orders</td>
+                  <td class="text-center">
+                    <input class="form-check-input permission-checkbox" type="checkbox"
+                           id="read_orders" name="permissions[]" value="read_orders"
+                           <% if (locals.old && old.permissions && old.permissions.includes('read_orders')) { %>checked<% } %>>
+                  </td>
+                  <td class="text-center">
+                    <input class="form-check-input permission-checkbox" type="checkbox"
+                           id="write_orders" name="permissions[]" value="write_orders"
+                           <% if (locals.old && old.permissions && old.permissions.includes('write_orders')) { %>checked<% } %>>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Team Members</td>
+                  <td class="text-center">
+                    <input class="form-check-input permission-checkbox" type="checkbox"
+                           id="read_members" name="permissions[]" value="read_members"
+                           <% if (locals.old && old.permissions && old.permissions.includes('read_members')) { %>checked<% } %>>
+                  </td>
+                  <td class="text-center">
+                    <input class="form-check-input permission-checkbox" type="checkbox"
+                           id="write_members" name="permissions[]" value="write_members"
+                           <% if (locals.old && old.permissions && old.permissions.includes('write_members')) { %>checked<% } %>>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="text-center">
+              <button type="submit" class="btn btn-primary">Pay $2 and Submit</button>
+            </div>
+          </form><!-- End Multi Columns Form -->
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <%- include('../layouts/footer') %>
+<%- include('../layouts/footer') %>
+
+<script>
+  // Function to toggle all permissions when admin checkbox changes
+  function togglePermissions() {
+    const isAdmin = document.getElementById('isAdmin').checked;
+    const checkboxes = document.querySelectorAll('.permission-checkbox');
+
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = isAdmin;
+      checkbox.disabled = isAdmin;
+    });
+  }
+
+
+  document.addEventListener('DOMContentLoaded', () => {
+
+    togglePermissions();
+
+    // Set up form submission handler
+    document.getElementById('addMemberForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      if (!csrfToken) {
+        console.error('CSRF token not found');
+        return;
+      }
+
+
+      const data = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+        passwordConfirmation: document.getElementById('passwordConfirmation').value,
+        isAdmin: document.getElementById('isAdmin').checked ? 'true' : 'false',
+        permissions: []
+      };
+
+
+      if (data.isAdmin === 'true') {
+
+        data.permissions = [
+          'read_products', 'write_products',
+          'read_customers', 'write_customers',
+          'read_orders', 'write_orders',
+          'read_members', 'write_members'
+        ];
+      } else {
+        // Collect only checked permissions
+        const permissionCheckboxes = document.querySelectorAll('.permission-checkbox:checked');
+        permissionCheckboxes.forEach(checkbox => {
+          data.permissions.push(checkbox.value);
+        });
+
+        data.permissions = [...new Set(data.permissions)];
+      }
+
+      const url = '<%= route('members.create',{storeId: storeId}) %>';
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (response.redirected) {
+          window.location.href = response.url;
+        } else {
+          const result = await response.json();
+          if (response.status === 400) {
+            // Handle validation errors
+            alert('Validation error: ' + JSON.stringify(result.message));
+          } else {
+            // Handle other non-redirect responses
+            document.open();
+            document.write(result);
+            document.close();
+          }
+        }
+      } catch (error) {
+        console.error('Submission error:', error);
+        alert('Error submitting form');
+      }
+    });
+  });
+</script>
 </body>
 </html>

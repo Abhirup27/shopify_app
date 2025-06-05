@@ -78,6 +78,12 @@ export class Store {
   access_token: string;
 
   @Column({
+    type: 'boolean',
+    default: false,
+  })
+  allowOfflineToken?: boolean;
+
+  @Column({
     type: 'varchar',
     nullable: true,
   })

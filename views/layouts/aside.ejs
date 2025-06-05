@@ -11,21 +11,21 @@
           <i class="bi bi-menu-button-wide"></i><span>Shopify</span><i class="bi bi-chevron-down ms-auto"></i>
         </a>
         <ul id="components-nav" class="nav-content collapse show" data-bs-parent="#sidebar-nav">
-          <% if(user.hasRole('SUPER_ADMIN') || user.can(['all_access','write_orders','read_orders'])) { %>
+          <% if(user.hasRole('ADMIN') || user.can(['all_access','write_orders','read_orders'])) { %>
           <li>
             <a href="<%= route(`shopify.orders`,{storeId : storeId})%>">
               <i class="bi bi-circle"></i><span>Orders</span>
             </a>
           </li>
           <% } %>
-          <% if(user.hasRole('SUPER_ADMIN') || user.can(['all_access','write_products','read_products'])) { %>
+          <% if(user.hasRole('ADMIN') || user.can(['all_access','write_products','read_products'])) { %>
           <li>
             <a href="<%= route('shopify.products',{storeId : storeId}) %>">
               <i class="bi bi-circle"></i><span>Products</span>
             </a>
           </li>
           <% } %>
-          <% if(user.hasRole('SUPER_ADMIN') || user.can(['all_access','write_customers','read_customers'])) { %>
+          <% if(user.hasRole('ADMIN') || user.can(['all_access','write_customers','read_customers'])) { %>
           <li>
             <a href="<%= route('shopify.customers',{storeId : storeId}) %>">
               <i class="bi bi-circle"></i><span>Customers</span>
@@ -35,7 +35,7 @@
         </ul>
       </li><!-- End Components Nav -->
       <% if(isStorePublic) { %>
-        <% if(user.hasRole('SUPER_ADMIN') || user.can(['all_access','write_members','read_members'])) { %>
+        <% if(user.hasRole('ADMIN') || user.can(['all_access','write_members','read_members'])) { %>
         <li class="nav-item">
           <a class="nav-link collapsed" href="<%= route('members.index' ,{storeId : storeId}) %>">
             <i class="bi bi-people"></i>
@@ -43,7 +43,7 @@
           </a>
         </li><!-- End Contact Page Nav -->
         <% } %>
-        <% if(user.hasRole('SUPER_ADMIN') || user.hasRole('ADMIN')) { %>
+        <% if(user.hasRole('ADMIN') ) { %>
         <li class="nav-item">
           <a class="nav-link collapsed" href="<%= route('billing.index',{storeId : storeId}) %>">
             <i class="bi bi-cash"></i>

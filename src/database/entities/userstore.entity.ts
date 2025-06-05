@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryColumn } from 'typeorm';
 import { User } from './user.entity';
 import { Store } from './store.entity';
-import { IsArray, IsString } from 'class-validator';
+import { IsArray, IsOptional, IsString } from 'class-validator';
 
 @Entity()
 export class UserStore {
@@ -33,6 +33,9 @@ export class UserStore {
   @IsArray()
   @IsString({ each: true })
   permissions?: string[];
+
+  @Column({ type: 'varchar', nullable: true })
+  user_access_token?: string;
 
   @Column({
     type: 'timestamp',
