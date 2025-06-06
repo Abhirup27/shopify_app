@@ -7,7 +7,7 @@ export class RequestExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
-    response.status(401).json({
+    response.status(429).json({
       exception
     });
   }

@@ -26,7 +26,7 @@ export class StorePlan {
   @Column({ type: 'integer', unsigned: true })
   plan_id: number;
 
-  @OneToOne(() => Plan, { nullable: false, onDelete: 'NO ACTION' })
+  @OneToOne(() => Plan, { nullable: false, onDelete: 'NO ACTION', onUpdate: 'NO ACTION' })
   @JoinColumn({ name: 'plan_id', referencedColumnName: 'id' })
   plan?: Plan;
 
@@ -41,6 +41,16 @@ export class StorePlan {
   @ManyToOne(() => User, { nullable: false, onDelete: 'NO ACTION', cascade: true })
   @JoinColumn({ name: 'user_id', referencedColumnName: 'user_id' })
   user?: User;
+
+  @Column({type: 'varchar', nullable: false})
+  status: string;
+
+  @Column({ type: 'bigint', unsigned: true, nullable: true })
+  last_charge_id?: number;
+
+  @Column({ type: 'jsonb', nullable: true })
+  charge_history?: string;
+
   @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt?: Date;
 

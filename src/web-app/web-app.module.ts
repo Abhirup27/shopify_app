@@ -1,5 +1,4 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
-import { UserModule } from './user/user.module';
 import { WebAppController } from './web-app.controller';
 import { AuthMiddleware } from 'src/auth/auth.middleware';
 import { AuthModule } from 'src/auth/auth.module';
@@ -22,7 +21,6 @@ import { DataModule } from 'src/data/data.module';
     DataModule,
     JobsModule,
     UtilsModule,
-    UserModule,
     AuthModule,
     ConfigModule.forFeature(routesConfig),
     ConfigModule.forFeature(jwtConfig),

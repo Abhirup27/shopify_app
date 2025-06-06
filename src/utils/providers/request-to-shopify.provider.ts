@@ -1,7 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { AxiosHeaders, Method } from 'axios';
-import { ShopifyResponse } from 'src/types/ShopifyResponse';
+import { ShopifyResponse } from 'src/utils/types/ShopifyResponse';
 
 /**
  * Alternate requestToShopify function that can be used in utils.service. Not used.

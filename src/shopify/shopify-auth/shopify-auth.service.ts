@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 
 import { AxiosHeaders } from 'axios';
 
-import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
-import { ShopifyResponse } from 'src/types/ShopifyResponse';
+import { ShopifyRequestOptions } from 'src/utils/types/ShopifyRequestOptions';
+import { ShopifyResponse } from 'src/utils/types/ShopifyResponse';
 import { UtilsService } from 'src/utils/utils.service';
 import { CreateShopDTO } from './dtos/create-store.dto';
 import { CreateStoreProvider } from './providers/create-store.provider';

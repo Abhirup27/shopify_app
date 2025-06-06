@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
-import { HashVerificationGuard } from '../guards/hash-verification/hash-verification.guard';
+import { HashVerificationGuard } from '../guards/hash-verification.guard';
 import { Request } from 'express';
 
-@Controller('webhook')
+@Controller() //@Controller('webhook')
 @UseGuards(HashVerificationGuard)
 export class WebhooksController {
 
@@ -37,6 +37,7 @@ export class WebhooksController {
   public async updateSubscriptionById(@Body() body: any, @Req() req: Request)
   {
     //console.log(req.rawBody);
+
     console.log(body);
   }
 

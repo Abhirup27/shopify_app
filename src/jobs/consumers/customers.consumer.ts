@@ -8,8 +8,8 @@ import { ConfigService } from '@nestjs/config';
 import { UtilsService } from 'src/utils/utils.service';
 import { Customer } from 'src/database/entities/customer.entity';
 import { Job } from 'bullmq';
-import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
-import { ShopifyResponse } from 'src/types/ShopifyResponse';
+import { ShopifyRequestOptions } from 'src/utils/types/ShopifyRequestOptions';
+import { ShopifyResponse } from 'src/utils/types/ShopifyResponse';
 
 interface PageInfo {
   hasNextPage: boolean;

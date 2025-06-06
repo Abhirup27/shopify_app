@@ -13,14 +13,13 @@ import {
   Render,
   Req,
   Res,
-  UnauthorizedException,
+  UnauthorizedException, UseFilters,
   UseGuards,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService } from 'src/auth/auth.service';
 import { AccessTokenGuard, Public } from 'src/auth/guards/access-token.guard';
 import { UtilsService } from 'src/utils/utils.service';
-import { UserService } from './user/user.service';
 import { StoreContextGuard } from './store-context.guard';
 import { WebAppService } from './web-app.service';
 import { CurrentUser } from './decorators/user.decorator';
@@ -29,8 +28,11 @@ import { ADMIN, SUPER_ADMIN } from 'src/database/entities/constants/user-roles.c
 import { RegisterUserDto } from './dtos/register-member.dto';
 import { newProductDto } from './dtos/new-product.dto';
 import { unwatchFile } from 'fs';
+import { CsrfExceptionFilter } from '../filters/csrf.exception.filter';
+import { RateLimitingGuard } from './guards/rate-limiting.guard';
 
-@UseGuards(AccessTokenGuard, StoreContextGuard)
+@UseFilters(CsrfExceptionFilter)
+@UseGuards(RateLimitingGuard, AccessTokenGuard, StoreContextGuard)
 @Controller()
 export class WebAppController {
   private readonly logger = new Logger(WebAppController.name);
@@ -38,7 +40,6 @@ export class WebAppController {
     private readonly webAppService: WebAppService,
     private readonly utilsService: UtilsService,
 
-    private readonly userService: UserService,
 
     @Inject(forwardRef(() => AuthService))
     private readonly authService: AuthService,

@@ -15,7 +15,7 @@ import { StoreLocations } from 'src/database/entities/storeLocations.entity';
 import * as crypto from 'crypto';
 import { Response } from 'express';
 import { newProductDto } from './dtos/new-product.dto';
-import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
+import { ShopifyRequestOptions } from 'src/utils/types/ShopifyRequestOptions';
 import { ProductType } from 'src/database/entities/productType.entity';
 import { DataService } from 'src/data/data.service';
 import { isArray } from 'class-validator';
@@ -366,7 +366,7 @@ export class WebAppService {
     return newUser;
   };
   private getOAuthURL = async (shopDomain: string): Promise<string> => {
-    const nonce: string = await this.utilsService.createNonce(shopDomain);
+    const nonce: string = await this.dataService.createNonce(shopDomain);
 
     const clientId: string = this.configService.get<string>('shopify_api_key');
     const scopes: string = this.configService.get('accessScopes');

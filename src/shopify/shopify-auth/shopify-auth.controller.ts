@@ -5,12 +5,9 @@ import {
   Logger,
   Query,
   Req,
-  Request,
   Res,
-  Response,
   UnauthorizedException,
   UseFilters,
-  ValidationPipe,
 } from '@nestjs/common';
 import { ShopifyAuthService } from './shopify-auth.service';
 import { UtilsService } from 'src/utils/utils.service';
@@ -20,7 +17,7 @@ import { GetInstallCodeDto } from './dtos/get-code-query.dto';
 import { UnauthorizedExceptionFilter } from '../../filters/hmac.exception.filter';
 import { JobsService } from 'src/jobs/jobs.service';
 import { Store } from '../../database/entities/store.entity';
-
+import { Response, Request } from 'express';
 /**
  * These routes need to be allowed in the shopify app's configuration
  * */
@@ -49,7 +46,7 @@ export class ShopifyAuthController {
    *It checks if the store already exists in the database or not. If not, it redirects to /shopify/auth/redirect to carry out the installation.
    * */
   @Get('/')
-  public async startInstallation(@Request() request: Request, @Query() query: GetInstallInitQueryDto, @Res() response) {
+  public async startInstallation(@Req() request: Request, @Query() query: GetInstallInitQueryDto, @Res() response) {
     try {
       const shop: string = query.shop;
       const endpoint = `https://${shop}/admin/oauth/authorize?client_id=${this.clientId}&scope=${this.accessScopes}&redirect_uri=${this.redirectUri}`;
@@ -116,7 +113,7 @@ export class ShopifyAuthController {
    * This route handles the installation.
    * */
   @Get('/redirect')
-  public async install(@Request() request: Request, @Query() query: GetInstallCodeDto, @Res() response) {
+  public async install(@Req() request: Request, @Query() query: GetInstallCodeDto, @Res() response) {
     //console.log(request)
     try {
       const validateHMAC: boolean = await this.utilsService.validateRequestFromShopify(query);
@@ -190,10 +187,10 @@ export class ShopifyAuthController {
    * I use this route to re authenticate the access token for a store when a query to shopify return 401 error code.
    * */
   @Get('/updateStoreToken')
-  public async updateToken(@Req() request: Request, @Res() response, @Query() query) {
+  public async updateToken(@Req() request: Request, @Res() response: Response, @Query() query: GetInstallCodeDto) {
     try {
       const validateHMAC: boolean = await this.utilsService.validateRequestFromShopify(query);
-      const validateNonce: boolean = await this.utilsService.validateNonce(query.state, query.shop);
+      const validateNonce: boolean = await this.installationService.validateNonce(query.state, query.shop);
       if (validateHMAC && validateNonce) {
         const shop: string = query.shop;
         const code: string = query.code;

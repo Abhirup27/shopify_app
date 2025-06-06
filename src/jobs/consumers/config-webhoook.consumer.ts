@@ -8,8 +8,8 @@ import { Repository } from 'typeorm';
 import { UtilsService } from 'src/utils/utils.service';
 import { AxiosHeaders } from 'axios';
 import { ConfigService } from '@nestjs/config';
-import { ShopifyResponse } from 'src/types/ShopifyResponse';
-import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
+import { ShopifyResponse } from 'src/utils/types/ShopifyResponse';
+import { ShopifyRequestOptions } from 'src/utils/types/ShopifyRequestOptions';
 
 type ConfigureJobNames = typeof JOB_TYPES.CONFIGURE_WEBHOOKS;
 
@@ -48,7 +48,7 @@ export class ConfigWebhookConsumer extends WorkerHost {
       const body = {
         webhook: {
           topic: element,
-          address: this.configService.get<string>('app_url') + `/webhook/${element}`,
+          address: this.configService.get<string>('app_url') + `/shopify/webhook/${element}`,
           format: 'json',
         },
       };

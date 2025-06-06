@@ -7,8 +7,8 @@ import { UtilsService } from 'src/utils/utils.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from 'src/database/entities/order.entity';
 import { Repository } from 'typeorm';
-import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
-import { ShopifyResponse } from 'src/types/ShopifyResponse';
+import { ShopifyRequestOptions } from 'src/utils/types/ShopifyRequestOptions';
+import { ShopifyResponse } from 'src/utils/types/ShopifyResponse';
 import { TokenExpiredException } from '../token-expired.exception';
 
 interface Money {

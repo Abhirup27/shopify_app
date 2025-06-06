@@ -10,12 +10,12 @@ import { APP_FILTER, APP_GUARD, RouterModule } from '@nestjs/core';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
-import { WebhooksModule } from './webhooks/webhooks.module';
+import { ShopifyWebhooksModule } from './shopify/shopify-webhooks/shopify-webhooks.module';
 import { WebAppModule } from './web-app/web-app.module';
 
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { throttlerConfig } from './config/rate-limiting.config';
-import { RateLimitingGuard } from './guards/rate-limiting/rate-limiting.guard';
+import { RateLimitingGuard } from './web-app/guards/rate-limiting.guard';
 import { CsrfMiddleware } from './middlewares/csrf.middleware';
 import { CsrfExceptionFilter } from './filters/csrf.exception.filter';
 import { JobsModule } from './jobs/jobs.module';
@@ -31,15 +31,6 @@ const ENV = process.env.NODE_ENV;
 
 @Module({
   imports: [
-    ConfigModule.forRoot(
-      {
-        isGlobal: true,
-        load: [configuration],
-        //envFilePath: ['.env.development']
-        envFilePath: !ENV ? '.env' : `.env.${ENV}`,
-      }
-    ),
-    UtilsModule,
     ShopifyModule,
     RouterModule.register([
       {
@@ -48,9 +39,22 @@ const ENV = process.env.NODE_ENV;
         children: [
           { path: 'auth', module: ShopifyAuthModule }, // Child route: /shopify/auth
           { path: 'rac', module: ShopifyBillingModule }, // Child route: /shopify/rac
+          { path: 'webhook', module: ShopifyWebhooksModule },
         ],
       },
     ]),
+    WebAppModule,
+    UtilsModule,
+    AuthModule,
+    JobsModule,
+    DataModule,
+
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [configuration],
+      //envFilePath: ['.env.development']
+      envFilePath: !ENV ? '.env' : `.env.${ENV}`,
+    }),
 
     // For running cron jobs.
     ScheduleModule.forRoot(),
@@ -62,31 +66,24 @@ const ENV = process.env.NODE_ENV;
       useFactory: moduleOptions,
     }),
     ThrottlerModule.forRoot({ throttlers: [throttlerConfig] }),
-    AuthModule,
-    WebhooksModule,
-    WebAppModule,
-    JobsModule,
-    DataModule,
   ],
   controllers: [],
 
-  providers: [AppService,
-    {
-      provide: APP_FILTER,
-      useClass: CsrfExceptionFilter
-    },
-    {
-      provide: APP_GUARD,
-      useClass: RateLimitingGuard
-    },
+  providers: [
+    AppService,
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: RateLimitingGuard,
+    // },
+
     // To run tasks which need to run once during startup.
-    StartupService
+    StartupService,
   ],
-  exports: []
+  exports: [],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(CsrfMiddleware).exclude('/webhook/*path').forRoutes('*');
+    consumer.apply(CsrfMiddleware).exclude('/shopify/*path').forRoutes('*');
   }
 }
 

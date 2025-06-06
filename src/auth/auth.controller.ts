@@ -10,7 +10,7 @@ export class AuthController {
     )
     { }
 
-    //I probably wont need this controller as I would use the auth module from the web-app module
+    //I wont need this controller for this project as I use the auth module from the web-app module
      @Post('sign-in')
     public async signIn(@Body() signInDto: SignInDto): Promise<any> {
             

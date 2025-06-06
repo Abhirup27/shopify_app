@@ -6,26 +6,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Store } from 'src/database/entities/store.entity';
 import { RequestToShopifyProvider } from './providers/request-to-shopify.provider';
 import { CsrfProvider } from './providers/csrf.provider';
-import { RedisModule } from '@nestjs-modules/ioredis';
-import { NonceProvider } from './providers/nonce.provider';
 
-// May set this as a global module later
 //@Global()
 @Module({
-  providers: [UtilsService, RequestToShopifyProvider, CsrfProvider, NonceProvider],
+  providers: [UtilsService, RequestToShopifyProvider, CsrfProvider],
   imports: [
     ConfigModule,
     HttpModule,
     TypeOrmModule.forFeature([Store]),
-    RedisModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        type: 'single',
-        //url: configService.get<string>('REDIS_URL'),
-        url: `redis://${configService.get<string>('redis.host')}:${configService.get<number>('redis.port')}`,
-      }),
-    }),
   ],
 
   exports: [UtilsService],

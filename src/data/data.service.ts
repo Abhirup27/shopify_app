@@ -16,6 +16,7 @@ import { UserStore } from 'src/database/entities/userstore.entity';
 import { RequestExceptionFilter } from 'src/filters/timeout.exception.filter';
 import { Repository } from 'typeorm';
 import { CacheService } from './cache/cache.service';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class DataService {
@@ -113,12 +114,16 @@ export class DataService {
   /**
    * Remember to pass the actual store ID and not the primary incremented ID.
    * */
-  public setPlan = async (planId: number, storeId: number, userId: number): Promise<StorePlan> => {
+  public setPlan = async (
+    planId: number,
+    userId: number,
+    storeId?: number,
+    chargeId?: number,
+    chargeDetails?: Record<string, string>,
+  ): Promise<StorePlan> => {
     const plans: Plan[] = await this.getPlans();
-    console.log('plans', plans);
-    console.log('planId', planId);
+
     const selectedPlan = plans.find(plan => plan.id == planId);
-console.log(selectedPlan);
     if (!selectedPlan) {
       throw new Error('Plan not found');
     }
@@ -140,23 +145,63 @@ console.log(selectedPlan);
         if (selectedPlan.name == 'Trial' || planId == 1) {
           return existingPlan;
         }
-        // Add credits to existing plan if the new one is not a trial.
-        existingPlan.credits += selectedPlan.credits;
-        existingPlan.plan_id = planId;
-        existingPlan.price = selectedPlan.price;
-        existingPlan.user_id = userId;
+        //this.logger.warn(`${existingPlan.last_charge_id}  ${}`);
+        // Add credits to existing plan if the new one is not a trial. AND if the new ChargeId doesn't match
+        if((chargeId!= undefined && existingPlan.last_charge_id != chargeId)) {
+          console.log('execute')
+          existingPlan.plan_id = planId;
+          existingPlan.price = selectedPlan.price;
+          existingPlan.user_id = userId;
+          existingPlan.last_charge_id = chargeId;
 
-        const updatedPlan = await queryRunner.manager.save(existingPlan);
-        await queryRunner.commitTransaction();
-        return updatedPlan;
+          if(chargeDetails == undefined || chargeDetails == null){
+            existingPlan.status = 'PENDING';
+          } else {
+            existingPlan.status = chargeDetails.status;
+            if(existingPlan.status != 'CANCELLED') {
+              existingPlan.credits += selectedPlan.credits;
+            }
+
+            let existing_history= existingPlan.charge_history != null ? JSON.parse(existingPlan.charge_history).toArray() : [];
+            existing_history.push(chargeDetails);
+            existing_history = JSON.stringify(existing_history);
+            existingPlan.charge_history = existing_history;
+          }
+          existingPlan.credits += selectedPlan.credits;
+          const updatedPlan = await queryRunner.manager.save(existingPlan);
+          await queryRunner.commitTransaction();
+          return updatedPlan;
+        }
+        // this will run if the subscription update webhook calls this function for the specific planId and storeId after billing controller
+        if(chargeDetails!= undefined){
+          existingPlan.status = chargeDetails.status;
+          if(existingPlan.status == 'CANCELLED' && existingPlan.last_charge_id == chargeId){
+            existingPlan.credits -= selectedPlan.credits;
+            if(existingPlan.credits<0)
+            {
+              existingPlan.credits = 0;
+            }
+          }
+          let existing_history= existingPlan.charge_history != null ? JSON.parse(existingPlan.charge_history).toArray() : [];
+          existing_history.push(chargeDetails);
+          existing_history = JSON.stringify(existing_history);
+          existingPlan.charge_history = existing_history;
+          const updatedPlan = await queryRunner.manager.save(existingPlan);
+          await queryRunner.commitTransaction();
+          return updatedPlan;
+        }
+          return existingPlan;
+
+
       } else {
-        // CREATE NEW PLAN
+        // start trial
         const newPlan = queryRunner.manager.create(StorePlan, {
           store_id: storeId,
           user_id: userId,
           plan_id: planId,
           credits: selectedPlan.credits,
           price: selectedPlan.price,
+          status: 'ACTIVE'
         });
 
         const createdPlan = await queryRunner.manager.save(newPlan);
@@ -480,20 +525,53 @@ console.log(selectedPlan);
 
   public cacheAllProductTypes = async (): Promise<void> => {};
 
-  public storeNonce = async (nonce: String, shopDomain: string): Promise<void> =>
-  {
+  public createNonce = async (shopDomain: string): Promise<string> => {
+    const nonce = randomBytes(16).toString('hex');
+
+    await this.cacheService.set(`${this.NONCE_PREFIX}${nonce}`, shopDomain, this.NONCE_EXPIRY);
+    return nonce;
+  };
+
+  public storeNonce = async (nonce: String, shopDomain: string): Promise<void> => {
 
     await this.cacheService.set(`${this.NONCE_PREFIX}${nonce}`, shopDomain, this.NONCE_EXPIRY);
   };
-  public validateAndRemoveNonce = async (nonce: string, shopDomain: string): Promise<boolean> =>
-  {
+  public validateAndRemoveNonce = async (nonce: string, shopDomain: string): Promise<boolean> => {
     const key = `${this.NONCE_PREFIX}${nonce}`;
-    const storedShopDomain = await this.cacheService.get(key);
+    const storedShopDomain = await this.cacheService.get<string>(key);
 
     if (storedShopDomain === shopDomain) {
       await this.cacheService.delete(key);
       return true;
     }
     return false;
-  }
+  };
+  /**
+   *This function is used to pick one store, it is called by the store context guard.
+   *If a storeId is specified in the request query, then it gets passed to this function which then is searched in the DB.
+   * */
+
+  public getStoreContext = async (userId: number, storeId?: number): Promise<UserStore> => {
+    if (storeId && typeof storeId != undefined) {
+      const storeContext = await this.userStoreRepository.findOne({
+        where: { user_id: userId, store_id: storeId },
+        relations: ['store'],
+      });
+
+      if (storeContext) return storeContext;
+    }
+
+    // Otherwise get the primary store or the first one
+    const storeContexts = await this.userStoreRepository.find({
+      where: { user_id: userId },
+      order: { store_id: 'DESC' }, // Primary stores first
+      relations: ['store'],
+    });
+
+    if (!storeContexts.length) {
+      throw new Error('No store context found for user');
+    }
+
+    return storeContexts[0];
+  };
 }

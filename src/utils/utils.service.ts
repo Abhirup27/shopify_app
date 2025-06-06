@@ -1,5 +1,5 @@
-import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
-import { ResponseBodyType, ShopifyResponse } from 'src/types/ShopifyResponse';
+import { ShopifyRequestOptions } from 'src/utils/types/ShopifyRequestOptions';
+import { ResponseBodyType, ShopifyResponse } from 'src/utils/types/ShopifyResponse';
 
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
@@ -11,7 +11,6 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CsrfProvider } from './providers/csrf.provider';
 import { Request, Response } from 'express';
-import { NonceProvider } from './providers/nonce.provider';
 import { GetInstallCodeDto } from 'src/shopify/shopify-auth/dtos/get-code-query.dto';
 import { GetInstallInitQueryDto } from 'src/shopify/shopify-auth/dtos/get-install-query.dto';
 
@@ -27,7 +26,6 @@ export class UtilsService {
     private readonly httpService: HttpService,
 
     private readonly csrfProvider: CsrfProvider,
-    private readonly nonceProvider: NonceProvider,
     @InjectRepository(Store)
     private storeRepository: Repository<Store>,
   ) {
@@ -245,11 +243,4 @@ export class UtilsService {
     return this.csrfProvider.generateToken(req, res);
   };
 
-  public createNonce = async (shopDomain: string): Promise<string> => {
-    return await this.nonceProvider.createNonce(shopDomain);
-  };
-
-  public validateNonce = async (nonce: string, shopDomain: string): Promise<boolean> => {
-    return await this.nonceProvider.validateAndRemoveNonce(nonce, shopDomain);
-  };
 }

@@ -6,9 +6,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, UpdateResult } from 'typeorm';
 import { Job, UnrecoverableError } from 'bullmq';
 import { StoreLocations } from 'src/database/entities/storeLocations.entity';
-import { ShopifyRequestOptions } from 'src/types/ShopifyRequestOptions';
+import { ShopifyRequestOptions } from 'src/utils/types/ShopifyRequestOptions';
 import { UtilsService } from 'src/utils/utils.service';
-import { ShopifyResponse } from 'src/types/ShopifyResponse';
+import { ShopifyResponse } from 'src/utils/types/ShopifyResponse';
 import { AxiosHeaders } from 'axios';
 import { ConfigService } from '@nestjs/config';
 import { TokenExpiredException } from '../token-expired.exception';
@@ -95,14 +95,16 @@ export class StoresConsumer extends WorkerHost {
   ): Promise<JobRegistry[typeof JOB_TYPES.BUY_STORE_PLAN]['result']> => {
     const plans = await this.dataService.getPlans();
     const selectedPlan: Plan = plans.find(plan => plan.id == data.planId);
-
+    if(selectedPlan.name == 'Trial' || selectedPlan.name == 'Demo' || selectedPlan.name == 'Free'){
+      return this.configService.get('app_url') + '/billing';
+    }
     const options: ShopifyRequestOptions = {
       url: this.utilsService.getShopifyURLForStore('graphql.json', data.store),
       headers: this.utilsService.getGraphQLHeadersForStore(data.store),
     };
     const variables: AppSubscriptionCreateMutationVariables = {
       name: selectedPlan.name,
-      returnUrl: (this.configService.get<string>('app_url') + '/billing'),
+      returnUrl: this.configService.get<string>('app_url') + `/shopify/rac?planId=${selectedPlan.id}&userId=${data.userId}&storeId=${data.store.id}`,
       test: true,
       lineItems: {
         plan: {
@@ -141,7 +143,7 @@ export class StoresConsumer extends WorkerHost {
     data: JobRegistry[typeof JOB_TYPES.ACTIVATE_TRIAL]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.ACTIVATE_TRIAL]['result']> => {
     try {
-      const result = await this.dataService.setPlan(1, data.store.id, data.user.user_id);
+      const result = await this.dataService.setPlan(1, data.user.user_id, data.store.id);
       if (result) {
         return;
       }
