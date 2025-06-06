@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { InstallationService } from './installation.service';
+import { ShopifyAuthService } from './shopify-auth.service';
 
 describe('InstallationService', () => {
-  let service: InstallationService;
+  let service: ShopifyAuthService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [InstallationService],
+      providers: [ShopifyAuthService],
     }).compile();
 
-    service = module.get<InstallationService>(InstallationService);
+    service = module.get<ShopifyAuthService>(ShopifyAuthService);
   });
 
   it('should be defined', () => {

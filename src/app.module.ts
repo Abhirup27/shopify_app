@@ -5,7 +5,7 @@ import configuration from './config/configuration';
 
 import { AppService } from './app.service';
 import { UtilsModule } from './utils/utils.module';
-import { InstallationModule } from './installation/installation.module';
+import { ShopifyAuthModule } from './shopify/shopify-auth/shopify-auth.module';
 import { APP_FILTER, APP_GUARD, RouterModule } from '@nestjs/core';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -23,6 +23,8 @@ import { moduleOptions } from './database/typeorm.config';
 import { DataModule } from './data/data.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { StartupService } from './startup.service';
+import { ShopifyModule } from './shopify/shopify.module';
+import { ShopifyBillingModule } from './shopify/shopify-billing/shopify-billing.module';
 
 //we pass this value through the command line/system variables
 const ENV = process.env.NODE_ENV;
@@ -38,13 +40,17 @@ const ENV = process.env.NODE_ENV;
       }
     ),
     UtilsModule,
-    InstallationModule,
-    RouterModule.register(
-      [{
-        path: '/shopify/auth',
-        module: InstallationModule
-      },]
-    ),
+    ShopifyModule,
+    RouterModule.register([
+      {
+        path: 'shopify',
+        module: ShopifyModule,
+        children: [
+          { path: 'auth', module: ShopifyAuthModule }, // Child route: /shopify/auth
+          { path: 'rac', module: ShopifyBillingModule }, // Child route: /shopify/rac
+        ],
+      },
+    ]),
 
     // For running cron jobs.
     ScheduleModule.forRoot(),
@@ -60,7 +66,7 @@ const ENV = process.env.NODE_ENV;
     WebhooksModule,
     WebAppModule,
     JobsModule,
-    DataModule
+    DataModule,
   ],
   controllers: [],
 

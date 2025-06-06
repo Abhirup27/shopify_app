@@ -19,7 +19,10 @@ import { CacheService } from './cache/cache.service';
 
 @Injectable()
 export class DataService {
+
   private readonly logger = new Logger(DataService.name);
+  private readonly NONCE_PREFIX = 'shopify:nonce:';
+  private readonly NONCE_EXPIRY = '120s';
 
   constructor(
     //@Inject(CACHE_MANAGER) private cacheManager: Cache,
@@ -476,4 +479,21 @@ console.log(selectedPlan);
   }
 
   public cacheAllProductTypes = async (): Promise<void> => {};
+
+  public storeNonce = async (nonce: String, shopDomain: string): Promise<void> =>
+  {
+
+    await this.cacheService.set(`${this.NONCE_PREFIX}${nonce}`, shopDomain, this.NONCE_EXPIRY);
+  };
+  public validateAndRemoveNonce = async (nonce: string, shopDomain: string): Promise<boolean> =>
+  {
+    const key = `${this.NONCE_PREFIX}${nonce}`;
+    const storedShopDomain = await this.cacheService.get(key);
+
+    if (storedShopDomain === shopDomain) {
+      await this.cacheService.delete(key);
+      return true;
+    }
+    return false;
+  }
 }

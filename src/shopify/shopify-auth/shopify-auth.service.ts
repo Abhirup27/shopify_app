@@ -13,11 +13,13 @@ import { CreateSuperAdmin } from './providers/create-super-admin';
 import { User } from 'src/database/entities/user.entity';
 import { Store } from 'src/database/entities/store.entity';
 import { JobsService } from 'src/jobs/jobs.service';
-import { NonceProvider } from './providers/nonce.provider';
 import * as crypto from 'crypto';
+import { DataService } from '../../data/data.service';
+
 @Injectable()
-export class InstallationService {
-  private readonly logger = new Logger(InstallationService.name);
+export class ShopifyAuthService {
+  private readonly logger = new Logger(ShopifyAuthService.name);
+
 
   constructor(
     private readonly utilsService: UtilsService,
@@ -25,7 +27,8 @@ export class InstallationService {
     private readonly jobsService: JobsService,
     private readonly createStoreProvider: CreateStoreProvider,
     private readonly createSuperAdminProvider: CreateSuperAdmin,
-    private readonly nonceProvider: NonceProvider,
+    //private readonly nonceProvider: NonceProvider,
+    private readonly dataService: DataService,
     /**
      * Injecting StoreRepository and UserRepository
      */
@@ -61,7 +64,7 @@ export class InstallationService {
 
   public getOAuthURL = async (clientId: string, shopDomain: string): Promise<string> => {
     const nonce = crypto.randomBytes(16).toString('hex');
-    await this.nonceProvider.storeNonce(nonce, shopDomain);
+    await this.dataService.storeNonce(nonce, shopDomain);
 
     const scopes: string = this.configService.get('accessScopes');
     const redirect: string = this.configService.get('app_install_URL');
@@ -75,7 +78,7 @@ export class InstallationService {
   };
 
   public validateNonce = async (nonce: string, shopDomain: string): Promise<boolean> => {
-    return await this.nonceProvider.validateAndRemoveNonce(nonce, shopDomain);
+    return await this.dataService.validateAndRemoveNonce(nonce, shopDomain);
   };
   public getAccessTokenForStore = async (shop: any, code: string): Promise<string | false> => {
     try {

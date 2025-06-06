@@ -1,6 +1,9 @@
-import { Body, Controller, Get, Post, Request } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { HashVerificationGuard } from '../guards/hash-verification/hash-verification.guard';
+import { Request } from 'express';
 
 @Controller('webhook')
+@UseGuards(HashVerificationGuard)
 export class WebhooksController {
 
     @Post('app/uninstalled')
@@ -31,9 +34,10 @@ export class WebhooksController {
       console.log(req);
     }
   @Post('app_subscriptions/update')
-  public async updateSubscriptionById(@Body() req: any)
+  public async updateSubscriptionById(@Body() body: any, @Req() req: Request)
   {
-    console.log(req);
+    //console.log(req.rawBody);
+    console.log(body);
   }
 
 

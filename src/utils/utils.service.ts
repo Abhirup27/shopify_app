@@ -12,8 +12,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CsrfProvider } from './providers/csrf.provider';
 import { Request, Response } from 'express';
 import { NonceProvider } from './providers/nonce.provider';
-import { GetInstallCodeDto } from 'src/installation/dtos/get-code-query.dto';
-import { GetInstallInitQueryDto } from 'src/installation/dtos/get-install-query.dto';
+import { GetInstallCodeDto } from 'src/shopify/shopify-auth/dtos/get-code-query.dto';
+import { GetInstallInitQueryDto } from 'src/shopify/shopify-auth/dtos/get-install-query.dto';
 
 /**
  * Here all the utility functions are defined. These are used throughout the app.

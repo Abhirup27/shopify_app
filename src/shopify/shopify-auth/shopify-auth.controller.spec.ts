@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { InstallationController } from './installation.controller';
+import { ShopifyAuthController } from './shopify-auth.controller';
 
 describe('InstallationController', () => {
-  let controller: InstallationController;
+  let controller: ShopifyAuthController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [InstallationController],
+      controllers: [ShopifyAuthController],
     }).compile();
 
-    controller = module.get<InstallationController>(InstallationController);
+    controller = module.get<ShopifyAuthController>(ShopifyAuthController);
   });
 
   it('should be defined', () => {
