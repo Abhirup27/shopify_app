@@ -7,14 +7,14 @@
         <h1>Team Members</h1>
         <nav>
           <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="<%= route('home') %>">Home</a></li>
+            <li class="breadcrumb-item"><a href="<%= route('home', {storeId: storeId}) %>">Home</a></li>
             <li class="breadcrumb-item">Team Members</li>
           </ol>
         </nav>
       </div>
       <div class="col-4">
         <% if (user.can(['all_access', 'write_members'])) { %>
-          <a href="<%= route('members.register') %>" style="float: right" class="btn btn-primary">Add member</a>
+          <a href="<%= route('members.register', {storeId: storeId}) %>" style="float: right" class="btn btn-primary">Add member</a>
         <% } %>
       </div>
     </div>
@@ -61,5 +61,3 @@
   </section>
 
   <%- include('../layouts/footer') %>
-</body>
-</html>

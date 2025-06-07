@@ -6,7 +6,9 @@
     
     <!-- ======= Sidebar ======= -->
     <% if (user.hasRole('SUPER_ADMIN')) { %>
-        <%- include('../superadmin/aside') %>
+        <% if(showSidebar) { %>
+            <%- include('../superadmin/aside') %>
+        <% } %>
     <% } %>
      <% if (user.hasRole('ADMIN') || user.hasRole('SUB_USER')) { %>
         <% if(showSidebar) { %>
@@ -23,18 +25,3 @@
         <%- include('success_message') %>
         <!-- End Sidebar-->
         <%- body %>
-    </main>
-
-    <%- include('footer') %>
-    <%- include('scripts') %>
-    
-
-    <% if (!showSidebar) { %>
-    <script>
-        $(document).ready(function () {
-            $('.toggle-sidebar-btn').click();
-        });
-    </script>
-    <% } %>
-</body>
-</html>

@@ -49,7 +49,7 @@ export class WebAppService {
       this.logger.error(error);
     }
   }
-  public getBasePayload(user: UserDto, sidebar: boolean = false):object{
+  public getBasePayload(user: UserDto, sidebar: boolean = true): object {
     return {
       appName: 'Shopify App',
       user: user,

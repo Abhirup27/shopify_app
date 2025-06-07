@@ -9,6 +9,8 @@
 # General
 --------------------------------------------------------------*/
 :root {
+  --sidebar-width: 300px;
+  --header-height: 60px;
   scroll-behavior: smooth;
 }
 
@@ -38,7 +40,7 @@ h1, h2, h3, h4, h5, h6 {
 #main {
   margin-top: 60px;
   padding: 20px 30px;
-  transition: all 0.3s;
+  transition: margin-left 0.3s ease;
 }
 @media (max-width: 1199px) {
   #main {
@@ -330,6 +332,21 @@ h1, h2, h3, h4, h5, h6 {
 /*--------------------------------------------------------------
 # Header
 --------------------------------------------------------------*/
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #ebeef4;
+}
+
+.sidebar-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #899bbd;
+}
 .logo {
   line-height: 1;
 }
@@ -533,7 +550,7 @@ h1, h2, h3, h4, h5, h6 {
   bottom: 0;
   width: 300px;
   z-index: 996;
-  transition: all 0.3s;
+  transition: transform 0.3s ease;
   padding: 20px;
   overflow-y: auto;
   scrollbar-width: thin;
@@ -544,6 +561,7 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 1199px) {
   .sidebar {
     left: -300px;
+    transform: translateX(-100%);
   }
 }
 .sidebar::-webkit-scrollbar {
@@ -571,6 +589,7 @@ h1, h2, h3, h4, h5, h6 {
   }
   .toggle-sidebar .sidebar {
     left: -300px;
+    transform: translateX(-100%);
   }
 }
 

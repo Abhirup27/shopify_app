@@ -20,7 +20,7 @@
     </div>
     <div class="row">
         <div class="col-12 text-center">
-            <a href=" <%= route('consume.credits')%>" class="btn btn-primary">Consume Credits</a>
+            <a href=" <%= route('consume.credits', {storeId: storeId})%>" class="btn btn-primary">Consume Credits</a>
         </div>
     </div>
     <% if (plans) { %>
@@ -36,7 +36,7 @@
                             <% if (last_plan_info && last_plan_info.plan_id === plan.id) { %>
                             <a href="#" class="btn btn-success" style="width: 100%">Active</a>
                             <% } else { %>
-                            <a href="<%= route('plan.buy',{}, {planid: plan.id} ) %>" class="btn btn-primary" style="width: 100%">Buy</a>
+                            <a href="<%= route('plan.buy', {storeId: storeId}, {planid: plan.id} ) %>" class="btn btn-primary" style="width: 100%">Buy</a>
                             <% } %>
                         </div>
                     </div>
@@ -46,3 +46,4 @@
     </div>
     <% } %>
 </div>
+<%- include('../layouts/footer') %>

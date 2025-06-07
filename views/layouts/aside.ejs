@@ -1,7 +1,7 @@
 <aside id="sidebar" class="sidebar" <% if(isEmbedded) { %> style="background-color:#f1f2f4" <% } %>>
     <ul class="sidebar-nav" id="sidebar-nav">
       <li class="nav-item">
-        <a class="nav-link " href="<%= route('home') %>">
+        <a class="nav-link " href="<%= route('home', {storeId: storeId}) %>">
           <i class="bi bi-grid"></i>
           <span>Dashboard</span>
         </a>
@@ -54,7 +54,7 @@
       <% } else { %>
         <% if(user.hasRole('SUPER_ADMIN') || user.hasRole('ADMIN')) { %>
         <li class="nav-item">
-          <a class="nav-link collapsed" href="<%= route('subscriptions.index') %>">
+          <a class="nav-link collapsed" href="<%= route('subscriptions.index', {storeId: storeId}) %>">
             <i class="bi bi-cash"></i>
             <span>Subscriptions</span>
           </a>
@@ -72,7 +72,7 @@
         <a class="nav-link collapsed" onclick="event.preventDefault(); document.getElementById('logout-user').submit();">
           <i class="bi bi-box-arrow-right"></i>
             <form id="logout-user" action="<%= route('logout') %>" method="POST" class="d-none" style="display: none">
-                <!-- CSRF token handled differently in EJS -->
+
             </form>
           <span>Sign Out</span>
         </a>

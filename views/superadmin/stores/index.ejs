@@ -6,7 +6,7 @@
             <h1>Stores</h1>
             <nav>
                 <ol class="breadcrumb">
-                  <li class="breadcrumb-item"><a href="<%= route('home') %>">Home</a></li>
+                  <li class="breadcrumb-item"><a href="<%= route('home', {storeId: storeId}) %>">Home</a></li>
                   <li class="breadcrumb-item">Stores</li>
                 </ol>
             </nav>
@@ -65,7 +65,7 @@
       console.log(val);
       if(val.length > 2) {
         $.ajax({
-          url: "<%= route('search.store') %>",
+          url: "<%= route('search.store', {storeId: storeId}) %>",
           type: 'POST',
           async: false,
           data: {"searchTerm" : val},

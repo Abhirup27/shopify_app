@@ -1,4 +1,18 @@
+</main>
+
+
+</body>
+</html>
 <footer id="footer" class="footer">
+
+  <%- include('scripts') %>
+  <% if (!showSidebar) { %>
+    <script>
+      $(document).ready(function () {
+        $('.toggle-sidebar-btn').click();
+      });
+    </script>
+  <% } %>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const storeSelect = document.getElementById('store-select');

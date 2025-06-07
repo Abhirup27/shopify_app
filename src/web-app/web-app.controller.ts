@@ -31,6 +31,10 @@ import { unwatchFile } from 'fs';
 import { CsrfExceptionFilter } from '../filters/csrf.exception.filter';
 import { RateLimitingGuard } from './guards/rate-limiting.guard';
 
+
+/**
+ *
+ * */
 @UseFilters(CsrfExceptionFilter)
 @UseGuards(RateLimitingGuard, AccessTokenGuard, StoreContextGuard)
 @Controller()
@@ -54,7 +58,7 @@ export class WebAppController {
   @Get()
   @Render('login')
   public async loginPage(@Req() req: Request, @Res() res: Response) {
-    console.log('recieved');
+
    // const token: string = this.utilsService.generateToken(req, res);
    // console.log(token);
     return {

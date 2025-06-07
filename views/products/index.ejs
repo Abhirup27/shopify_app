@@ -6,7 +6,7 @@
             <h1>Products</h1>
             <nav>
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="<%= route('home') %>">Home</a></li>
+                    <li class="breadcrumb-item"><a href="<%= route('home', {storeId: storeId}) %>">Home</a></li>
                     <li class="breadcrumb-item">Products</li>
                 </ol>
             </nav>
@@ -16,8 +16,8 @@
             <table class="table table-borderless">
                 <tbody>
                     <tr>
-                        <td><a href="<%= route('shopify.product.create') %>" style="float:right" class="btn btn-success">Create Product</a></td>
-                        <td><a href="<%= route('shopify.products.sync') %>" style="float: right" class="btn btn-primary">Sync Products</a></td>
+                        <td><a href="<%= route('shopify.product.create', {storeId: storeId}) %>" style="float:right" class="btn btn-success">Create Product</a></td>
+                        <td><a href="<%= route('shopify.products.sync', {storeId: storeId}) %>" style="float: right" class="btn btn-primary">Sync Products</a></td>
                     </tr>
                 </tbody>
             </table>
@@ -72,3 +72,5 @@
         </div>
     </div>
 </section>
+
+<%- include('../layouts/footer') %>
