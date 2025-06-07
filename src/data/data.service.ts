@@ -447,6 +447,7 @@ export class DataService {
         where: {
           user_id: user.user_id,
         },
+        relations: ['store'],
       });
     } catch (error) {
       throw new RequestTimeoutException(error, {

@@ -58,6 +58,7 @@ export class AccessTokenGuard implements CanActivate {
       request[REQUEST_USER_KEY] = payload;
       //console.log('the payload is ', payload);
 
+      //retrieves the user's details and all the Store and UserStore entities the user is associated with.
       const { User, UserStore } = await this.dataService.findOneByEmail(payload.email);
       //console.log(User, UserStore);
       request.user = User;

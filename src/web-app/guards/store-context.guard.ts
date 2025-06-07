@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Inject, Injectable, SetMetadata } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { DataService } from '../data/data.service';
+import { DataService } from '../../data/data.service';
 
 export const Public = () => SetMetadata('isPublic', true);
 
@@ -33,7 +33,8 @@ export class StoreContextGuard implements CanActivate {
     }
     //console.log(request.user);
     request.userStore = await this.dataService.getStoreContext(request.user.user_id, storeId);
-    //console.log(request.userStore)
+
     return true;
   }
+  //private getStoreContext = async(userId: number, storeId: number): Promise<U>
 }

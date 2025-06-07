@@ -61,6 +61,22 @@ export class CreateStoreProvider {
 
         newStore = this.storesRepository.create(payload);
         newStore = await this.storesRepository.save(newStore);
+      } else if( existingStore == null) {
+        const payload = {
+          id: createStoreDto['id'],
+          name: createStoreDto['name'],
+          email: createStoreDto['email'],
+          user_id: existingUser.user_id,
+          access_token: accessToken,
+          myshopify_domain: createStoreDto['myshopify_domain'],
+          phone: createStoreDto['phone'],
+          address1: createStoreDto['address1'],
+          address2: createStoreDto['address2'],
+          zip: createStoreDto['zip'],
+        };
+
+        newStore = this.storesRepository.create(payload);
+        newStore = await this.storesRepository.save(newStore);
       }
       if (existingStore) {
         await this.storesRepository.update({ id: existingStore.id }, { access_token: accessToken });

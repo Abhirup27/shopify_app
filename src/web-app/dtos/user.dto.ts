@@ -47,11 +47,15 @@ class UserStoreDetailsDto extends PartialType(UserStore) {
   @IsArray()
   permissions?: string[];
 
+
   // the 'this' context cannot be accessed here even if function is declared as a member function and not as a variable (arrow function)
 }
-
+ class OtherStores {
+  @Expose()
+  otherStores: UserStore[];
+ };
 // Combine both DTOs
-export class UserDto extends IntersectionType(UserDetailsDto, UserStoreDetailsDto) {
+export class UserDto extends IntersectionType(UserDetailsDto, UserStoreDetailsDto, OtherStores) {
   @Expose()
   hasRole(reqRole: string): boolean {
     //console.log(this.role)
@@ -70,4 +74,7 @@ export class UserDto extends IntersectionType(UserDetailsDto, UserStoreDetailsDt
     return reqPermissions.some(permission => this.permissions?.includes(permission));
   }
   // methods can be added here
+  // @Expose()
+  // @IsArray()
+  // otherStores: UserStore[];
 }

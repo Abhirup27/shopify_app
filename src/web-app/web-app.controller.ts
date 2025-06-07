@@ -20,7 +20,7 @@ import { Request, Response } from 'express';
 import { AuthService } from 'src/auth/auth.service';
 import { AccessTokenGuard, Public } from 'src/auth/guards/access-token.guard';
 import { UtilsService } from 'src/utils/utils.service';
-import { StoreContextGuard } from './store-context.guard';
+import { StoreContextGuard } from './guards/store-context.guard';
 import { WebAppService } from './web-app.service';
 import { CurrentUser } from './decorators/user.decorator';
 import { UserDto } from './dtos/user.dto';
@@ -86,9 +86,7 @@ export class WebAppController {
   //@UseGuards(AccessTokenGuard)
   @Get('/dashboard')
   public async getDashboard(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response) {
-    // console.log(req["user"],req["roles"]);
 
- // console.log('in dashboard')
     const token = this.utilsService.generateToken(req, res);
     //const token = req['generateCsrfToken'](req, res);
     if (user.hasRole(SUPER_ADMIN)) {
@@ -203,44 +201,32 @@ export class WebAppController {
 
   @Get('/members')
   public async getMembers(@CurrentUser() user: UserDto, @Res() res: Response, @Req() req: Request) {
-    const payload: object = {};
+
     try {
       if (user.can(['all_access', 'read_members'])) {
-        payload['members'] = await this.webAppService.getMembers(user.store_id);
-        payload['csrfToken'] = this.utilsService.generateToken(req, res);
-        payload['user'] = user;
-        payload['appName'] = 'Shopify app';
-        payload['style'] = '';
-        payload['isEmbedded'] = false;
-        payload['showSidebar'] = true;
-        payload['storeId'] = user.store_id;
-        payload['isStorePublic'] = true;
-        payload['body'] = '';
+        const payload: object = {
+          ...this.webAppService.getBasePayload(user),
+          members: await this.webAppService.getMembers(user.store_id),
+          csrfToken: this.utilsService.generateToken(req, res),
+        };
+        res.render('members/index', payload);
       } else {
-        throw new Error('User does not have permission to view members of the current store.');
+        throw new UnauthorizedException('User does not have permission to view members of the current store.');
       }
     } catch (error) {
       this.logger.error(error.message, this.getMembers.name);
     }
-    res.render('members/index', payload);
   }
 
   @Get('/memberRegister')
   public async registerMember(@CurrentUser() user: UserDto, @Res() res: Response, @Req() req: Request) {
     try {
       if (user.can(['write_members'])) {
-        const payload: object = {};
-        payload['previousUrl'] = req.headers.origin;
-        payload['user'] = user;
-        payload['csrfToken'] = this.utilsService.generateToken(req, res);
-        payload['appName'] = 'Shopify App';
-        payload['style'] = '';
-        payload['isEmbedded'] = false;
-        payload['showSidebar'] = true;
-        payload['body'] = '';
-        payload['isStorePublic'] = !user.store.IsPrivate();
-        payload['storeId'] = user.store_id;
-
+        const payload: object = {
+          ...this.webAppService.getBasePayload(user, false),
+          previousUrl: req.headers.origin,
+          csrfToken: this.utilsService.generateToken(req, res),
+        };
         res.render('members/create', payload);
       } else {
         throw new Error('User has no permission to create new members.');
@@ -348,6 +334,7 @@ export class WebAppController {
       res.redirect(await this.webAppService.buyPlanForStore(user, id));
     } catch (error) {
       this.logger.error(error.message, error.stack, this.buyPlan.name);
+      res.status(500);
     }
   }
 }

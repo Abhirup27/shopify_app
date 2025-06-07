@@ -1,4 +1,22 @@
 <footer id="footer" class="footer">
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const storeSelect = document.getElementById('store-select');
+      if (storeSelect) {
+        storeSelect.addEventListener('change', function() {
+          // Get current URL without query parameters
+          const currentPath = window.location.pathname;
+
+
+          const newUrl = new URL(currentPath, window.location.origin);
+          newUrl.searchParams.set('storeId', this.value);
+
+
+          window.location.href = newUrl.toString();
+        });
+      }
+    });
+  </script>
   <div class="copyright">
 
   </div>

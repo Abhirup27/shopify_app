@@ -270,31 +270,31 @@
       </div><!-- End Budget Report -->
 
       <!-- Website Traffic -->
-      <div class="card">
-        <div class="card-body pb-0">
-          <h5 class="card-title">Website Traffic <span>| Today</span></h5>
-          <div id="trafficChart" style="min-height: 400px;" class="echart"></div>
-          <%- include('partials/traffic-chart') %>
-        </div>
-      </div><!-- End Website Traffic -->
+<!--      <div class="card">-->
+<!--        <div class="card-body pb-0">-->
+<!--          <h5 class="card-title">Website Traffic <span>| Today</span></h5>-->
+<!--          <div id="trafficChart" style="min-height: 400px;" class="echart"></div>-->
+<!--          <%- include('partials/traffic-chart') %>-->
+<!--        </div>-->
+<!--      </div>&lt;!&ndash; End Website Traffic &ndash;&gt;-->
 
       <!-- News & Updates -->
-      <div class="card">
-        <div class="card-body pb-0">
-          <h5 class="card-title">News &amp; Updates <span>| Today</span></h5>
-          <div class="news">
-            <% news.forEach(function(item) { %>
-              <div class="post-item clearfix">
-                <img src="<%= item.image %>" alt="">
-                <h4><a href="#"><%= item.title %></a></h4>
-                <p><%= item.excerpt %></p>
-              </div>
-            <% }); %>
-          </div>
-        </div>
-      </div><!-- End News & Updates -->
-    </div><!-- End Right side columns -->
-  </div>
+<!--      <div class="card">-->
+<!--        <div class="card-body pb-0">-->
+<!--          <h5 class="card-title">News &amp; Updates <span>| Today</span></h5>-->
+<!--          <div class="news">-->
+<!--            <% news.forEach(function(item) { %>-->
+<!--              <div class="post-item clearfix">-->
+<!--                <img src="<%= item.image %>" alt="">-->
+<!--                <h4><a href="#"><%= item.title %></a></h4>-->
+<!--                <p><%= item.excerpt %></p>-->
+<!--              </div>-->
+<!--            <% }); %>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>&lt;!&ndash; End News & Updates &ndash;&gt;-->
+<!--    </div>&lt;!&ndash; End Right side columns &ndash;&gt;-->
+<!--  </div>-->
 </section>
 
 <%- include('layouts/footer') %>

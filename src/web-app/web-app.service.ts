@@ -49,32 +49,29 @@ export class WebAppService {
       this.logger.error(error);
     }
   }
+  public getBasePayload(user: UserDto, sidebar: boolean = false):object{
+    return {
+      appName: 'Shopify App',
+      user: user,
+      storeId: user.store_id,
+      isStorePublic: !user.store.IsPrivate(),
+      style:'',
+      body: '',
+      messages: '',
+      showSidebar: sidebar,
+      isEmbedded: this.utilsService.isAppEmbedded(),
+      session: {
+        success: '',
+      },
+
+    }
+  }
   public getSuperDashboardPayload = async (user: UserDto): Promise<object> => {
     let dashboard: object = {};
 
     try {
-      const isPublic: boolean = !user.store.IsPrivate();
       dashboard = {
-        storeId: user.store_id,
-        showSidebar: true,
-        isSuperAdmin: true,
-        isStorePublic: isPublic,
-        session: {
-          success: '',
-        },
-        user: {
-          name: user.name,
-          id: user.user_id,
-          permissions: user.permissions,
-          can: (permissions: string[]) => user.can(permissions),
-          hasRole: (role: string) => user.hasRole(role),
-        },
-        body: '',
-        csrfToken: null,
-        appName: 'Shopify App',
-        style: '',
-        messages: '',
-        isEmbedded: false,
+        ...this.getBasePayload(user, true),
       };
     } catch (error) {
       this.logger.error(error.message, this.getSuperDashboardPayload.name);
@@ -108,26 +105,7 @@ export class WebAppService {
         });
       }
       dashboard = {
-        storeId: user.store_id,
-        showSidebar: true,
-        isSuperAdmin: false,
-        isStorePublic: isPublic,
-        session: {
-          success: '',
-        },
-        user: {
-          name: user.name,
-          id: user.user_id,
-          permissions: user.permissions,
-          can: (permissions: string[]) => user.can(permissions),
-          hasRole: (role: string) => user.hasRole(role),
-        },
-        body: '',
-        csrfToken: null,
-        appName: 'Shopify App',
-        style: '',
-        messages: '',
-        isEmbedded: false,
+        ...this.getBasePayload(user, true),
         orders_count: recentOrders.length,
         orders_revenue: totalRevenue,
         customers_count: customers.length,
@@ -181,53 +159,22 @@ export class WebAppService {
   };
   public getStoresPayload = async (user: UserDto): Promise<object> => {
     const allStores: UserStore[] = await this.dataService.getAllStoresForUser(user.user_id);
-    console.log(allStores[0].store.IsPrivate());
+    //console.log(allStores[0].store.IsPrivate());
     /*const stores: Store[] = allStores.map(userStore => {
       return userStore.store;
     });*/
     return {
       stores: [...allStores],
-      storeId: user.store_id,
-      isEmbedded: false,
-      showSidebar: false,
-      isStorePublic: !user.store.IsPrivate(),
-      style: '',
-      appName: 'Shopify App',
-      user: {
-        name: user.name,
-        id: user.user_id,
-        permissions: user.permissions,
-        can: (permissions: string[]) => user.can(permissions),
-        hasRole: (role: string) => user.hasRole(role),
-      },
-      session: {
-        success: '',
-      },
-      body: '',
+      ...this.getBasePayload(user),
     };
   };
   public getOrders = async (user: UserDto): Promise<object> => {
     let payload: object = {};
     try {
       payload = {
-        storeId: user.store_id,
+
         orders: await this.dataService.getAllOrdersForStore(user.store_id),
-        isEmbedded: false,
-        showSidebar: true,
-        isStorePublic: !user.store.IsPrivate(),
-        style: '',
-        appName: 'Shopify App',
-        user: {
-          name: user.name,
-          id: user.user_id,
-          permissions: user.permissions,
-          can: (permissions: string[]) => user.can(permissions),
-          hasRole: (role: string) => user.hasRole(role),
-        },
-        session: {
-          success: '',
-        },
-        body: '',
+        ...this.getBasePayload(user),
       };
     } catch (error) {
       this.logger.error(error.message);
@@ -305,15 +252,10 @@ export class WebAppService {
         const products: Product[] = await this.dataService.getAllProductsForStore(user.store_id);
         //console.log(products);
         payload = {
-          storeId: user.store_id,
+
           products: products,
-          user: user,
-          isEmbedded: false,
-          showSidebar: true,
-          isStorePublic: !user.store.IsPrivate(),
-          style: '',
-          appName: 'Shopify App',
-          body: '',
+          ...this.getBasePayload(user),
+
         };
       }
     } catch (error) {
@@ -329,15 +271,8 @@ export class WebAppService {
       console.log(level_one_categories);
       //console.log(level_one_categories);
       payload = {
-        storeId: user.store_id,
+        ...this.getBasePayload(user),
         locations: locations,
-        user: user,
-        isEmbedded: false,
-        showSidebar: true,
-        isStorePublic: !user.store.IsPrivate(),
-        style: '',
-        appName: 'Shopify App',
-        body: '',
         productTypes: level_one_categories,
       };
     } catch (error) {
@@ -392,23 +327,15 @@ export class WebAppService {
     }
     return true;
   };
-
   public getBillingPagePayload = async (user: UserDto): Promise<object> => {
     try {
       //call the DataService methods
       const plans = await this.dataService.getPlans();
       const currentPlan: StorePlan = await this.dataService.getCurrentPlan(user.store.id);
       const payload = {
-        storeId: user.store.table_id,
-        user:user,
-        isEmbedded: false,
-        showSidebar: true,
+        ...this.getBasePayload(user),
         plans: [...plans],
         last_plan_info: currentPlan,
-        isStorePublic: !user.store.IsPrivate(),
-        style: '',
-        appName: 'Shopify App',
-        body: '',
       };
       return payload;
     } catch (error) {

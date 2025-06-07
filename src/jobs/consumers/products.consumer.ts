@@ -203,18 +203,22 @@ export class ProductsConsumer extends WorkerHost {
         .where('id NOT IN (:...variantIds)', { variantIds: shopifyVariantIds })
         .execute();
     */
-    await this.productsRepository
-      .createQueryBuilder()
-      .delete()
-      .where('store_id = :storeId', { storeId: data.store.table_id })
-      .andWhere('id NOT IN (:...productIds)', { productIds: shopifyProductIds })
-      .execute();
-    const productEntities: Product[] = this.productsRepository.create(totalProducts);
-    await this.productsRepository.upsert(productEntities, ['id']);
+    // The query gives an error if there are no products in the store, So I'll have to refactor or do an else condition.
+    if( shopifyProductIds.length> 0 ) {
 
-    const productVaraintsEntities: ProductVariant[] = this.productVariantsRepository.create(totalProductVariants);
-    await this.productVariantsRepository.upsert(productVaraintsEntities, ['id']);
 
+      await this.productsRepository
+        .createQueryBuilder()
+        .delete()
+        .where('store_id = :storeId', { storeId: data.store.table_id })
+        .andWhere('id NOT IN (:...productIds)', { productIds: shopifyProductIds })
+        .execute();
+      const productEntities: Product[] = this.productsRepository.create(totalProducts);
+      await this.productsRepository.upsert(productEntities, ['id']);
+
+      const productVaraintsEntities: ProductVariant[] = this.productVariantsRepository.create(totalProductVariants);
+      await this.productVariantsRepository.upsert(productVaraintsEntities, ['id']);
+    }
     return true;
   };
 
