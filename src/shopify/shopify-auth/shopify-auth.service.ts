@@ -15,27 +15,23 @@ import { Store } from 'src/database/entities/store.entity';
 import { JobsService } from 'src/jobs/jobs.service';
 import * as crypto from 'crypto';
 import { DataService } from '../../data/data.service';
+import { print } from 'graphql';
+import { GetStoreDetailsDocument, GetStoreDetailsQuery, GetStoreDetailsQueryVariables } from '../../generated/graphql';
 
 @Injectable()
 export class ShopifyAuthService {
   private readonly logger = new Logger(ShopifyAuthService.name);
 
 
+  private readonly storeDetailsQuery: string =  print(GetStoreDetailsDocument);
   constructor(
     private readonly utilsService: UtilsService,
     private readonly configService: ConfigService,
     private readonly jobsService: JobsService,
     private readonly createStoreProvider: CreateStoreProvider,
     private readonly createSuperAdminProvider: CreateSuperAdmin,
-    //private readonly nonceProvider: NonceProvider,
     private readonly dataService: DataService,
-    /**
-     * Injecting StoreRepository and UserRepository
-     */
-    // @InjectRepository(Store)
-    // private storesRepository: Repository<Store>,
-    // @InjectRepository(User)
-    // private usersRepository:Repository<User>
+
   ) {}
 
   public isAccessTokenValid = async (storeDetails: Store): Promise<boolean> => {
@@ -121,11 +117,16 @@ export class ShopifyAuthService {
     }
   };
 
-  public getShopDetailsFromShopify = async (shop_domain: string, accessToken: string): Promise<any> => {
+  
+  public getShopDetailsFromShopify = async (shop_domain: string, accessToken: string): Promise<GetStoreDetailsQuery> => {
     try {
-      const options: ShopifyRequestOptions = { url: null, headers: null };
+      const options: ShopifyRequestOptions = {
+        url: this.utilsService.getShopifyStoreURL('graphql.json', shop_domain),
+        headers: null,
+        data: { query: this.storeDetailsQuery },
+      };
 
-      options.url = this.utilsService.getShopifyStoreURL('shop.json', shop_domain);
+      //options.url = this.utilsService.getShopifyStoreURL('shop.json', shop_domain);
 
       options.headers = new AxiosHeaders()
         .set('Content-Type', 'application/json')
@@ -133,11 +134,11 @@ export class ShopifyAuthService {
 
       //console.log(options.url)
 
-      const shopDetails = await this.utilsService.requestToShopify('get', options);
-      //console.log(shopDetails.respBody, '\n')
+      const shopDetails = await this.utilsService.requestToShopify<GetStoreDetailsQuery>('post', options);
+
       if (shopDetails.statusCode === 200 || shopDetails.status === true) {
-        // log storeDetails.respBody
-        return shopDetails;
+
+        return shopDetails.respBody;
       } else {
         //log the error using Logger module or custom class
         this.logger.error(
@@ -157,12 +158,23 @@ export class ShopifyAuthService {
    * Saves store details to the database, in store_table. CreateShopDTO has all the key value pairs that the shopify server returns for requesting the shop.json
    */
   public saveStoreDetails = async (
-    shopDetails: CreateShopDTO,
+    shopDetails:  GetStoreDetailsQuery['shop'],
     accessToken: string,
   ): Promise<{ table_id: number | null; success: boolean }> => {
     let result: { success?: boolean; user: User; store: Store };
     try {
-      result = await this.createStoreProvider.createStore(shopDetails, accessToken);
+      const store  = {
+        id: parseInt(shopDetails.id.split('/').pop()),
+        name: shopDetails.name,
+        email: shopDetails.email,
+        phone: shopDetails.billingAddress.phone,
+        address1: shopDetails.billingAddress.address1,
+        address2: shopDetails.billingAddress.address2,
+        zip: shopDetails.billingAddress.zip,
+        myshopifyDomain: shopDetails.myshopifyDomain,
+        country: shopDetails.billingAddress.country,
+      };
+      result = await this.createStoreProvider.createStore(store, accessToken);
 
       //console.log(result)
       //create a new entry with the table_id of the store table and the id of the user in another table
@@ -174,11 +186,15 @@ export class ShopifyAuthService {
       return { table_id: null, success: false };
     }
 
-    await this.jobsService.syncProducts(result.store);
-    await this.jobsService.syncOrders(result.store);
-    await this.jobsService.syncCustomers(result.store);
-    await this.jobsService.activateTrial(result.store, result.user);
+
     const createRelation: UserStore | false = await this.createSuperAdmin(result.user.user_id, result.store.table_id);
+    //post install tasks
+    this.jobsService.syncProducts(result.store);
+    this.jobsService.syncOrders(result.store);
+    this.jobsService.syncCustomers(result.store);
+    this.jobsService.configure(result.store.table_id);
+    this.jobsService.activateTrial(result.store, result.user);
+
     if (typeof createRelation == 'boolean') {
       return { table_id: result.store.table_id, success: false };
     }
@@ -201,7 +217,7 @@ export class ShopifyAuthService {
     return result;
   };
 
-  public updateAccessToken = async (store: Store, accessToken: string): Promise<boolean> => {
-    return await this.jobsService.updateStoreToken(store, accessToken);
+  public updateAccessToken = async (store: number, accessToken: string): Promise<boolean> => {
+    return await this.dataService.updateStoreToken(store, accessToken);
   };
 }

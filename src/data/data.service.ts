@@ -14,9 +14,10 @@ import { User } from 'src/database/entities/user.entity';
 import { StorePlan } from 'src/database/entities/storePlans.entity';
 import { UserStore } from 'src/database/entities/userstore.entity';
 import { RequestExceptionFilter } from 'src/filters/timeout.exception.filter';
-import { Repository } from 'typeorm';
+import { Repository, UpdateResult } from 'typeorm';
 import { CacheService } from './cache/cache.service';
 import { randomBytes } from 'crypto';
+import { JOB_TYPES, JobRegistry } from '../jobs/constants/jobs.constants';
 
 @Injectable()
 export class DataService {
@@ -118,7 +119,7 @@ export class DataService {
     planId: number,
     userId: number,
     storeId?: number,
-    chargeId?: number,
+    chargeId?: string,
     chargeDetails?: Record<string, string>,
   ): Promise<StorePlan> => {
     const plans: Plan[] = await this.getPlans();
@@ -214,6 +215,42 @@ export class DataService {
     } finally {
       await queryRunner.release();
     }
+  };
+  public getAllPendingSubs = async (chargeIds: string[]): Promise<StorePlan[]> => {
+    if (chargeIds.length === 0) return [];
+
+    const records = await this.storePlanRepository
+      .createQueryBuilder('store_plan')
+      .where("store_plan.status = 'PENDING'")
+      .andWhere('store_plan.last_charge_id IN (:...chargeIds)', { chargeIds })
+      .getMany();
+
+    return records;
+
+  }
+  public getPendingSubs = async () => {
+    const pending = await this.cacheService.get<Record<string, string>>('PENDING-SUBSCRIPTIONS');
+    if (Object.keys(pending).length > 0) {
+      return pending;
+    }
+    return null;
+  };
+  public setPendingSubs = async(chargeId: string, attempts: string): Promise<boolean> => {
+    const existing = this.getPendingSubs();
+    if (existing != null) {
+      existing[chargeId] = '0';
+      return this.cacheService.set('PENDING-SUBSCRIPTIONS', existing, 0);
+    }
+    return this.cacheService.set('PENDING-SUBSCRIPTIONS', { chargeId: attempts }, 0);
+  };
+  public deletePendingSub = async (chargeId: string): Promise<boolean> => {
+    const existing = this.getPendingSubs();
+    if (existing != null) {
+      delete existing[chargeId];
+      return this.cacheService.set('PENDING-SUBSCRIPTIONS', existing, 0);
+    }
+    this.logger.warn('PENDING-SUBSCRIPTIONS empty');
+    return false;
   };
   public getUsersForStore = async (storeId: number): Promise<UserStore[]> => {
     try {
@@ -574,5 +611,21 @@ export class DataService {
     }
 
     return storeContexts[0];
+  };
+
+
+  public updateStoreToken = async (
+     storeId: number, newAccessToken: string): Promise<boolean> => {
+    try {
+      const updatedEntry: UpdateResult = await this.storeRepository.update(
+        { id: storeId },
+        { access_token: newAccessToken },
+      );
+
+      return updatedEntry.affected && updatedEntry.affected > 0;
+    } catch (error) {
+      this.logger.error(error.message, this.updateStoreToken.name);
+      return false;
+    }
   };
 }

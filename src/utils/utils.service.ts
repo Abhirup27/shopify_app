@@ -37,11 +37,12 @@ export class UtilsService {
 
   public getStoreByDomain = async (shop: string): Promise<Store> => {
     //console.log(shop);
+    console.log(shop);
     const existingStore = await this.storeRepository.findOneBy({
       myshopify_domain: shop,
     });
     //console.log(existingStore);
-
+    console.log('yes');
     return existingStore;
   };
   public getAllStoresByDomain = async (shop: string): Promise<Store[]> => {
@@ -103,11 +104,14 @@ export class UtilsService {
       store.api_key.length > 0 &&
       store.api_secret_key.length > 0
     );
-  }
+  };
+
   public getShopifyStoreURL(endpoint: string, myshopify_domain: string): string;
   public getShopifyStoreURL(endpoint: string, store: Store): string;
   public getShopifyStoreURL(endpoint: string, domain_or_store: Store | string): string {
+
     if (this.isStore(domain_or_store)) {
+
       const store = domain_or_store;
       return this.checkIfStoreIsPrivate(store)
         ? `https://${store.api_key}:${store.api_secret_key}@${store.myshopify_domain}/admin/api/${this.configService.get('shopify_aoi_version')}/${endpoint}`

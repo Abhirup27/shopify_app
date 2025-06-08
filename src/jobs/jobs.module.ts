@@ -31,6 +31,7 @@ import { RedisModule } from '@nestjs-modules/ioredis';
 import { ProductVariant } from 'src/database/entities/productVariant.entity';
 import { Queue } from 'bullmq';
 import { DataModule } from 'src/data/data.module';
+import { CronConsumer } from './consumers/cron.consumer';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { DataModule } from 'src/data/data.module';
       { name: QUEUES.STORES },
       { name: QUEUES.CUSTOMERS },
       { name: QUEUES.USERS },
+      {name: QUEUES.CRON},
     ),
     RedisModule.forRootAsync({
       imports: [ConfigModule],
@@ -97,6 +99,7 @@ import { DataModule } from 'src/data/data.module';
     CustomersConsumer,
     StoresConsumer,
     UsersConsumer,
+    CronConsumer,
 
     OrdersQueueEvents,
     CustomersQueueEvents,

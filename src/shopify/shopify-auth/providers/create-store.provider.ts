@@ -52,11 +52,12 @@ export class CreateStoreProvider {
           email: createStoreDto['email'],
           user_id: newUser.user_id,
           access_token: accessToken,
-          myshopify_domain: createStoreDto['myshopify_domain'],
+          myshopify_domain: createStoreDto['myshopifyDomain'],
           phone: createStoreDto['phone'],
           address1: createStoreDto['address1'],
           address2: createStoreDto['address2'],
           zip: createStoreDto['zip'],
+
         };
 
         newStore = this.storesRepository.create(payload);

@@ -1,0 +1,24 @@
+query GetStoreDetails {
+    shop{
+        id
+        name
+        email
+        myshopifyDomain
+        currencyCode
+        createdAt
+        updatedAt
+        billingAddress{
+            address1
+            address2
+            city
+            country
+            countryCodeV2
+            formatted
+            province
+            phone
+            zip
+            provinceCode
+        }
+
+    }
+}

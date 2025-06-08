@@ -1,6 +1,6 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
-import { Job, Queue, QueueEvents } from 'bullmq';
+import { Job, JobsOptions, Queue, QueueEvents } from 'bullmq';
 import {
   errorResult,
   JOB_TYPES,
@@ -35,9 +35,11 @@ export class JobsService {
   private queueEventsMap: Record<string, QueueEvents> = {};
 
   constructor(
+
     @InjectQueue('PAUSED_QUEUE')
     private pausedQueue: Queue,
-
+    @InjectQueue(QUEUES.CRON)
+    private cronQueue: Queue<QueueData<typeof QUEUES.CRON>, QueueResult<typeof QUEUES.CRON>>,
     @InjectQueue(QUEUES.CONFIGURE)
     private configQueue: Queue<QueueData<typeof QUEUES.CONFIGURE>, QueueResult<typeof QUEUES.CONFIGURE>>,
     @InjectQueue(QUEUES.PRODUCTS)
@@ -50,6 +52,7 @@ export class JobsService {
     private storesQueue: Queue<QueueData<typeof QUEUES.STORES>, QueueResult<typeof QUEUES.STORES>>,
     @InjectQueue(QUEUES.USERS)
     private usersQueue: Queue<QueueData<typeof QUEUES.USERS>, QueueResult<typeof QUEUES.USERS>>,
+
   ) {
     this.queues = {
       [QUEUES.PRODUCTS]: this.productQueue,
@@ -58,6 +61,8 @@ export class JobsService {
       [QUEUES.USERS]: this.usersQueue,
       [QUEUES.STORES]: this.storesQueue,
       [QUEUES.CUSTOMERS]: this.customersQueue,
+
+      [QUEUES.CRON]: this.cronQueue,
     };
 
     // Initialize queue events
@@ -74,12 +79,12 @@ export class JobsService {
   async addJob<T extends JobType>(
     type: T,
     data: JobRegistry[T]['data'],
-    opts?: { attempts: 3 },
+    opts: JobsOptions = { attempts: 3, backoff: { delay: 5000, type: 'exponential',  } },
   ): Promise<JobRegistry[T]['result']> {
     const queueName = jobToQueueMap[type];
     const queue = this.queues[queueName];
     const event = this.queueEventsMap[queueName];
-    const job = await queue.add(type, data, { attempts: 3, backoff: { delay: 5000, type: 'exponential' } });
+    const job = await queue.add(type, data, opts);
     try {
       const result = (await job.waitUntilFinished(event, 30000)) as Promise<JobRegistry[T]['result']>;
       return result;
@@ -186,7 +191,6 @@ export class JobsService {
   //@Interval(5000)
   @Cron(CronExpression.EVERY_2_HOURS, { name: JOB_TYPES.SYNC_PRODUCT_TYPES,  })
   public async runSync() {
-    this.logger.error('this ran');
     //a access token is required to fetch product types from shopify.
     const store: Store = await this.getStore(1);
     if (store && store != null) {

@@ -45,8 +45,8 @@ export class StorePlan {
   @Column({type: 'varchar', nullable: false})
   status: string;
 
-  @Column({ type: 'bigint', unsigned: true, nullable: true })
-  last_charge_id?: number;
+  @Column({ type: 'varchar', unsigned: true, nullable: true })
+  last_charge_id?: string;
 
   @Column({ type: 'jsonb', nullable: true })
   charge_history?: string;

@@ -10,7 +10,10 @@ export class BillingController {
     console.log(query);
 
     //res.status(HttpStatus.OK);
-    await this.dataService.setPlan(query.planId,query.userId, query.storeId, query.charge_id );
+    await this.dataService.setPlan(query.planId,query.userId, query.storeId, query.charge_id.toString() );
+
+    await this.dataService.setPendingSubs(query.charge_id.toString(), '0');
+
     res.redirect(`/billing`);
   }
 }

@@ -55,7 +55,6 @@ export class ShopifyAuthController {
       if (validRequest) {
         //check query.shop if it is made optional, or according to the global Validation config
         const storeDetails: Store = await this.utilsService.getStoreByDomain(query.shop);
-
         if (storeDetails !== null && storeDetails.myshopify_domain == query.shop) {
           //store exists in the app's DB
           const validToken: boolean = await this.installationService.isAccessTokenValid(storeDetails);
@@ -124,24 +123,22 @@ export class ShopifyAuthController {
 
         const accessToken = await this.installationService.getAccessTokenForStore(shop, code);
         if (accessToken != false && accessToken.length > 0) {
-          const shopDetails = (await this.installationService.getShopDetailsFromShopify(shop, accessToken)).respBody;
+          const shopDetails = await this.installationService.getShopDetailsFromShopify(shop, accessToken);
           console.log(shopDetails);
-          const storeToDB = await this.installationService.saveStoreDetails(shopDetails['shop'], accessToken);
+          const storeToDB = await this.installationService.saveStoreDetails(shopDetails.shop, accessToken);
 
-          this.jobsService.configure(storeToDB.table_id);
+
 
           //console.log(shopDetails)
           if (storeToDB.success) {
             this.logger.log(
-              `App succesfully installed for store ${shopDetails.shop.domain} and stored to the Database.`,
+              `App succesfully installed for store ${shopDetails.shop.myshopifyDomain} and stored to the Database.`,
             );
 
             const isEmbedded = this.utilsService.isAppEmbedded();
 
             if (isEmbedded) {
             } else {
-              //redirect to login page of the app
-              //response.redirect('/login');
               return response.redirect('/');
             }
           } else {
@@ -199,9 +196,11 @@ export class ShopifyAuthController {
           const stores: Store[] = await this.utilsService.getAllStoresByDomain(shop);
 
           if (stores.length > 0) {
-            let store: Store = stores[0];
+            let store: number = stores[0].id;
             if (stores.length > 1) {
-              store = await this.installationService.getShopDetailsFromShopify(shop, accessToken);
+              store = parseInt((await this.installationService.getShopDetailsFromShopify(shop, accessToken)).shop.id
+                .split('/')
+                .pop(), 10);
             }
             const updateAccessToken = await this.installationService.updateAccessToken(store, accessToken);
             //console.log(updateAccessToken);

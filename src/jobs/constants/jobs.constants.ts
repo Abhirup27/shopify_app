@@ -19,12 +19,15 @@ export const QUEUES = {
   STORES: 'stores',
   CUSTOMERS: 'customers',
   CONFIGURE: 'configure',
+  CRON: 'cron',
 } as const;
 
 /**
  * All job type constants
  * */
 export const JOB_TYPES = {
+  CHECK_PENDING_PAYMENTS: 'check-pending-pay', // To check all the pending billing
+  SUBSCRIPTION_STATUS: 'subscription-status', // cron task to check for status of each active subscription, once every 24 hours
   SYNC_PRODUCTS: 'sync-products',
   GET_PRODUCTS: 'retrieve-products',
   CREATE_PRODUCT: 'create-product',
@@ -206,6 +209,17 @@ export type JobRegistry = {
     data: { storeId: number };
     result: void;
   };
+  /** Cron jobs*/
+  [JOB_TYPES.CHECK_PENDING_PAYMENTS]: {
+    queue: typeof QUEUES.CRON;
+    data: {};
+    result: void;
+  };
+  [JOB_TYPES.SUBSCRIPTION_STATUS]: {
+    queue: typeof QUEUES.CRON;
+    data: {};
+    result: void;
+  };
 };
 
 export type JobType = keyof JobRegistry;
@@ -248,7 +262,9 @@ export const jobToQueueMap: { [K in JobType]: QueueName } = {
   [JOB_TYPES.GET_PRODUCTS]: QUEUES.PRODUCTS,
 
   [JOB_TYPES.UPDATE_STORE_TOKEN]: QUEUES.STORES,
-  // Add other mappings...
+
+  [JOB_TYPES.SUBSCRIPTION_STATUS]: QUEUES.CRON,
+  [JOB_TYPES.CHECK_PENDING_PAYMENTS]: QUEUES.CRON,
 };
 
 /**

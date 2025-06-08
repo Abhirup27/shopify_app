@@ -117,6 +117,9 @@ export class Store {
   @Column({ type: 'text', nullable: true })
   zip: string;
 
+  @Column({ type: 'bigint', unsigned: true, nullable: true })
+  installationId?: number;
+
   @CreateDateColumn({
     type: 'timestamp with time zone',
     //default: () => 'CURRENT_TIMESTAMP'
