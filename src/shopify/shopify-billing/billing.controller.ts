@@ -12,8 +12,8 @@ export class BillingController {
     //res.status(HttpStatus.OK);
     await this.dataService.setPlan(query.planId,query.userId, query.storeId, query.charge_id.toString() );
 
-    await this.dataService.setPendingSubs(query.charge_id.toString(), '0');
-
+    console.log(await this.dataService.setPendingSubs(query.charge_id.toString(), '0'));
+    console.log(await this.dataService.getPendingSubs());
     res.redirect(`/billing`);
   }
 }

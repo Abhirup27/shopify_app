@@ -204,4 +204,9 @@ export class JobsService {
       );
     }
   }
+
+  @Cron(CronExpression.EVERY_5_SECONDS, {name: JOB_TYPES.CHECK_PENDING_PAYMENTS})
+  public async checkPending() {
+    this.addJob(JOB_TYPES.CHECK_PENDING_PAYMENTS, {});
+  }
 }

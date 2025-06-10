@@ -4,6 +4,13 @@ import { DataService } from '../../data/data.service';
 import { JOB_TYPES, JobRegistry, QUEUES } from '../constants/jobs.constants';
 import { Job } from 'bullmq';
 import { StorePlan } from '../../database/entities/storePlans.entity';
+import { print } from 'graphql';
+import { GetSubscriptionStateDocument, GetSubscriptionStateQuery } from '../../generated/graphql';
+import { ConfigService } from '@nestjs/config';
+import { ShopifyRequestOptions } from '../../utils/types/ShopifyRequestOptions';
+import { UtilsService } from '../../utils/utils.service';
+import { AxiosHeaders } from 'axios';
+import { Store } from '../../database/entities/store.entity';
 
 type CronQueueJobName = typeof JOB_TYPES.SUBSCRIPTION_STATUS | typeof JOB_TYPES.CHECK_PENDING_PAYMENTS;
 type CronQueueJob = {
@@ -14,8 +21,12 @@ type CronQueueJob = {
 export class CronConsumer extends WorkerHost {
   private readonly logger = new Logger(CronConsumer.name);
 
+  private readonly getSubscription: string = print(GetSubscriptionStateDocument);
+
   constructor(
     private readonly dataService: DataService,
+    private readonly config: ConfigService,
+    private readonly utilsService: UtilsService,
   ) {
     super();
   }
@@ -44,7 +55,7 @@ export class CronConsumer extends WorkerHost {
   private async checkPendingSubPay(
     data: JobRegistry[CronQueueJobName]['data'],
   ): Promise<JobRegistry[CronQueueJobName]['result']> {
-    const pendingSubsBilling = this.dataService.getPendingSubs();
+    const pendingSubsBilling = await this.dataService.getPendingSubs();
     if (pendingSubsBilling === null) return;
 
     let pendingDB: StorePlan[];
@@ -59,21 +70,55 @@ export class CronConsumer extends WorkerHost {
 
     // Process each charge ID in cache
     for (const chargeId of chargeIds) {
+
       const isInDB = dbChargeIds.has(chargeId);
 
       if (!isInDB) {
+
         // Remove from cache if not in DB as pending, meaning somewhere in between, this record got updated by a webhook
+
         toRemoveFromCache.push(chargeId);
         continue;
       }
+
       const currentValue = pendingSubsBilling[chargeId];
       const numericValue = parseInt(currentValue, 10) || 0;
-      if (numericValue % 3 === 0) {
-        // send a query to shopify every 3rd attempt to check for it's status.
 
+      if (numericValue!= 0 && numericValue % 3 === 0) {
+
+        const storePlan = pendingDB.find(storePlan => storePlan.last_charge_id == chargeId);
+        const store: Store = storePlan.store;
+        // send a query to shopify every 3rd attempt to check for it's status.
+        const request: ShopifyRequestOptions ={
+          url: this.utilsService.getShopifyURLForStore(
+            'graphql.json', store,),
+          headers: new AxiosHeaders()
+            .set('Content-Type', 'application/json')
+            .set('X-Shopify-Access-Token', store.access_token),
+          data: { query: this.getSubscription, variables: { apiKey: this.config.get<string>('shopify_api_key') } },
+        };
+
+        const response = await this.utilsService.requestToShopify<GetSubscriptionStateQuery>('post', request);
+        console.log(response.respBody.appByKey.installation.activeSubscriptions[0].status);
+        if(response.statusCode === 200) {
+          console.log(response.respBody.appByKey.installation.activeSubscriptions[0].status);
+          //if(response.respBody.appByKey.installation.activeSubscriptions)
+          if(response.respBody.appByKey.installation.activeSubscriptions[0].status != storePlan.status) {
+            console.log('these ran')
+            storePlan.status = response.respBody.appByKey.installation.activeSubscriptions[0].status;
+            storePlan.credits += (await this.dataService.getPlans())[storePlan.plan_id].credits;
+            await this.dataService.setPlanState(storePlan);
+            await this.dataService.deletePendingSub(chargeId);
+          }
+        }
+      } else {
+
+        const newValue = numericValue + 1;
+        //console.log('newValue', newValue);
+        pendingSubsBilling[chargeId] = newValue.toString();
+        await this.dataService.setPendingSubs(chargeId, pendingSubsBilling[chargeId]);
       }
-      const newValue = numericValue + 1;
-      pendingSubsBilling[chargeId] = newValue.toString();
     }
+
   }
 };

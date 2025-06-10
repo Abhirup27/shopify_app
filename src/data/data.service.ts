@@ -112,6 +112,11 @@ export class DataService {
     }
     return new StorePlan();
   };
+
+  public setPlanState = async (storePlan:StorePlan) => {
+   //await this.storePlanRepository.upsert(storePlan, ['id']);
+    await this.storePlanRepository.update({last_charge_id: storePlan.last_charge_id}, storePlan);
+  }
   /**
    * Remember to pass the actual store ID and not the primary incremented ID.
    * */
@@ -147,51 +152,20 @@ export class DataService {
           return existingPlan;
         }
         //this.logger.warn(`${existingPlan.last_charge_id}  ${}`);
-        // Add credits to existing plan if the new one is not a trial. AND if the new ChargeId doesn't match
         if((chargeId!= undefined && existingPlan.last_charge_id != chargeId)) {
-          console.log('execute')
+          //console.log('execute')
           existingPlan.plan_id = planId;
           existingPlan.price = selectedPlan.price;
           existingPlan.user_id = userId;
           existingPlan.last_charge_id = chargeId;
+          existingPlan.status = 'PENDING';
 
-          if(chargeDetails == undefined || chargeDetails == null){
-            existingPlan.status = 'PENDING';
-          } else {
-            existingPlan.status = chargeDetails.status;
-            if(existingPlan.status != 'CANCELLED') {
-              existingPlan.credits += selectedPlan.credits;
-            }
-
-            let existing_history= existingPlan.charge_history != null ? JSON.parse(existingPlan.charge_history).toArray() : [];
-            existing_history.push(chargeDetails);
-            existing_history = JSON.stringify(existing_history);
-            existingPlan.charge_history = existing_history;
-          }
-          existingPlan.credits += selectedPlan.credits;
           const updatedPlan = await queryRunner.manager.save(existingPlan);
           await queryRunner.commitTransaction();
+          //console.log(JSON.stringify(existingPlan))
           return updatedPlan;
         }
-        // this will run if the subscription update webhook calls this function for the specific planId and storeId after billing controller
-        if(chargeDetails!= undefined){
-          existingPlan.status = chargeDetails.status;
-          if(existingPlan.status == 'CANCELLED' && existingPlan.last_charge_id == chargeId){
-            existingPlan.credits -= selectedPlan.credits;
-            if(existingPlan.credits<0)
-            {
-              existingPlan.credits = 0;
-            }
-          }
-          let existing_history= existingPlan.charge_history != null ? JSON.parse(existingPlan.charge_history).toArray() : [];
-          existing_history.push(chargeDetails);
-          existing_history = JSON.stringify(existing_history);
-          existingPlan.charge_history = existing_history;
-          const updatedPlan = await queryRunner.manager.save(existingPlan);
-          await queryRunner.commitTransaction();
-          return updatedPlan;
-        }
-          return existingPlan;
+        return existingPlan;
 
 
       } else {
@@ -217,37 +191,42 @@ export class DataService {
     }
   };
   public getAllPendingSubs = async (chargeIds: string[]): Promise<StorePlan[]> => {
-    if (chargeIds.length === 0) return [];
-
-    const records = await this.storePlanRepository
+    //if (chargeIds.length === 0) return [];
+    return await this.storePlanRepository
       .createQueryBuilder('store_plan')
-      .where("store_plan.status = 'PENDING'")
-      .andWhere('store_plan.last_charge_id IN (:...chargeIds)', { chargeIds })
+      .leftJoinAndSelect('store_plan.store', 'store') // Load store relation
+      .where('store_plan.last_charge_id IN (:...chargeIds)', { chargeIds })
       .getMany();
-
-    return records;
-
-  }
+  };
+  
   public getPendingSubs = async () => {
     const pending = await this.cacheService.get<Record<string, string>>('PENDING-SUBSCRIPTIONS');
-    if (Object.keys(pending).length > 0) {
+    if(pending == null || pending == undefined){
+      return null;
+    }
+    if ( Object.keys(pending).length > 0) {
       return pending;
     }
     return null;
   };
   public setPendingSubs = async(chargeId: string, attempts: string): Promise<boolean> => {
-    const existing = this.getPendingSubs();
+    const existing = await this.getPendingSubs();
     if (existing != null) {
-      existing[chargeId] = '0';
+
+      existing[chargeId] = attempts;
       return this.cacheService.set('PENDING-SUBSCRIPTIONS', existing, 0);
     }
-    return this.cacheService.set('PENDING-SUBSCRIPTIONS', { chargeId: attempts }, 0);
+    const newRecord: Record<string,string>  = {};
+    newRecord[chargeId] = attempts
+    return this.cacheService.set('PENDING-SUBSCRIPTIONS',newRecord,0);
   };
   public deletePendingSub = async (chargeId: string): Promise<boolean> => {
-    const existing = this.getPendingSubs();
+    const existing = await this.getPendingSubs();
     if (existing != null) {
       delete existing[chargeId];
-      return this.cacheService.set('PENDING-SUBSCRIPTIONS', existing, 0);
+
+      await this.cacheService.delete('PENDING-SUBSCRIPTIONS');
+      return await this.cacheService.set('PENDING-SUBSCRIPTIONS', existing, 0);
     }
     this.logger.warn('PENDING-SUBSCRIPTIONS empty');
     return false;

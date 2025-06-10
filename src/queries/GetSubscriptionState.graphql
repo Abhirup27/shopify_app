@@ -1,0 +1,28 @@
+query GetSubscriptionState($apiKey: String!) {
+    appByKey(apiKey: $apiKey) {
+        installation {
+            activeSubscriptions {
+                id
+                status
+                createdAt
+                lineItems {
+                    plan {
+                        pricingDetails {
+                            ... on AppRecurringPricing {
+                                interval
+                                price {
+                                    amount
+                                    currencyCode
+                                }
+                            }
+                            ... on AppUsagePricing {
+                                interval
+
+                            }
+                        }
+                    }
+                }
+                }
+            }
+        }
+    }
