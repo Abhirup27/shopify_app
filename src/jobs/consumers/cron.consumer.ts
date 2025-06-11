@@ -65,8 +65,8 @@ export class CronConsumer extends WorkerHost {
     pendingDB = await this.dataService.getAllPendingSubs(chargeIds);
     const dbChargeIds = new Set(pendingDB.map(record => record.last_charge_id));
 
-    const toRemoveFromCache: string[] = [];
-    const shopifyQueries: Promise<void>[] = [];
+   // const toRemoveFromCache: string[] = [];
+    //const shopifyQueries: Promise<void>[] = [];
 
     // Process each charge ID in cache
     for (const chargeId of chargeIds) {
@@ -77,7 +77,8 @@ export class CronConsumer extends WorkerHost {
 
         // Remove from cache if not in DB as pending, meaning somewhere in between, this record got updated by a webhook
 
-        toRemoveFromCache.push(chargeId);
+        //toRemoveFromCache.push(chargeId);
+        this.dataService.deletePendingSub(chargeId)
         continue;
       }
 
@@ -105,9 +106,14 @@ export class CronConsumer extends WorkerHost {
           //if(response.respBody.appByKey.installation.activeSubscriptions)
           if(response.respBody.appByKey.installation.activeSubscriptions[0].status != storePlan.status) {
             console.log('these ran')
+            if (
+              response.respBody.appByKey.installation.activeSubscriptions[0].status == 'ACTIVE' ||
+              response.respBody.appByKey.installation.activeSubscriptions[0].status == 'ACCEPTED'
+            ) {
+              storePlan.credits += (await this.dataService.getPlans())[storePlan.plan_id].credits;
+            }
             storePlan.status = response.respBody.appByKey.installation.activeSubscriptions[0].status;
-            storePlan.credits += (await this.dataService.getPlans())[storePlan.plan_id].credits;
-            await this.dataService.setPlanState(storePlan);
+            await this.dataService.updatePlan(storePlan);
             await this.dataService.deletePendingSub(chargeId);
           }
         }
@@ -119,6 +125,7 @@ export class CronConsumer extends WorkerHost {
         await this.dataService.setPendingSubs(chargeId, pendingSubsBilling[chargeId]);
       }
     }
+
 
   }
 };

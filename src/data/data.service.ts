@@ -113,10 +113,40 @@ export class DataService {
     return new StorePlan();
   };
 
-  public setPlanState = async (storePlan:StorePlan) => {
+  public updatePlan = async (storePlan:StorePlan) => {
    //await this.storePlanRepository.upsert(storePlan, ['id']);
     await this.storePlanRepository.update({last_charge_id: storePlan.last_charge_id}, storePlan);
-  }
+  };
+  // need to use locks
+  public setPlanSate = async (chargeObj: Record<any, any>)=> {
+    const storePlan = await this.storePlanRepository.findOneBy({store_id: chargeObj.admin_graphql_api_shop_id.split('/').pop()})
+
+    //if executed before the billing function and the func which sets the new pending plan with id
+    if(storePlan.last_charge_id != chargeObj.admin_graphql_api_id){
+      if(new Date(chargeObj.updated_at).getTime() > storePlan.updatedAt.getTime()){
+        //update all
+        storePlan.last_charge_id = chargeObj.admin_graphql_api_id.split('/').pop();
+        //storePlan.charge_history
+        storePlan.status = chargeObj.status;
+        const plans: Plan[] = await this.getPlans();
+        const plan = plans.find(plan => plan.name === chargeObj.name);
+        storePlan.plan_id = plan.id;
+        storePlan.credits += plan.credits;
+      }
+    } //pending plan was set from the billing function, set the plan active, store charge history, add credits
+    else {
+      if( chargeObj.status == 'ACTIVE') {
+
+        // I could fetch the plan relation within the findOne function
+        const plan: Plan = await this.getPlans()[storePlan.plan_id];
+        storePlan.credits += plan.credits;
+        storePlan.status = 'ACTIVE';
+        //const chargeHistory= storePlan.charge_history;
+
+      }
+    }
+    await this.storePlanRepository.update({id: storePlan.id}, storePlan);
+  };
   /**
    * Remember to pass the actual store ID and not the primary incremented ID.
    * */
@@ -195,6 +225,7 @@ export class DataService {
     return await this.storePlanRepository
       .createQueryBuilder('store_plan')
       .leftJoinAndSelect('store_plan.store', 'store') // Load store relation
+      .where("store_plan.status = 'PENDING'")
       .where('store_plan.last_charge_id IN (:...chargeIds)', { chargeIds })
       .getMany();
   };
