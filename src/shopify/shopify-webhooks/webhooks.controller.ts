@@ -41,7 +41,7 @@ export class WebhooksController {
   public async updateSubscriptionById(@Body() body: any, @Req() req: Request)
   {
     //console.log(req.rawBody);
-    await this.dataService.setPlanSate(body.app_subscription);
+    await this.dataService.setPlanState(body.app_subscription);
     console.log(body);
 
   }

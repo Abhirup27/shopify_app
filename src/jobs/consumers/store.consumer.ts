@@ -117,7 +117,6 @@ export class StoresConsumer extends WorkerHost {
         },
       },
     };
-    console.log(variables.returnUrl)
     options.data = {
       query: this.appSubscriptionCreateMutation,
       variables: { ...variables },

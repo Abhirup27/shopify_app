@@ -56,6 +56,7 @@ export class CronConsumer extends WorkerHost {
     data: JobRegistry[CronQueueJobName]['data'],
   ): Promise<JobRegistry[CronQueueJobName]['result']> {
     const pendingSubsBilling = await this.dataService.getPendingSubs();
+    console.log(pendingSubsBilling)
     if (pendingSubsBilling === null) return;
 
     let pendingDB: StorePlan[];
@@ -72,13 +73,13 @@ export class CronConsumer extends WorkerHost {
     for (const chargeId of chargeIds) {
 
       const isInDB = dbChargeIds.has(chargeId);
-
+      console.log('in DB', isInDB);
       if (!isInDB) {
 
         // Remove from cache if not in DB as pending, meaning somewhere in between, this record got updated by a webhook
 
         //toRemoveFromCache.push(chargeId);
-        this.dataService.deletePendingSub(chargeId)
+        await this.dataService.deletePendingSub(chargeId)
         continue;
       }
 
@@ -110,7 +111,8 @@ export class CronConsumer extends WorkerHost {
               response.respBody.appByKey.installation.activeSubscriptions[0].status == 'ACTIVE' ||
               response.respBody.appByKey.installation.activeSubscriptions[0].status == 'ACCEPTED'
             ) {
-              storePlan.credits += (await this.dataService.getPlans())[storePlan.plan_id].credits;
+              storePlan.credits += (await this.dataService.getPlans())[storePlan.plan_id -1 ].credits;
+              console.log(storePlan.credits);
             }
             storePlan.status = response.respBody.appByKey.installation.activeSubscriptions[0].status;
             await this.dataService.updatePlan(storePlan);

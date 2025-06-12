@@ -115,10 +115,11 @@ export class DataService {
 
   public updatePlan = async (storePlan:StorePlan) => {
    //await this.storePlanRepository.upsert(storePlan, ['id']);
-    await this.storePlanRepository.update({last_charge_id: storePlan.last_charge_id}, storePlan);
+    //await this.storePlanRepository.update({last_charge_id: storePlan.last_charge_id}, storePlan);
+    await this.storePlanRepository.save(storePlan);
   };
   // need to use locks
-  public setPlanSate = async (chargeObj: Record<any, any>)=> {
+  public setPlanState = async (chargeObj: Record<any, any>)=> {
     const storePlan = await this.storePlanRepository.findOneBy({store_id: chargeObj.admin_graphql_api_shop_id.split('/').pop()})
 
     //if executed before the billing function and the func which sets the new pending plan with id
@@ -128,23 +129,35 @@ export class DataService {
         storePlan.last_charge_id = chargeObj.admin_graphql_api_id.split('/').pop();
         //storePlan.charge_history
         storePlan.status = chargeObj.status;
-        const plans: Plan[] = await this.getPlans();
-        const plan = plans.find(plan => plan.name === chargeObj.name);
-        storePlan.plan_id = plan.id;
-        storePlan.credits += plan.credits;
+
+        if(chargeObj.status == 'ACTIVE'){
+          console.log('these ran')
+          const plans: Plan[] = await this.getPlans();
+          const plan = plans.find(plan => plan.name === chargeObj.name);
+          console.log('plan retrieved ', plan);
+          storePlan.plan_id = plan.id;
+          storePlan.price= plan.price;
+          storePlan.credits += plan.credits;
+          storePlan.status = 'ACTIVE';
+
+         // also set the charge history
+        }
       }
     } //pending plan was set from the billing function, set the plan active, store charge history, add credits
     else {
       if( chargeObj.status == 'ACTIVE') {
 
         // I could fetch the plan relation within the findOne function
-        const plan: Plan = await this.getPlans()[storePlan.plan_id];
+        const plan: Plan = await this.getPlans()[storePlan.plan_id -1];
+        console.log(storePlan.plan_id)
+        console.log(plan)
         storePlan.credits += plan.credits;
         storePlan.status = 'ACTIVE';
         //const chargeHistory= storePlan.charge_history;
 
       }
     }
+    console.log(JSON.stringify(storePlan));
     await this.storePlanRepository.update({id: storePlan.id}, storePlan);
   };
   /**
@@ -226,7 +239,7 @@ export class DataService {
       .createQueryBuilder('store_plan')
       .leftJoinAndSelect('store_plan.store', 'store') // Load store relation
       .where("store_plan.status = 'PENDING'")
-      .where('store_plan.last_charge_id IN (:...chargeIds)', { chargeIds })
+      .andWhere('store_plan.last_charge_id IN (:...chargeIds)', { chargeIds })
       .getMany();
   };
   
@@ -580,7 +593,7 @@ export class DataService {
     return nonce;
   };
 
-  public storeNonce = async (nonce: String, shopDomain: string): Promise<void> => {
+  public storeNonce = async (nonce: string, shopDomain: string): Promise<void> => {
 
     await this.cacheService.set(`${this.NONCE_PREFIX}${nonce}`, shopDomain, this.NONCE_EXPIRY);
   };
