@@ -18,10 +18,10 @@ import { Repository, UpdateResult } from 'typeorm';
 import { CacheService } from './cache/cache.service';
 import { randomBytes } from 'crypto';
 import { JOB_TYPES, JobRegistry } from '../jobs/constants/jobs.constants';
-
+//import { Redlock, RedlockService } from '@anchan828/nest-redlock';
+import Redlock from 'redlock';
 @Injectable()
 export class DataService {
-
   private readonly logger = new Logger(DataService.name);
   private readonly NONCE_PREFIX = 'shopify:nonce:';
   private readonly NONCE_EXPIRY = '120s';
@@ -29,7 +29,8 @@ export class DataService {
   constructor(
     //@Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly cacheService: CacheService,
-
+    @Inject('CACHE_LOCK') private readonly redLock: Redlock,
+    //private readonly redLock: RedlockService,
     @InjectRepository(Store) private readonly storeRepository: Repository<Store>,
     @InjectRepository(UserStore) private readonly userStoreRepository: Repository<UserStore>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
@@ -105,60 +106,60 @@ export class DataService {
    * Remember to pass the actual store ID and not the primary incremented ID.
    * */
   public getCurrentPlan = async (storeId: number): Promise<StorePlan> => {
-    try{
+    try {
       return await this.storePlanRepository.findOne({ where: { store_id: storeId } });
-    }catch(error){
+    } catch (error) {
       this.logger.error(error.message, error.stack);
     }
     return new StorePlan();
   };
 
-  public updatePlan = async (storePlan:StorePlan) => {
-   //await this.storePlanRepository.upsert(storePlan, ['id']);
+  public updatePlan = async (storePlan: StorePlan) => {
+    //await this.storePlanRepository.upsert(storePlan, ['id']);
     //await this.storePlanRepository.update({last_charge_id: storePlan.last_charge_id}, storePlan);
     await this.storePlanRepository.save(storePlan);
   };
   // need to use locks
-  public setPlanState = async (chargeObj: Record<any, any>)=> {
-    const storePlan = await this.storePlanRepository.findOneBy({store_id: chargeObj.admin_graphql_api_shop_id.split('/').pop()})
+  public setPlanState = async (chargeObj: Record<any, any>) => {
+    const storePlan = await this.storePlanRepository.findOneBy({
+      store_id: chargeObj.admin_graphql_api_shop_id.split('/').pop(),
+    });
 
     //if executed before the billing function and the func which sets the new pending plan with id
-    if(storePlan.last_charge_id != chargeObj.admin_graphql_api_id){
-      if(new Date(chargeObj.updated_at).getTime() > storePlan.updatedAt.getTime()){
+    if (storePlan.last_charge_id != chargeObj.admin_graphql_api_id) {
+      if (new Date(chargeObj.updated_at).getTime() > storePlan.updatedAt.getTime()) {
         //update all
         storePlan.last_charge_id = chargeObj.admin_graphql_api_id.split('/').pop();
         //storePlan.charge_history
         storePlan.status = chargeObj.status;
 
-        if(chargeObj.status == 'ACTIVE'){
-          console.log('these ran')
+        if (chargeObj.status == 'ACTIVE') {
+          console.log('these ran');
           const plans: Plan[] = await this.getPlans();
           const plan = plans.find(plan => plan.name === chargeObj.name);
           console.log('plan retrieved ', plan);
           storePlan.plan_id = plan.id;
-          storePlan.price= plan.price;
+          storePlan.price = plan.price;
           storePlan.credits += plan.credits;
           storePlan.status = 'ACTIVE';
 
-         // also set the charge history
+          // also set the charge history
         }
       }
     } //pending plan was set from the billing function, set the plan active, store charge history, add credits
     else {
-      if( chargeObj.status == 'ACTIVE') {
-
+      if (chargeObj.status == 'ACTIVE') {
         // I could fetch the plan relation within the findOne function
-        const plan: Plan = await this.getPlans()[storePlan.plan_id -1];
-        console.log(storePlan.plan_id)
-        console.log(plan)
+        const plan: Plan = await this.getPlans()[storePlan.plan_id - 1];
+        console.log(storePlan.plan_id);
+        console.log(plan);
         storePlan.credits += plan.credits;
         storePlan.status = 'ACTIVE';
         //const chargeHistory= storePlan.charge_history;
-
       }
     }
     console.log(JSON.stringify(storePlan));
-    await this.storePlanRepository.update({id: storePlan.id}, storePlan);
+    await this.storePlanRepository.update({ id: storePlan.id }, storePlan);
   };
   /**
    * Remember to pass the actual store ID and not the primary incremented ID.
@@ -195,7 +196,7 @@ export class DataService {
           return existingPlan;
         }
         //this.logger.warn(`${existingPlan.last_charge_id}  ${}`);
-        if((chargeId!= undefined && existingPlan.last_charge_id != chargeId)) {
+        if (chargeId != undefined && existingPlan.last_charge_id != chargeId) {
           //console.log('execute')
           existingPlan.plan_id = planId;
           existingPlan.price = selectedPlan.price;
@@ -209,8 +210,6 @@ export class DataService {
           return updatedPlan;
         }
         return existingPlan;
-
-
       } else {
         // start trial
         const newPlan = queryRunner.manager.create(StorePlan, {
@@ -219,7 +218,7 @@ export class DataService {
           plan_id: planId,
           credits: selectedPlan.credits,
           price: selectedPlan.price,
-          status: 'ACTIVE'
+          status: 'ACTIVE',
         });
 
         const createdPlan = await queryRunner.manager.save(newPlan);
@@ -242,27 +241,26 @@ export class DataService {
       .andWhere('store_plan.last_charge_id IN (:...chargeIds)', { chargeIds })
       .getMany();
   };
-  
+
   public getPendingSubs = async () => {
     const pending = await this.cacheService.get<Record<string, string>>('PENDING-SUBSCRIPTIONS');
-    if(pending == null || pending == undefined){
+    if (pending == null || pending == undefined) {
       return null;
     }
-    if ( Object.keys(pending).length > 0) {
+    if (Object.keys(pending).length > 0) {
       return pending;
     }
     return null;
   };
-  public setPendingSubs = async(chargeId: string, attempts: string): Promise<boolean> => {
+  public setPendingSubs = async (chargeId: string, attempts: string): Promise<boolean> => {
     const existing = await this.getPendingSubs();
     if (existing != null) {
-
       existing[chargeId] = attempts;
       return this.cacheService.set('PENDING-SUBSCRIPTIONS', existing, 0);
     }
-    const newRecord: Record<string,string>  = {};
-    newRecord[chargeId] = attempts
-    return this.cacheService.set('PENDING-SUBSCRIPTIONS',newRecord,0);
+    const newRecord: Record<string, string> = {};
+    newRecord[chargeId] = attempts;
+    return this.cacheService.set('PENDING-SUBSCRIPTIONS', newRecord, 0);
   };
   public deletePendingSub = async (chargeId: string): Promise<boolean> => {
     const existing = await this.getPendingSubs();
@@ -456,10 +454,10 @@ export class DataService {
   /**
    *  This function is used to set the full sync status of the product taxonomy in the cache
    *  */
-  public setProductCategorySyncStatus = async(status: boolean): Promise<boolean> => {
-      return await this.cacheService.set('productCategorySyncStatus', status, 0);
+  public setProductCategorySyncStatus = async (status: boolean): Promise<boolean> => {
+    return await this.cacheService.set('productCategorySyncStatus', status, 0);
   };
-  public getProductCategorySyncStatus = async(): Promise<boolean> => {
+  public getProductCategorySyncStatus = async (): Promise<boolean> => {
     return await this.cacheService.get<boolean>('productCategorySyncStatus');
   };
   public setProductCategoryMap = async (key: string, map: Record<string, string>): Promise<boolean> => {
@@ -487,6 +485,7 @@ export class DataService {
   public async findOneByEmail(email: string): Promise<{ User: User; UserStore: UserStore[] }> {
     let user: User | undefined = undefined;
     let userRoles: UserStore[] | undefined = undefined;
+
     try {
       user = await this.userRepository.findOneBy({
         email: email,
@@ -594,7 +593,6 @@ export class DataService {
   };
 
   public storeNonce = async (nonce: string, shopDomain: string): Promise<void> => {
-
     await this.cacheService.set(`${this.NONCE_PREFIX}${nonce}`, shopDomain, this.NONCE_EXPIRY);
   };
   public validateAndRemoveNonce = async (nonce: string, shopDomain: string): Promise<boolean> => {
@@ -636,9 +634,7 @@ export class DataService {
     return storeContexts[0];
   };
 
-
-  public updateStoreToken = async (
-     storeId: number, newAccessToken: string): Promise<boolean> => {
+  public updateStoreToken = async (storeId: number, newAccessToken: string): Promise<boolean> => {
     try {
       const updatedEntry: UpdateResult = await this.storeRepository.update(
         { id: storeId },
@@ -650,5 +646,26 @@ export class DataService {
       this.logger.error(error.message, this.updateStoreToken.name);
       return false;
     }
+  };
+
+  // @Redlock<DataService["readStoreCredits"]>(
+  //   (target: DataService, storeId: number): any=> {`${storeId}-credits`},
+  // })
+  public readStoreCredits = async (storeId: number): Promise<number> => {
+    const value = await this.redLock.using([`${storeId}-credits`], 2000, async signal => {
+      return await this.cacheService.get<number>(`${storeId}-credits`);
+    });
+
+    return value;
+    //const lock2 = await this.redLock.using(`${storeId}-credits`, duration )
+  };
+
+  public writeStoreCredits = async (storeId: string, value: number): Promise<boolean> => {
+    const result = await this.redLock.using([`${storeId}-credits`], 2000, async signal => {
+      return await this.cacheService.set<number>(`${storeId}-credits`, value);
+    });
+
+    return result;
+    //const lock2 = await this.redLock.using(`${storeId}-credits`, duration )
   };
 }

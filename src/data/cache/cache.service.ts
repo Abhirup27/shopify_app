@@ -29,7 +29,9 @@ export class CacheService {
   public delete = async (key: string): Promise<boolean> => {
     return await this.cache.delete(key);
   };
-
+  public has = async (key: string): Promise<boolean> => {
+    return await this.cache.has(key);
+  };
   async mget(...args: string[]) {
     return Promise.all(args.map(key => this.cache.get(key)));
   }
