@@ -318,6 +318,9 @@ export class WebAppService {
   public createProduct = async (user: UserDto, product: newProductDto): Promise<boolean | {status: string, url: string}> => {
     console.log(product);
     const result = await this.jobsService.createProduct(user.store, product);
+    if (result == undefined){
+      return true;
+    }
     if(result['status'] == 'AUTH_REQUIRED') {
       const url = await this.getOAuthURL(user.store.myshopify_domain);
       return { status: result['status'], url };

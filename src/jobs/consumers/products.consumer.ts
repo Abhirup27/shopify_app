@@ -29,6 +29,8 @@ import {
   SyncProductsQuery,
 } from 'src/generated/graphql';
 import { print } from 'graphql';
+import { Lock } from 'redlock';
+import { instanceOf } from 'graphql/jsutils/instanceOf';
 
 export type ProductsType = {
   id: string;
@@ -571,6 +573,29 @@ export class ProductsConsumer extends WorkerHost {
     data: JobRegistry[typeof JOB_TYPES.CREATE_PRODUCT]['data'],
     job: Job,
   ): Promise<JobRegistry[typeof JOB_TYPES.CREATE_PRODUCT]['result']> => {
+    let lock: Lock;
+    let credits: number;
+    try{
+
+      lock = await this.dataService.getStoreCreditsLock(data.store.id);
+      this.logger.debug(JSON.stringify(lock));
+      credits = await this.dataService.getStoreCredits(data.store.id);
+
+     // const credits = await this.dataService.readStoreCredits(data.store.id);
+      console.log(credits);
+      if( isNaN(credits) || credits == undefined ){
+        job.delay = 2000;
+        //await job.moveToDelayed(2000, job.token);
+        await job.moveToFailed(new Error('lock or credits not found.'), job.token);
+       return true;
+      }
+      if( credits < 2 ) {
+        await job.moveToFailed(new UnrecoverableError('credits too low for the operation.'), job.token);
+        return true;
+      }
+    } catch( error ) {
+      throw error;
+    }
     const store: Store = data.store;
     const product: newProductDto = data.product;
     const locations: StoreLocations[] = [];
@@ -621,7 +646,9 @@ export class ProductsConsumer extends WorkerHost {
         await this.productVariantsRepository.upsert(variant, ['id']);
       }
     }
-
+    credits-= 2;
+    await this.dataService.setStoreCredits(data.store.id, credits);
+    await lock.release();
     return true;
   };
   private getCreateProductPayload = async (

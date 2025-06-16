@@ -8,7 +8,7 @@ export default registerAs('redlock-config', (config = configuration()): RedlockM
     clients: [new Redis({ host: config.redis.host || 'localhost', port: config.redis.port || 6379 })],
     settings: {
       driftFactor: 0.01,
-      retryCount: 10,
+      retryCount: 3,
       retryDelay: 200,
       retryJitter: 200,
       automaticExtensionThreshold: 500,

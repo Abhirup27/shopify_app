@@ -17,9 +17,8 @@ import { RequestExceptionFilter } from 'src/filters/timeout.exception.filter';
 import { Repository, UpdateResult } from 'typeorm';
 import { CacheService } from './cache/cache.service';
 import { randomBytes } from 'crypto';
-import { JOB_TYPES, JobRegistry } from '../jobs/constants/jobs.constants';
 //import { Redlock, RedlockService } from '@anchan828/nest-redlock';
-import Redlock from 'redlock';
+import Redlock, { ExecutionResult, Lock } from 'redlock';
 @Injectable()
 export class DataService {
   private readonly logger = new Logger(DataService.name);
@@ -647,25 +646,76 @@ export class DataService {
       return false;
     }
   };
-
+  public getStoreToken = async(storeId: number): Promise<number> => {
+    const credits = await this.cacheService.get<number>(`${storeId}-credits`);
+    if(isNaN(credits)){
+      const storePlan = await this.storePlanRepository.findOneBy({store_id: storeId});
+      return storePlan.credits;
+    }
+    return credits;
+  };
+  public getStoreCredits = async (storeId: number): Promise<number> => {
+    const credits =  await this.cacheService.get<number>(`${storeId}-credits`);
+    if(isNaN(credits)){
+      const creditsDB = await this.storePlanRepository.findOneBy({store_id: storeId});
+      console.log('in db', creditsDB.credits);
+      this.cacheService.set(`${storeId}-credits`, creditsDB.credits);
+      console.log('done');
+      return creditsDB.credits;
+    }
+    return credits;
+  };
+  public setStoreCredits = async(storeId: number, credits: number): Promise<boolean> => {
+    return await this.cacheService.set(`${storeId}-credits`, credits);
+  }
   // @Redlock<DataService["readStoreCredits"]>(
   //   (target: DataService, storeId: number): any=> {`${storeId}-credits`},
   // })
   public readStoreCredits = async (storeId: number): Promise<number> => {
-    const value = await this.redLock.using([`${storeId}-credits`], 2000, async signal => {
-      return await this.cacheService.get<number>(`${storeId}-credits`);
-    });
+    try{
+      const value = await this.redLock.using([`locks:${storeId}-credits`], 2000, async signal => {
+        const creditsCache = await this.cacheService.get<number>(`${storeId}-credits`);
+        if (signal.aborted) {
+          throw signal.error;
+        }
+        console.log('in cache', creditsCache);
+        if (isNaN(creditsCache)) {
+          const creditsDB = await this.storePlanRepository.findOneBy({store_id: storeId});
+          console.log('in db', creditsDB.credits);
+          this.cacheService.set(`${storeId}-credits`, creditsDB.credits);
+          console.log('done');
+          return creditsDB.credits;
+        } else {
+          return creditsCache;
+        }
+      });
 
-    return value;
+      return value;
+    }catch(error){
+      this.logger.error(error, error.stack);
+    }
     //const lock2 = await this.redLock.using(`${storeId}-credits`, duration )
   };
 
   public writeStoreCredits = async (storeId: string, value: number): Promise<boolean> => {
-    const result = await this.redLock.using([`${storeId}-credits`], 2000, async signal => {
+    const result = await this.redLock.using([`locks:${storeId}-credits`], 2000, async signal => {
       return await this.cacheService.set<number>(`${storeId}-credits`, value);
     });
 
     return result;
-    //const lock2 = await this.redLock.using(`${storeId}-credits`, duration )
+
+  };
+
+  public getStoreCreditsLock = async (storeId: number): Promise<Lock> => {
+    try {
+      const result = await this.redLock.acquire([`locks:${storeId}-credits`], 4000,);
+      return result;
+    } catch(error){
+      this.logger.error(error, error.stack);
+    }
+    };
+  public freeLock = async (lock: Lock): Promise<ExecutionResult> => {
+    const result = await this.redLock.release(lock);
+    return result;
   };
 }
