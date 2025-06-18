@@ -65,7 +65,7 @@ import Redlock from 'redlock';
   exports: ['CACHE_INSTANCE', 'CACHE_LOCK'],
 })
 export class CacheModule implements OnApplicationShutdown {
-  constructor(@Inject('REDIS_CLIENT') private readonly redisClient: Client) {}
+  constructor(@Inject('REDIS_CLIENT') private readonly redisClient: Keyv) {}
   async onApplicationShutdown() {
     try {
       await this.redisClient.disconnect();

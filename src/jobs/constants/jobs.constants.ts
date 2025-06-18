@@ -42,6 +42,7 @@ export const JOB_TYPES = {
   GET_ORDER: 'retrieve-order-details',
 
   SYNC_STORE: 'sync-store',
+  SYNC_STORES: 'sync-stores',
   SYNC_STORE_LOCATIONS: 'sync-store-locations',
   ACTIVATE_TRIAL: 'activate-trial',
   BUY_STORE_PLAN: 'buy-store-plan',
@@ -137,6 +138,11 @@ export type JobRegistry = {
   [JOB_TYPES.SYNC_STORE]: {
     queue: typeof QUEUES.STORES;
     data: { storeId: number };
+    result: void;
+  };
+  [JOB_TYPES.SYNC_STORES]: {
+    queue: typeof QUEUES.STORES;
+    data:   {};
     result: void;
   };
   [JOB_TYPES.SYNC_STORE_LOCATIONS]: {
@@ -242,6 +248,7 @@ export const jobToQueueMap: { [K in JobType]: QueueName } = {
 
   [JOB_TYPES.SYNC_CUSTOMERS]: QUEUES.CUSTOMERS,
   [JOB_TYPES.SYNC_STORE]: QUEUES.STORES,
+  [JOB_TYPES.SYNC_STORES]: QUEUES.STORES,
   [JOB_TYPES.SYNC_STORE_LOCATIONS]: QUEUES.STORES,
   [JOB_TYPES.ACTIVATE_TRIAL]: QUEUES.STORES,
   [JOB_TYPES.BUY_STORE_PLAN]: QUEUES.STORES,

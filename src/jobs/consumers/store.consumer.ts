@@ -1,9 +1,9 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { JOB_TYPES, JobRegistry, QUEUES } from '../constants/jobs.constants';
 import { Store } from 'src/database/entities/store.entity';
-import { Logger } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, UpdateResult } from 'typeorm';
+import { QueryRunner, Repository, UpdateResult } from 'typeorm';
 import { Job, UnrecoverableError } from 'bullmq';
 import { StoreLocations } from 'src/database/entities/storeLocations.entity';
 import { ShopifyRequestOptions } from 'src/utils/types/ShopifyRequestOptions';
@@ -21,10 +21,14 @@ import {
 } from '../../generated/graphql';
 import { DataService } from '../../data/data.service';
 import { Plan } from '../../database/entities/plans.entity';
+import { StorePlan } from '../../database/entities/storePlans.entity';
+import { CacheService } from '../../data/cache/cache.service';
+import Redlock from 'redlock';
 
 type StoreJobNames =
   | typeof JOB_TYPES.GET_STORE
   | typeof JOB_TYPES.SYNC_STORE
+  | typeof JOB_TYPES.SYNC_STORES
   | typeof JOB_TYPES.GET_STORE_LOCATIONS
   | typeof JOB_TYPES.SYNC_STORE_LOCATIONS
   | typeof JOB_TYPES.UPDATE_STORE_TOKEN
@@ -42,9 +46,13 @@ export class StoresConsumer extends WorkerHost {
   private readonly appSubscriptionCreateMutation: string = print(AppSubscriptionCreateDocument);
 
   constructor(
+    private readonly cacheService: CacheService,
+    @Inject('CACHE_LOCK') private readonly redLock: Redlock,
+
     @InjectRepository(Store)
     private readonly storesRepository: Repository<Store>,
-
+    @InjectRepository(StorePlan)
+    private readonly storePlansRepository: Repository<StorePlan>,
     @InjectRepository(StoreLocations)
     private readonly locationsRepository: Repository<StoreLocations>,
 
@@ -59,6 +67,8 @@ export class StoresConsumer extends WorkerHost {
       switch (job.name) {
         case JOB_TYPES.GET_STORE:
           return await this.retrieveStore(job.data);
+        case JOB_TYPES.SYNC_STORES:
+          return await this.syncStores();
         case JOB_TYPES.SYNC_STORE:
           return await this.syncStore(job.data);
         case JOB_TYPES.GET_STORE_LOCATIONS:
@@ -90,12 +100,48 @@ export class StoresConsumer extends WorkerHost {
     return job.name === name;
   }
 */
+  private syncStores = async (): Promise<void> => {
+    let queryRunner: QueryRunner;
+    try {
+      queryRunner = this.storePlansRepository.manager.connection.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      const storesToSync = await this.cacheService.get<Array<number>>('credits-keys');
+
+      if (!Array.isArray(storesToSync) || storesToSync.length === 0) {
+        return;
+      }
+      const stores = await this.storePlansRepository
+        .createQueryBuilder('store_plan')
+        .where('store_plan.store_id IN (:...storeIds)', { storeIds: storesToSync })
+        .getMany();
+
+      for (const store of stores) {
+        const lock = await this.dataService.getStoreCreditsLock(store.store_id);
+        if (lock == undefined) {
+          continue;
+        }
+
+        const currentCredits = await this.cacheService.get<number>(`${store.store_id}-credits`);
+        store.credits = currentCredits;
+        const updatedStore = await queryRunner.manager.save(store);
+        await lock.release();
+      }
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
+  };
+
   private buyPlan = async (
     data: JobRegistry[typeof JOB_TYPES.BUY_STORE_PLAN]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.BUY_STORE_PLAN]['result']> => {
     const plans = await this.dataService.getPlans();
     const selectedPlan: Plan = plans.find(plan => plan.id == data.planId);
-    if(selectedPlan.name == 'Trial' || selectedPlan.name == 'Demo' || selectedPlan.name == 'Free'){
+    if (selectedPlan.name == 'Trial' || selectedPlan.name == 'Demo' || selectedPlan.name == 'Free') {
       return this.configService.get('app_url') + '/billing';
     }
     const options: ShopifyRequestOptions = {
@@ -104,7 +150,9 @@ export class StoresConsumer extends WorkerHost {
     };
     const variables: AppSubscriptionCreateMutationVariables = {
       name: selectedPlan.name,
-      returnUrl: this.configService.get<string>('app_url') + `/shopify/rac?planId=${selectedPlan.id}&userId=${data.userId}&storeId=${data.store.id}`,
+      returnUrl:
+        this.configService.get<string>('app_url') +
+        `/shopify/rac?planId=${selectedPlan.id}&userId=${data.userId}&storeId=${data.store.id}`,
       test: true,
       lineItems: {
         plan: {
@@ -125,15 +173,14 @@ export class StoresConsumer extends WorkerHost {
     const response = await this.utilsService.requestToShopify<AppSubscriptionCreateMutation>('post', options);
     console.log(JSON.stringify(response));
     if (response.statusCode === 200) {
-      if(response.respBody.appSubscriptionCreate.userErrors[0] !== undefined) {
+      if (response.respBody.appSubscriptionCreate.userErrors[0] !== undefined) {
         throw new Error(response.respBody.appSubscriptionCreate.userErrors[0].message);
       }
-       const url: string = response.respBody.appSubscriptionCreate.confirmationUrl;
-
+      const url: string = response.respBody.appSubscriptionCreate.confirmationUrl;
 
       console.log(JSON.stringify(response));
-       return url;
-        //redirect to the confirmation shopify page
+      return url;
+      //redirect to the confirmation shopify page
     } else if (response.statusCode === 401) {
       // Oauth failed, token expired
     }

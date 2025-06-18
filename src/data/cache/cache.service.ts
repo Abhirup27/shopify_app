@@ -13,6 +13,7 @@ export class CacheService {
 
   public set = async <T>(key: string, value: T, ttl?: number | string): Promise<boolean> => {
     try {
+
       const result = await this.cache.set<T>(key, value, ttl);
       if (result) {
         return true;

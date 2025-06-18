@@ -32,9 +32,12 @@ import { ProductVariant } from 'src/database/entities/productVariant.entity';
 import { Queue } from 'bullmq';
 import { DataModule } from 'src/data/data.module';
 import { CronConsumer } from './consumers/cron.consumer';
+import { StorePlan } from '../database/entities/storePlans.entity';
+import { CacheModule } from '../data/cache/cache.module';
 
 @Module({
   imports: [
+    CacheModule,
     DataModule,
     UtilsModule,
     AuthModule,
@@ -48,6 +51,7 @@ import { CronConsumer } from './consumers/cron.consumer';
       UserStore,
       User,
       StoreLocations,
+      StorePlan,
     ]),
 
     BullModule.forRootAsync({
@@ -68,7 +72,7 @@ import { CronConsumer } from './consumers/cron.consumer';
       { name: QUEUES.STORES },
       { name: QUEUES.CUSTOMERS },
       { name: QUEUES.USERS },
-      {name: QUEUES.CRON},
+      { name: QUEUES.CRON },
     ),
     RedisModule.forRootAsync({
       imports: [ConfigModule],

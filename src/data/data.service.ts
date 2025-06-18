@@ -120,45 +120,69 @@ export class DataService {
   };
   // need to use locks
   public setPlanState = async (chargeObj: Record<any, any>) => {
-    const storePlan = await this.storePlanRepository.findOneBy({
-      store_id: chargeObj.admin_graphql_api_shop_id.split('/').pop(),
-    });
+    try {
+      let lock: Lock;
+      let commitedCredits: number;
+      const storePlan = await this.storePlanRepository.findOneBy({
+        store_id: chargeObj.admin_graphql_api_shop_id.split('/').pop(),
+      });
 
-    //if executed before the billing function and the func which sets the new pending plan with id
-    if (storePlan.last_charge_id != chargeObj.admin_graphql_api_id) {
-      if (new Date(chargeObj.updated_at).getTime() > storePlan.updatedAt.getTime()) {
-        //update all
-        storePlan.last_charge_id = chargeObj.admin_graphql_api_id.split('/').pop();
-        //storePlan.charge_history
-        storePlan.status = chargeObj.status;
+      //if executed before the billing function and the func which sets the new pending plan with id
+      if (storePlan.last_charge_id != chargeObj.admin_graphql_api_id) {
+        if (new Date(chargeObj.updated_at).getTime() > storePlan.updatedAt.getTime()) {
 
+          storePlan.last_charge_id = chargeObj.admin_graphql_api_id.split('/').pop();
+          //storePlan.charge_history
+          storePlan.status = chargeObj.status;
+
+          if (chargeObj.status == 'ACTIVE') {
+            console.log('these ran');
+            const plans: Plan[] = await this.getPlans();
+            const plan = plans.find(plan => plan.name === chargeObj.name);
+            console.log('plan retrieved ', plan);
+            storePlan.plan_id = plan.id;
+            storePlan.price = plan.price;
+
+            lock = await this.getStoreCreditsLock(storePlan.store_id);
+            if (lock != null || lock != undefined) {
+              const credits = await this.getStoreCredits(storePlan.store_id);
+              storePlan.credits = plan.credits + credits;
+              commitedCredits= storePlan.credits;
+            }
+            // storePlan.credits += plan.credits;
+            storePlan.status = 'ACTIVE';
+
+            // also set the charge history
+          }
+        }
+      } //pending plan was set from the billing function, set the plan active, store charge history, add credits
+      else {
         if (chargeObj.status == 'ACTIVE') {
-          console.log('these ran');
-          const plans: Plan[] = await this.getPlans();
-          const plan = plans.find(plan => plan.name === chargeObj.name);
-          console.log('plan retrieved ', plan);
-          storePlan.plan_id = plan.id;
-          storePlan.price = plan.price;
-          storePlan.credits += plan.credits;
-          storePlan.status = 'ACTIVE';
+          // I could fetch the plan relation within the findOne function
+          const plan: Plan = await this.getPlans()[storePlan.plan_id - 1];
+          const lock: Lock = await this.getStoreCreditsLock(storePlan.store_id);
 
-          // also set the charge history
+          if (lock != null || lock != undefined) {
+            const credits = await this.getStoreCredits(storePlan.store_id);
+            storePlan.credits = plan.credits + credits;
+            commitedCredits= storePlan.credits;
+          }
+          storePlan.status = 'ACTIVE';
+          //const chargeHistory= storePlan.charge_history;
         }
       }
-    } //pending plan was set from the billing function, set the plan active, store charge history, add credits
-    else {
-      if (chargeObj.status == 'ACTIVE') {
-        // I could fetch the plan relation within the findOne function
-        const plan: Plan = await this.getPlans()[storePlan.plan_id - 1];
-        console.log(storePlan.plan_id);
-        console.log(plan);
-        storePlan.credits += plan.credits;
-        storePlan.status = 'ACTIVE';
-        //const chargeHistory= storePlan.charge_history;
-      }
+      console.log(JSON.stringify(storePlan));
+      await this.storePlanRepository.update({ id: storePlan.id }, storePlan);
+      await this.cacheService.set(
+        `${ chargeObj.admin_graphql_api_shop_id.split('/').pop()}-credits`,
+        commitedCredits,
+        '5m',
+      );
+      await lock.release();
+    } catch(error) {
+      this.logger.error(error.message, error.stack);
+      throw error;
     }
-    console.log(JSON.stringify(storePlan));
-    await this.storePlanRepository.update({ id: storePlan.id }, storePlan);
   };
   /**
    * Remember to pass the actual store ID and not the primary incremented ID.
@@ -659,14 +683,33 @@ export class DataService {
     if(isNaN(credits)){
       const creditsDB = await this.storePlanRepository.findOneBy({store_id: storeId});
       console.log('in db', creditsDB.credits);
-      this.cacheService.set(`${storeId}-credits`, creditsDB.credits);
+      this.cacheService.set(`${storeId}-credits`, creditsDB.credits, '5m');
+      let keys = new Set(await this.cacheService.get<Array<string>>('credits-keys'));
+      if (keys != undefined || keys != null) {
+        keys.add(storeId.toString());
+       // keys.push(storeId.toString());
+      } else {
+        keys = new Set<string>();
+        keys.add(storeId.toString());
+      //  keys.push(storeId.toString());
+      }
+      await this.cacheService.set('credits-keys', [...keys]);
       console.log('done');
       return creditsDB.credits;
     }
     return credits;
   };
   public setStoreCredits = async(storeId: number, credits: number): Promise<boolean> => {
-    return await this.cacheService.set(`${storeId}-credits`, credits);
+    const result= await this.cacheService.set(`${storeId}-credits`, credits, '5m');
+    let keys = new Set( await this.cacheService.get<Array<string>>('credits-keys'));
+    if (keys != undefined || keys != null) {
+      keys.add(storeId.toString());
+    } else {
+      keys = new Set<string>();
+      keys.add(storeId.toString());
+    }
+    await this.cacheService.set('credits-keys', [...keys]);
+    return result;
   }
   // @Redlock<DataService["readStoreCredits"]>(
   //   (target: DataService, storeId: number): any=> {`${storeId}-credits`},
@@ -682,7 +725,16 @@ export class DataService {
         if (isNaN(creditsCache)) {
           const creditsDB = await this.storePlanRepository.findOneBy({store_id: storeId});
           console.log('in db', creditsDB.credits);
-          this.cacheService.set(`${storeId}-credits`, creditsDB.credits);
+          this.cacheService.set(`${storeId}-credits`, creditsDB.credits, '5m');
+          let keys = new Set(await this.cacheService.get<Set<string>>('credits-keys'));
+          if (keys != undefined || keys != null) {
+            keys.add(storeId.toString());
+          } else {
+            keys = new Set<string>();
+            keys.add(storeId.toString());
+          }
+          await this.cacheService.set('credits-keys', [...keys]);
+
           console.log('done');
           return creditsDB.credits;
         } else {
@@ -699,23 +751,20 @@ export class DataService {
 
   public writeStoreCredits = async (storeId: string, value: number): Promise<boolean> => {
     const result = await this.redLock.using([`locks:${storeId}-credits`], 2000, async signal => {
-      return await this.cacheService.set<number>(`${storeId}-credits`, value);
+      return await this.cacheService.set<number>(`${storeId}-credits`, value, '5m');
     });
 
     return result;
 
   };
 
-  public getStoreCreditsLock = async (storeId: number): Promise<Lock> => {
+  public getStoreCreditsLock = async (storeId: number, retry: number = 3): Promise<Lock> => {
     try {
-      const result = await this.redLock.acquire([`locks:${storeId}-credits`], 4000,);
+      const result = await this.redLock.acquire([`locks:${storeId}-credits`], 4000, { retryCount: retry });
       return result;
     } catch(error){
-      this.logger.error(error, error.stack);
-    }
+        this.logger.error(error, error.stack);
+        throw error;
+      }
     };
-  public freeLock = async (lock: Lock): Promise<ExecutionResult> => {
-    const result = await this.redLock.release(lock);
-    return result;
-  };
 }

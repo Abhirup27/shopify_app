@@ -56,7 +56,7 @@ export class CronConsumer extends WorkerHost {
     data: JobRegistry[CronQueueJobName]['data'],
   ): Promise<JobRegistry[CronQueueJobName]['result']> {
     const pendingSubsBilling = await this.dataService.getPendingSubs();
-    console.log(pendingSubsBilling)
+
     if (pendingSubsBilling === null) return;
 
     let pendingDB: StorePlan[];
