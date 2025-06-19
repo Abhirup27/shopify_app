@@ -206,12 +206,12 @@ export class JobsService {
   }
 
   @Cron(CronExpression.EVERY_5_SECONDS, {name: JOB_TYPES.CHECK_PENDING_PAYMENTS})
-  public async checkPending() {
+  public checkPending() {
     this.addJob(JOB_TYPES.CHECK_PENDING_PAYMENTS, {});
   }
 
   @Cron(CronExpression.EVERY_MINUTE, {name: JOB_TYPES.SYNC_STORES})
-  public async syncStores() {
+  public syncStores() {
 
     this.addJob(JOB_TYPES.SYNC_STORES, {});
   }

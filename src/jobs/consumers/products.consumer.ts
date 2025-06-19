@@ -31,6 +31,7 @@ import {
 import { print } from 'graphql';
 import { Lock } from 'redlock';
 import { instanceOf } from 'graphql/jsutils/instanceOf';
+import { CacheService } from '../../data/cache/cache.service';
 
 export type ProductsType = {
   id: string;
@@ -86,6 +87,7 @@ export class ProductsConsumer extends WorkerHost {
   private readonly createProductVariantsBulk: string = print(CreateProductVariantsBulkDocument);
 
   constructor(
+    private readonly cacheService:  CacheService,
     private readonly dataService: DataService,
     private readonly configService: ConfigService,
     private readonly utilsService: UtilsService,
@@ -137,6 +139,22 @@ export class ProductsConsumer extends WorkerHost {
     }
   };
 
+  public setProductCategorySyncStatus = async (status: boolean): Promise<boolean> => {
+    return await this.cacheService.set('productCategorySyncStatus', status, 0);
+  };
+
+  async getCategoryName(id: string): Promise<string> {
+    const parent = id.substring(0, id.lastIndexOf('-'));
+    if (parent != '') {
+      return await this.cacheService.get<Record<string, string>>(parent).then(value => {
+        return value[id];
+      });
+    } else {
+      return await this.cacheService.get<Record<string, string>>('product-types').then(value => {
+        return value[id];
+      });
+    }
+  }
   private isJobOfType<T extends keyof JobRegistry>(
     job: Job<JobRegistry[keyof JobRegistry]['data'], JobRegistry[keyof JobRegistry]['result']>,
     name: T,
@@ -317,7 +335,7 @@ export class ProductsConsumer extends WorkerHost {
           product.productType != ''
             ? product.productType
             : product.category != null
-              ? await this.dataService.getCategoryName(product.category.id)
+              ? await this.getCategoryName(product.category.id)
               : '',
         admin_graphql_api_id: product.legacyResourceId ? product.legacyResourceId : '',
         inventoryTotal: product.totalInventory,
@@ -393,9 +411,9 @@ export class ProductsConsumer extends WorkerHost {
     data: JobRegistry[typeof JOB_TYPES.GET_PRODUCT_TYPES]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.GET_PRODUCT_TYPES]['result']> => {
     if (data.id != null) {
-      return await this.dataService.getProductCategoryMap(data.id);
+      return await this.cacheService.get<Record<string, string>>(data.id);
     }
-    const result = await this.dataService.getProductCategoryMap('product-types');
+    const result = await this.cacheService.get<Record<string, string>>('product-types');
 
     return result;
   };
@@ -472,8 +490,9 @@ export class ProductsConsumer extends WorkerHost {
 
         // Cache the map for the current level
         // await this.cacheService.storeMap(currentCacheKey, currentLevelMap);
-        await this.dataService.setProductCategoryMap(currentCacheKey, currentLevelMap);
-        await this.dataService.setProductCategorySyncStatus(true);
+        //await this.dataService.setProductCategoryMap(currentCacheKey, currentLevelMap);
+        await this.cacheService.set(currentCacheKey, currentLevelMap, 0);
+        await this.setProductCategorySyncStatus(true);
       }
     } catch (error) {
       this.logger.error(
@@ -535,7 +554,7 @@ export class ProductsConsumer extends WorkerHost {
       if (!productTypes.length) return;
 
       //starting to update the cache
-      await this.dataService.setProductCategorySyncStatus(false);
+      await this.setProductCategorySyncStatus(false);
 
       productTypes = this.productTypesRepository.create(productTypes);
       productTypes = await this.productTypesRepository.save(productTypes);
@@ -553,8 +572,8 @@ export class ProductsConsumer extends WorkerHost {
       }
 
       // Cache the map for the current level
-      await this.dataService.setProductCategoryMap(cacheKey, currentLevelMap);
-      await this.dataService.setProductCategorySyncStatus(true);
+      await this.cacheService.set(cacheKey, currentLevelMap);
+      await this.setProductCategorySyncStatus(true);
       //await this.cacheService.storeMap(cacheKey, currentLevelMap);
     } catch (error) {
       if (error instanceof TokenExpiredException) {
@@ -658,7 +677,7 @@ export class ProductsConsumer extends WorkerHost {
   ): Promise<{ query: string; variables: object }> => {
     console.log(product.title, product.vendor, product.desc, JSON.stringify(product.tags));
     const category = product.product_type;
-    const categoryName = await this.dataService.getCategoryName(category);
+    const categoryName = await this.getCategoryName(category);
     // const productData = `(input: {category: "${category}", productType: "${categoryName}", title:"${product.title}",vendor:"${product.vendor}", descriptionHtml:"${product.desc}", tags:${JSON.stringify(product.tags)}})`;
 
     const input: ProductInput = {
@@ -724,7 +743,7 @@ export class ProductsConsumer extends WorkerHost {
     productEntity.handle = shopifyProduct.handle;
     productEntity.created_at = new Date(shopifyProduct.createdAt);
     productEntity.updated_at = new Date(shopifyProduct.updatedAt);
-    productEntity.product_type = (await this.dataService.getCategoryName(dto.product_type)) ?? '';
+    productEntity.product_type = (await this.getCategoryName(dto.product_type)) ?? '';
     productEntity.tags = dto.tags?.join(',') || '';
     productEntity.admin_graphql_api_id = shopifyProduct.legacyResourceId;
     productEntity.category_id = dto.product_type;

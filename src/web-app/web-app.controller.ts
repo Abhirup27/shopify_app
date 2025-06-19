@@ -49,11 +49,6 @@ export class WebAppController {
     private readonly authService: AuthService,
   ) {}
 
-  //@Public()
-  @Get('taxonomy')
-  public async testTaxonomy(@Req() req: Request, @CurrentUser() user: UserDto) {
-    await this.webAppService.syncProductTypes(user.store);
-  }
   @Public()
   @Get()
   @Render('login')

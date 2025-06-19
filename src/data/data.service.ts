@@ -475,33 +475,6 @@ export class DataService {
   };
 
   /**
-   *  This function is used to set the full sync status of the product taxonomy in the cache
-   *  */
-  public setProductCategorySyncStatus = async (status: boolean): Promise<boolean> => {
-    return await this.cacheService.set('productCategorySyncStatus', status, 0);
-  };
-  public getProductCategorySyncStatus = async (): Promise<boolean> => {
-    return await this.cacheService.get<boolean>('productCategorySyncStatus');
-  };
-  public setProductCategoryMap = async (key: string, map: Record<string, string>): Promise<boolean> => {
-    return await this.cacheService.set(key, map, 0);
-  };
-  public getProductCategoryMap = async (key: string): Promise<Record<string, string>> => {
-    return await this.cacheService.get<Record<string, string>>(key);
-  };
-  async getCategoryName(id: string): Promise<string> {
-    const parent = id.substring(0, id.lastIndexOf('-'));
-    if (parent != '') {
-      return await this.cacheService.get<Record<string, string>>(parent).then(value => {
-        return value[id];
-      });
-    } else {
-      return await this.cacheService.get<Record<string, string>>('product-types').then(value => {
-        return value[id];
-      });
-    }
-  }
-  /**
    * This function is specifically used in guards to authorize
    * */
   @UseFilters(RequestExceptionFilter)
