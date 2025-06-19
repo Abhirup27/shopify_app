@@ -3,7 +3,6 @@ import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/c
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/configuration';
 
-import { AppService } from './app.service';
 import { UtilsModule } from './utils/utils.module';
 import { ShopifyAuthModule } from './shopify/shopify-auth/shopify-auth.module';
 import { APP_FILTER, APP_GUARD, RouterModule } from '@nestjs/core';
@@ -70,7 +69,6 @@ const ENV = process.env.NODE_ENV;
   controllers: [],
 
   providers: [
-    AppService,
     // {
     //   provide: APP_GUARD,
     //   useClass: RateLimitingGuard,

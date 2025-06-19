@@ -40,6 +40,7 @@ export class RegisterUserDto {
 
   //@IsNotEmpty({ message: 'isAdmin should not be empty' })
   @Transform(({ value }) => {
+    //I had to do this because the fetch logic in the create member page changes the check box's boolean value to string
     if (typeof value == 'object' || value === 'true' || value === true || value === '1' || value === 'on')
       return 'true';
     if (value === 'false' || value === false || value === '0' || value === '' || value === undefined) return 'false';

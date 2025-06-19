@@ -14,7 +14,7 @@ import { IsAppPublicMiddleware } from 'src/middlewares/is-app-public.middleware'
 import { DataModule } from 'src/data/data.module';
 
 /**
- * This module will import submodules which will serve different pages of the website.
+ * This module contains the endpoints(controller) which serves the users of the app.
  */
 @Module({
   imports: [
@@ -35,6 +35,8 @@ export class WebAppModule implements NestModule {
     consumer
       .apply(AuthMiddleware)
       .forRoutes(
+        { path: 'createMember', method: RequestMethod.POST },
+        { path: 'productPublish', method: RequestMethod.POST },
         { path: 'dashboard', method: RequestMethod.GET },
         { path: 'orders', method: RequestMethod.GET },
         { path: 'logout', method: RequestMethod.POST },
@@ -42,18 +44,15 @@ export class WebAppModule implements NestModule {
         { path: 'order', method: RequestMethod.GET },
         { path: 'members', method: RequestMethod.GET },
         { path: 'memberRegister', method: RequestMethod.GET },
-        { path: 'createMember', method: RequestMethod.POST },
         { path: 'products', method: RequestMethod.GET },
         { path: 'productCreate', method: RequestMethod.GET },
         { path: 'syncStoreLocations', method: RequestMethod.GET },
-        { path: 'productPublish', method: RequestMethod.POST },
         { path: 'taxonomy', method: RequestMethod.GET },
         { path: 'product-categories/children/:id', method: RequestMethod.GET },
         { path: 'syncProducts', method: RequestMethod.GET },
         { path: 'stores', method: RequestMethod.GET },
         { path: 'billing', method: RequestMethod.GET },
         { path: 'buyPlan/:id', method: RequestMethod.GET },
-        { path: 'test', method: RequestMethod.GET },
       );
   }
 }

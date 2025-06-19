@@ -3,7 +3,6 @@ import { BullModule } from '@nestjs/bullmq';
 import { JobsService } from './jobs.service';
 import { QUEUES } from './constants/jobs.constants';
 import { ConfigWebhookConsumer } from './consumers/config-webhoook.consumer';
-import { JobsController } from './jobs.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Store } from 'src/database/entities/store.entity';
@@ -111,7 +110,7 @@ import { CacheModule } from '../data/cache/cache.module';
     UsersQueueEvents,
     ProductsQueueEvents,
   ],
-  controllers: [JobsController],
+  controllers: [],
   exports: [JobsService],
 })
 export class JobsModule {}

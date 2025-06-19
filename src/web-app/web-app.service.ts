@@ -315,7 +315,10 @@ export class WebAppService {
     return url;
   };
 
-  public createProduct = async (user: UserDto, product: newProductDto): Promise<boolean | {status: string, url: string}> => {
+  public createProduct = async (
+    user: UserDto,
+    product: newProductDto,
+  ): Promise<boolean | { status: string; url: string }> => {
     console.log(product);
     const result = await this.jobsService.createProduct(user.store, product);
     if (result == undefined){

@@ -17,7 +17,6 @@ import { RequestExceptionFilter } from 'src/filters/timeout.exception.filter';
 import { Repository, UpdateResult } from 'typeorm';
 import { CacheService } from './cache/cache.service';
 import { randomBytes } from 'crypto';
-//import { Redlock, RedlockService } from '@anchan828/nest-redlock';
 import Redlock, { ExecutionResult, Lock } from 'redlock';
 @Injectable()
 export class DataService {
@@ -579,7 +578,6 @@ export class DataService {
     return store;
   }
 
-  public cacheAllProductTypes = async (): Promise<void> => {};
 
   public createNonce = async (shopDomain: string): Promise<string> => {
     const nonce = randomBytes(16).toString('hex');
