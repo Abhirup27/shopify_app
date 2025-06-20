@@ -177,7 +177,10 @@ export class DataService {
         commitedCredits,
         '5m',
       );
-      await lock.release();
+      if(chargeObj.status != 'CANCELLED') {
+        await lock.release();
+      }
+
     } catch(error) {
       this.logger.error(error.message, error.stack);
       throw error;

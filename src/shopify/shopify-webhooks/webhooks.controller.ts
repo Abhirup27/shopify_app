@@ -42,7 +42,7 @@ export class WebhooksController {
   {
     //console.log(req.rawBody);
     await this.dataService.setPlanState(body.app_subscription);
-    console.log(body);
+    //console.log(body);
 
   }
 

@@ -79,24 +79,25 @@ export class JobsService {
   async addJob<T extends JobType>(
     type: T,
     data: JobRegistry[T]['data'],
-    opts: JobsOptions = { attempts: 3, backoff: { delay: 5000, type: 'exponential',  } },
+    opts: JobsOptions = { attempts: 3, backoff: { delay: 5000, type: 'exponential'  } },
   ): Promise<JobRegistry[T]['result']> {
     const queueName = jobToQueueMap[type];
     const queue = this.queues[queueName];
     const event = this.queueEventsMap[queueName];
     const job = await queue.add(type, data, opts);
     try {
+      console.log(job.name);
       const result = (await job.waitUntilFinished(event, 30000)) as Promise<JobRegistry[T]['result']>;
       return result;
     } catch (error) {
-      console.log(JSON.stringify(error));
+      console.log(JSON.stringify(error), job.name);
       if (error.message == '401' || job.failedReason == '401') {
         //console.log(await job.isFailed());
         //job.moveToFailed(error, job.token)
         //job.remove();
 
         //Since the SYNC_PRODUCT_TYPES is mainly a background/cron job, we don't add it to pause queue
-        if(job.name != JOB_TYPES.SYNC_PRODUCT_TYPES) {
+        if(job.name != JOB_TYPES.SYNC_PRODUCT_TYPES && job.name != JOB_TYPES.BUY_STORE_PLAN) {
           const pausedJob = await this.pausedQueue.add(
             job.queueName + ':' + job.data['store'].myshopify_domain + ':' + type,
             { queue: job.queueName, jobName: job.name, id: job.id, task_type: type },
@@ -108,7 +109,7 @@ export class JobsService {
           shopDomain: job.data.myshopify_domain,
         } as errorResult;
       }
-      this.logger.debug("The job error was not 401 so It didn't return.");
+      this.logger.debug(JSON.stringify(error) + JSON.stringify(job.data));
     }
   }
   public configure = async (storeId: number) => await this.addJob(JOB_TYPES.CONFIGURE_WEBHOOKS, { storeId: storeId });
@@ -188,31 +189,4 @@ export class JobsService {
     }
   };
 
-  //@Interval(5000)
-  @Cron(CronExpression.EVERY_2_HOURS, { name: JOB_TYPES.SYNC_PRODUCT_TYPES,  })
-  public async runSync() {
-    //a access token is required to fetch product types from shopify.
-    const store: Store = await this.getStore(1);
-    if (store && store != null) {
-      const result = await this.syncProductTypes(store);
-      if (result != null && result.status == 'AUTH_REQUIRED') {
-        this.logger.error("stub store's access token has expired, manual OAuth needed.");
-      }
-    } else {
-      this.logger.warn(
-        'The SUPER ADMIN/ stub store does not exist. The super admin has to manually start the sync of product types.',
-      );
-    }
-  }
-
-  @Cron(CronExpression.EVERY_5_SECONDS, {name: JOB_TYPES.CHECK_PENDING_PAYMENTS})
-  public checkPending() {
-    this.addJob(JOB_TYPES.CHECK_PENDING_PAYMENTS, {});
-  }
-
-  @Cron(CronExpression.EVERY_MINUTE, {name: JOB_TYPES.SYNC_STORES})
-  public syncStores() {
-
-    this.addJob(JOB_TYPES.SYNC_STORES, {});
-  }
 }

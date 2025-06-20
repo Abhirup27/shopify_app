@@ -106,6 +106,7 @@ export class ProductsConsumer extends WorkerHost {
 
   public process = async (job: ProductsQueueJob): Promise<JobRegistry[ProductsQueueJobName]['result']> => {
     try {
+
       switch (job.name) {
         case JOB_TYPES.SYNC_PRODUCTS:
           return await this.syncProducts(job.data, job);
@@ -145,6 +146,7 @@ export class ProductsConsumer extends WorkerHost {
 
   async getCategoryName(id: string): Promise<string> {
     const parent = id.substring(0, id.lastIndexOf('-'));
+
     if (parent != '') {
       return await this.cacheService.get<Record<string, string>>(parent).then(value => {
         return value[id];
@@ -455,7 +457,6 @@ export class ProductsConsumer extends WorkerHost {
   private async cacheProductTypes(parentId: string | null = '', cacheKey: string = 'product-types'): Promise<void> {
     try {
       // Stack to store work items: [parentId, cacheKey]
-
       const stack: Array<{
         parentId: string | null;
         cacheKey: string;
@@ -468,8 +469,14 @@ export class ProductsConsumer extends WorkerHost {
         const { parentId: currentParentId, cacheKey: currentCacheKey } = stack.pop();
 
         let children: ProductType[] = [];
+
         if ((currentParentId == '' || currentParentId == null) && currentCacheKey == 'product-types') {
           children = await this.productTypesRepository.findBy({ isRoot: true });
+
+          //if there are no root types, that means it has not been synced from shopify to DB ever, so abort
+          if(children.length == 0) {
+            return;
+          }
         } else {
           children = await this.productTypesRepository.findBy({ parentId: currentParentId });
         }

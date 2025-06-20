@@ -7,13 +7,13 @@ export class BillingController {
   constructor(private readonly dataService: DataService){}
   @Get()
   public async acceptSubscription(@Query() query: BillingDto, @Res() res: Response) {
-    console.log(query);
+    //console.log(query);
 
     //res.status(HttpStatus.OK);
     await this.dataService.setPlan(query.planId,query.userId, query.storeId, query.charge_id.toString() );
 
     console.log(await this.dataService.setPendingSubs(query.charge_id.toString(), '0'));
-    console.log(await this.dataService.getPendingSubs());
+    //console.log(await this.dataService.getPendingSubs());
     res.redirect(`/billing`);
   }
 }

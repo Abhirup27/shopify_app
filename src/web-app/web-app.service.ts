@@ -351,7 +351,13 @@ export class WebAppService {
 
   async buyPlanForStore(user: UserDto, id: number) : Promise<string> {
 
-    return await this.jobsService.buyPlan(id, user.user_id, user.store);
+    const result = await this.jobsService.buyPlan(id, user.user_id, user.store);
+    if (result['status'] == 'AUTH_REQUIRED') {
+      return await this.getOAuthURL(user.store.myshopify_domain);
+      //console.log(url);
+     // res.redirect(url);
+    }
+    return result;
   }
 
 }

@@ -107,7 +107,6 @@ export class StoresConsumer extends WorkerHost {
       await queryRunner.connect();
       await queryRunner.startTransaction();
       const storesToSync = await this.cacheService.get<Array<number>>('credits-keys');
-
       if (!Array.isArray(storesToSync) || storesToSync.length === 0) {
         return;
       }
@@ -140,7 +139,9 @@ export class StoresConsumer extends WorkerHost {
     data: JobRegistry[typeof JOB_TYPES.BUY_STORE_PLAN]['data'],
   ): Promise<JobRegistry[typeof JOB_TYPES.BUY_STORE_PLAN]['result']> => {
     const plans = await this.dataService.getPlans();
+
     const selectedPlan: Plan = plans.find(plan => plan.id == data.planId);
+    console.log(data.planId);
     if (selectedPlan.name == 'Trial' || selectedPlan.name == 'Demo' || selectedPlan.name == 'Free') {
       return this.configService.get('app_url') + '/billing';
     }
@@ -183,6 +184,10 @@ export class StoresConsumer extends WorkerHost {
       //redirect to the confirmation shopify page
     } else if (response.statusCode === 401) {
       // Oauth failed, token expired
+      throw new TokenExpiredException(`Token expired for ${data.store.table_id}`, {
+        shop: data.store.table_id.toString(),
+        jobId: '',
+      });
     }
   };
   private activateTrialForStore = async (

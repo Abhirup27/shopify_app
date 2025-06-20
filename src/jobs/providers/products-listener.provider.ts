@@ -6,7 +6,7 @@ import { Job } from 'bullmq';
 export class ProductsQueueEvents extends QueueEventsHost {
   @OnQueueEvent('active')
   onActive() {
-    console.log('New products job in queue');
+   console.log('New products job in queue');
   }
 
   @OnQueueEvent('completed')
