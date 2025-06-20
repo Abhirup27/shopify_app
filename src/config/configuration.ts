@@ -6,9 +6,9 @@ export default () => ({
   logToFile: process.env.LOG_TO_FILE,
 
   app_secret: process.env.APP_SECRET,
-  app_url: 'https://rnesz-223-233-71-49.a.free.pinggy.link',
-  app_install_URL: 'https://rnesz-223-233-71-49.a.free.pinggy.link/shopify/auth/redirect',
-  refresh_token_URL: 'https://rnesz-223-233-71-49.a.free.pinggy.link/shopify/auth/updateStoreToken',
+  app_url: 'https://rncrb-223-233-71-49.a.free.pinggy.link',
+  app_install_URL: 'https://rncrb-223-233-71-49.a.free.pinggy.link/shopify/auth/redirect',
+  refresh_token_URL: 'https://rncrb-223-233-71-49.a.free.pinggy.link/shopify/auth/updateStoreToken',
   shopify_api_version: '2024-07',
   shopify_api_key: process.env.API_KEY,
   shopify_api_secret: process.env.API_SECRET,
