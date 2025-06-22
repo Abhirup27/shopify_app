@@ -19,10 +19,10 @@ class UserDetailsDto extends PartialType(User) {
   @IsEmail()
   email: string;
 
-  @Expose()
-  @IsOptional()
-  @IsString()
-  stripe_id?: string;
+  // @Expose()
+  // @IsOptional()
+  // @IsString()
+  // stripe_id?: string;
   @Expose()
   @IsDate()
   email_verified_at: Date | string;

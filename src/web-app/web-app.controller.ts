@@ -101,7 +101,20 @@ export class WebAppController {
     }
     //console.log(recentOrders[0].id)
   }
+@Get('/settings')
+public async getSettings(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response) {
+  let payload: object = {};
+  const token = this.utilsService.generateToken(req, res);
+  try {
+    payload = this.webAppService.getBasePayload(user);
+    //payload = await this.webAppService.getOrders(user);
+    payload['csrfToken'] = token;
+  } catch (error) {
+    this.logger.error(error.message);
+  }
 
+  res.render('settings', payload);
+}
   /**
    * Only for the super admin
    * */

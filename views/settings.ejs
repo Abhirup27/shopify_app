@@ -1,0 +1,147 @@
+<%- include('./layouts/app') %>
+
+    <div class="pagetitle">
+        <h1>Security Settings</h1>
+    </div>
+
+    <section class="section">
+        <div class="row">
+            <!-- Change Password Card -->
+            <div class="col-lg-4">
+                <div class="card security-card">
+                    <div class="card-body">
+                        <div class="security-icon">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                        <h5 class="card-title">Change Password</h5>
+
+                        <form id="passwordForm">
+                            <div class="mb-3">
+                                <label for="currentPassword" class="form-label">Current Password</label>
+                                <input type="password" class="form-control" id="currentPassword" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="newPassword" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="newPassword" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" id="confirmPassword" required>
+                            </div>
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-save">Update Password</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Phone Number Card -->
+            <div class="col-lg-4">
+                <div class="card security-card">
+                    <div class="card-body">
+                        <div class="security-icon">
+                            <i class="bi bi-phone"></i>
+                        </div>
+                        <h5 class="card-title">Add Phone Number</h5>
+
+                        <form id="phoneForm">
+                            <div class="mb-3">
+                                <label for="phoneNumber" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phoneNumber" placeholder="+1 (555) 123-4567" required>
+                            </div>
+                            <div class="mb-3">
+                                <p class="small text-muted">We'll send a verification code to this number</p>
+                            </div>
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-save">Add Phone Number</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enable 2FA Card -->
+            <div class="col-lg-4">
+                <div class="card security-card">
+                    <div class="card-body">
+                        <div class="security-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <h5 class="card-title">Two-Factor Authentication</h5>
+
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>2FA Status:</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="twoFactorToggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="twoFactorInfo" class="d-none">
+                            <div class="mb-3">
+                                <p>Two-factor authentication is enabled. You'll need to enter a verification code from your authenticator app when signing in.</p>
+                            </div>
+                            <div class="text-center">
+                                <button class="btn btn-save">Manage 2FA Settings</button>
+                            </div>
+                        </div>
+
+                        <div id="twoFactorSetup" class="d-none">
+                            <div class="mb-3">
+                                <p>Scan this QR code with your authenticator app:</p>
+                                <div class="text-center mb-3">
+                                    <div class="d-inline-block p-2 bg-light">
+                                        <!-- QR Code Placeholder -->
+                                        <div style="width: 150px; height: 150px; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+                                            <span class="text-muted">QR Code</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="small">Or enter this code manually: <strong>JBSWY3DPEHPK3PXP</strong></p>
+                            </div>
+                            <div class="mb-3">
+                                <label for="verificationCode" class="form-label">Enter Verification Code</label>
+                                <input type="text" class="form-control" id="verificationCode" placeholder="123456">
+                            </div>
+                            <div class="text-center">
+                                <button type="button" class="btn btn-save">Enable 2FA</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+<script>
+  // Toggle 2FA sections
+  const twoFactorToggle = document.getElementById('twoFactorToggle');
+  const twoFactorInfo = document.getElementById('twoFactorInfo');
+  const twoFactorSetup = document.getElementById('twoFactorSetup');
+
+  twoFactorToggle.addEventListener('change', function() {
+    if(this.checked) {
+      twoFactorSetup.classList.remove('d-none');
+      twoFactorInfo.classList.add('d-none');
+    } else {
+      twoFactorSetup.classList.add('d-none');
+      twoFactorInfo.classList.remove('d-none');
+    }
+  });
+
+  // Form submission handlers
+  document.getElementById('passwordForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    alert('Password change request submitted!');
+  });
+
+  document.getElementById('phoneForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    alert('Phone number verification initiated!');
+  });
+</script>
+
+<%- include('./layouts/footer') %>

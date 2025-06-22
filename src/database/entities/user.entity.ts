@@ -31,8 +31,11 @@ export class User {
   })
   password: string;
 
-  @Column({ type: 'text', nullable: true })
-  stripe_id?: string;
+  @Column({ type: 'varchar', length: 15, nullable: true })
+  phone?: string;
+
+  @Column({ type: 'boolean', nullable: true })
+  twoFA?: boolean;
 
   @Column({
     type: 'timestamp',

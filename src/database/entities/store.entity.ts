@@ -120,6 +120,8 @@ export class Store {
   @Column({ type: 'bigint', unsigned: true, nullable: true })
   installationId?: number;
 
+  @Column({ type: 'text', nullable: true })
+  stripe_id?: string;
   @CreateDateColumn({
     type: 'timestamp with time zone',
     //default: () => 'CURRENT_TIMESTAMP'

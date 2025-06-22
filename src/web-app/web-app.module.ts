@@ -53,6 +53,7 @@ export class WebAppModule implements NestModule {
         { path: 'stores', method: RequestMethod.GET },
         { path: 'billing', method: RequestMethod.GET },
         { path: 'buyPlan/:id', method: RequestMethod.GET },
+        { path: 'settings', method: RequestMethod.GET },
       );
   }
 }

@@ -217,7 +217,7 @@ export class StoresConsumer extends WorkerHost {
         return store;
       }
     } catch (error) {
-      this.logger.error(error.message, this.retrieveStore.name);
+      this.logger.error(error.message, error.stack);
     }
 
     return null;
@@ -238,7 +238,7 @@ export class StoresConsumer extends WorkerHost {
 
       return updatedEntry.affected && updatedEntry.affected > 0;
     } catch (error) {
-      this.logger.error(error.message, this.updateStoreToken.name);
+      this.logger.error(error.message, error.stack);
       return false;
     }
   };
@@ -247,7 +247,7 @@ export class StoresConsumer extends WorkerHost {
   ): Promise<JobRegistry[typeof JOB_TYPES.SYNC_STORE]['result']> => {
     try {
     } catch (error) {
-      this.logger.error(error.message, this.syncStore.name);
+      this.logger.error(error.message, error.stack);
       return null;
     }
   };
@@ -309,7 +309,7 @@ export class StoresConsumer extends WorkerHost {
 
       return parseInt(idPart, 10);
     } catch (error) {
-      this.logger.error(`Failed to extract ID from ${graphqlId}: ${error.message}`, this.extractIdFromGraphQLId.name);
+      this.logger.error(`Failed to extract ID from ${graphqlId}: ${error.message}`, error.stack);
       return null;
     }
   }
