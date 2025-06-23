@@ -25,6 +25,8 @@ export default registerAs('routes', (): Record<string, string> => {
     'orders.sync': '/syncOrders',
     'locations.sync': '/syncStoreLocations',
 
+
+    'shopify.product.types.sync': '/syncProductTypes',
     'product.add.variant': '/productAddVariant',
     'shopify.product.create': '/productCreate',
     'shopify.product.publish': '/productPublish',

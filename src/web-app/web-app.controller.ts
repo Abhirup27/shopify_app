@@ -299,6 +299,15 @@ public async getMyProfile(@CurrentUser() user: UserDto, @Req() req: Request, @Re
       this.logger.error(error.message);
     }
   }
+  @Get('/syncProductTypes')
+  public async syncProductTypes(@CurrentUser() user: UserDto, @Res() res: Response) {
+    if(user.can(['all_access', 'write_product_types']) || user.hasRole('SUPER_ADMIN')) {
+      this.webAppService.syncProductTypes(user.store);
+    } else {
+      res.status(401).json({ success: false });
+    }
+    res.status(201).json({ success: true });
+  }
 
   @Post('/productPublish')
   public async createProduct(

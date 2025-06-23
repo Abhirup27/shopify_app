@@ -49,9 +49,9 @@ export class StartupService implements OnApplicationBootstrap {
         });
 
       //stub store to fetch product types from shopify
-      const store = await this.jobsService.getStore(1);
-
+      const store = await this.jobsService.getStore(32);
       if (store && store != null) {
+        this.jobsService.addJob(JOB_TYPES.SYNC_PRODUCT_TYPES, { store: store });
         // will not sync if the stub store's access token is not an offline token and has expired.
         this.jobsService.addJob(
           JOB_TYPES.SYNC_PRODUCT_TYPES,

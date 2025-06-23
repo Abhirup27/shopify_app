@@ -33,7 +33,7 @@ export class WebAppService {
     private readonly dataService: DataService,
   ) {}
 
-  public async syncProductTypes(store: Store) {
+  public syncProductTypes(store: Store) {
     try {
       this.jobsService.syncProductTypes(store);
       //await this.jobsService.cacheProductTypes();
@@ -267,7 +267,7 @@ export class WebAppService {
     let payload: object = {};
     try {
       const locations: StoreLocations[] = await this.dataService.getAllLocationsOfStore(user.store_id);
-      const level_one_categories: Record<string, string> = await this.jobsService.getProductTypes();
+      const level_one_categories: Record<string, string> = await this.dataService.getProductTypes();
       console.log(level_one_categories);
       //console.log(level_one_categories);
       payload = {

@@ -508,6 +508,19 @@ export class ProductsConsumer extends WorkerHost {
       );
     }
   }
+  private setProductTypeUpdated = async (
+    tableName: string = 'product_type',
+    timestamp?: Date
+  ): Promise<void> => {
+    const updateTime = timestamp || new Date();
+
+    await this.entityManager.query(`
+    INSERT INTO table_metadata (table_name, last_updated)
+    VALUES ($1, $2)
+    ON CONFLICT (table_name)
+    DO UPDATE SET last_updated = $2
+  `, [tableName, updateTime]);
+  };
 
   private getProductTypeUpdated = async (tableName: string = 'product_type'): Promise<Date | null> => {
     const result = await this.entityManager.query(`SELECT last_updated
@@ -526,6 +539,7 @@ export class ProductsConsumer extends WorkerHost {
       console.log(lastUpdated);
       const minutes = lastUpdated !== null ? new Date().getTime() - lastUpdated.getTime() : null;
       if (minutes != null && minutes / (1000 * 60) < 30) {
+
          return;
       }
 
@@ -534,7 +548,8 @@ export class ProductsConsumer extends WorkerHost {
         headers: this.utilsService.getGraphQLHeadersForStore(data.store),
       };
 
-      await this.syncProductLevel(null, 'product-types', options);
+      this.syncProductLevel(null, 'product-types', options);
+      this.setProductTypeUpdated();
     } catch (error) {
       this.logger.error(error.message, error.stack,this.syncProductTypes.name);
     }
@@ -555,7 +570,9 @@ export class ProductsConsumer extends WorkerHost {
           jobId: '',
         });
       }
-
+      if(response.statusCode != 200 && response.statusCode != 201) {
+        throw new Error('Invalid response');
+      }
       let productTypes = response.respBody?.taxonomy?.categories?.nodes || [];
 
       if (!productTypes.length) return;
@@ -564,7 +581,7 @@ export class ProductsConsumer extends WorkerHost {
       await this.setProductCategorySyncStatus(false);
 
       productTypes = this.productTypesRepository.create(productTypes);
-      productTypes = await this.productTypesRepository.save(productTypes);
+      productTypes = await this.productTypesRepository.save(productTypes, );
 
       const currentLevelMap: Record<string, string> = {};
 

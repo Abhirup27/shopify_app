@@ -18,6 +18,7 @@ import { Repository, UpdateResult } from 'typeorm';
 import { CacheService } from './cache/cache.service';
 import { randomBytes } from 'crypto';
 import Redlock, { ExecutionResult, Lock } from 'redlock';
+import { JOB_TYPES, JobRegistry } from '../jobs/constants/jobs.constants';
 @Injectable()
 export class DataService {
   private readonly logger = new Logger(DataService.name);
@@ -105,7 +106,14 @@ export class DataService {
    * */
   public getCurrentPlan = async (storeId: number): Promise<StorePlan> => {
     try {
-      return await this.storePlanRepository.findOne({ where: { store_id: storeId } });
+      const cacheCredits = await this.cacheService.get<number>(`${storeId}-credits`);
+  console.log(cacheCredits);
+      const dbResult= await this.storePlanRepository.findOne({ where: { store_id: storeId } });
+      console.log(dbResult.credits)
+      if (cacheCredits != undefined || !isNaN(cacheCredits)) {
+        dbResult.credits = cacheCredits;
+      }
+      return dbResult;
     } catch (error) {
       this.logger.error(error.message, error.stack);
     }
@@ -475,7 +483,92 @@ export class DataService {
       this.logger.error(error.message, error.stack, this.getPlans.name);
     }
   };
+  public getProductTypes = async ( key?:string ): Promise<Record<string, string>> => {
+    let result: Record<string, string> = {};
+    if (key != null) {
+      result = await this.cacheService.get<Record<string, string>>(key);
+      if (result == undefined ||
+        result == null) {
+        this.cacheProductTypes(key, key);
+        const db = await this.productTypeRepository.findBy({ parentId: key });
+        const record: Record<string, string> = Object.fromEntries(
+          db.map(item => [item.id, item.name])
+        );
+        return record;
 
+      }
+    }
+      result = await this.cacheService.get<Record<string, string>>('product-types');
+      if (result == undefined ||
+        result == null) {
+        this.cacheProductTypes();
+        const db = await this.productTypeRepository.findBy({ parentId: key });
+        const record: Record<string, string> = Object.fromEntries(
+          db.map(item => [item.id, item.name])
+        );
+
+        return record;
+      }
+      return result;
+
+
+  };
+  //this function is also in products.consumer.ts, need to delete that.
+  private async cacheProductTypes(parentId: string | null = '', cacheKey: string = 'product-types'): Promise<void> {
+    try {
+      // Stack to store work items: [parentId, cacheKey]
+      console.log(cacheKey)
+      const stack: Array<{
+        parentId: string | null;
+        cacheKey: string;
+      }> = [];
+
+      // Initialize stack with the starting parameters
+      stack.push({ parentId, cacheKey });
+
+      while (stack.length > 0) {
+        const { parentId: currentParentId, cacheKey: currentCacheKey } = stack.pop();
+
+        let children: ProductType[] = [];
+
+        if ((currentParentId == '' || currentParentId == null) && currentCacheKey == 'product-types') {
+          children = await this.productTypeRepository.findBy({ isRoot: true });
+
+          //if there are no root types, that means it has not been synced from shopify to DB ever, so abort
+          if(children.length == 0) {
+            return;
+          }
+        } else {
+          children = await this.productTypeRepository.findBy({ parentId: currentParentId });
+        }
+        if (!children.length) continue;
+
+        const currentLevelMap: Record<string, string> = {};
+
+        for (const product of children) {
+          currentLevelMap[product.id] = product.name;
+          // If this node has children (not a leaf), add it to the stack for processing
+          if (product.isLeaf === false) {
+            stack.push({
+              parentId: product.id,
+              cacheKey: product.id,
+            });
+          }
+        }
+
+        // Cache the map for the current level
+        // await this.cacheService.storeMap(currentCacheKey, currentLevelMap);
+        //await this.dataService.setProductCategoryMap(currentCacheKey, currentLevelMap);
+        await this.cacheService.set(currentCacheKey, currentLevelMap, 0);
+        //await this.setProductCategorySyncStatus(true);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error syncing product level with parent ID ${parentId}: ${error}`,
+        this.cacheProductTypes.name,
+      );
+    }
+  }
   /**
    * This function is specifically used in guards to authorize
    * */
@@ -597,7 +690,8 @@ export class DataService {
     const storedShopDomain = await this.cacheService.get<string>(key);
 
     if (storedShopDomain === shopDomain) {
-      await this.cacheService.delete(key);
+      await this.cacheService.
+      delete(key);
       return true;
     }
     return false;

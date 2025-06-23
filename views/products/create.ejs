@@ -16,6 +16,7 @@
         <table class="table table-borderless">
             <tbody>
             <tr>
+                <td><a href="<%= route('shopify.product.types.sync') %>" style="float: right;" class="btn btn-success" id="syncProductTypes">Sync Product Categories</a></td>
                 <td><a href="<%= route('locations.sync', {storeId: storeId}) %>" style="float: right;" class="btn btn-success" id="syncLocations">Sync Locations</a></td>
                 <td><a href="<%= route('shopify.products', {storeId: storeId}) %>" style="float: right" class="btn btn-primary">Back</a></td>
             </tr>
@@ -323,6 +324,51 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    const syncProductTypesBtn = document.querySelector('#syncProductTypes');
+    if (syncProductTypesBtn) {
+      syncProductTypesBtn.addEventListener('click', async function(e) {
+        e.preventDefault();
+
+        syncProductTypesBtn.innerHTML = 'Syncing...';
+        syncProductTypesBtn.disabled = true;
+        try {
+          const response = await fetch(this.href, {
+            headers: {
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          });
+
+          // Handle HTTP errors (401 Unauthorized), server sends an Oauth url.
+          if (response.status === 401) {
+            saveFormData();
+
+            // const redirectUrl = await response.text();
+            // window.location.href = redirectUrl;  // Full page redirect
+            return;
+          }
+          if(response.status === 201) {
+            alert('Sync started. It will take some minutes.')
+          }
+          // Handle successful responses
+          // const data = await response.json();
+          //
+          // if (Array.isArray(data)) {
+          //   locations = data;
+          //   updateAllVariantsWithLocations();
+          //   alert('Locations synced successfully!');
+          // } else {
+          //   throw new Error('Invalid response format');
+          // }
+        } catch (error) {
+          console.error('Error syncing locations:', error);
+          alert('Failed to sync locations. Please try again.');
+        } finally {
+          syncProductTypesBtn.innerHTML = 'Sync Locations';
+          syncProductTypesBtn.disabled = false;
+        }
+      })
+    }
     // Sync locations functionality
 const syncLocationsBtn = document.querySelector('#syncLocations');
 if (syncLocationsBtn) {
