@@ -1,0 +1,261 @@
+<%- include('./layouts/app') %>
+<div class="profile-container">
+    <!-- Profile Header Section -->
+    <div class="profile-header">
+        <div class="profile-banner"></div>
+        <div class="profile-avatar">
+            <i class="bi bi-person"></i>
+        </div>
+        <div class="profile-info">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1 class="profile-name">firstname lastname</h1>
+                    <div class="profile-email">
+                        <i class="bi bi-envelope me-2"></i>xyz.123@example.com
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge-role me-2">ADMIN</span>
+                        <span class="badge-role">STORE_OWNER</span>
+                    </div>
+                </div>
+                <button class="btn btn-edit">
+                    <i class="bi bi-pencil me-1"></i>Edit Profile
+                </button>
+            </div>
+
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">Stores</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">Teams</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">Years</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Public Stores Section -->
+    <div class="profile-section">
+        <h2 class="section-title">
+            <i class="bi bi-shop me-2"></i>Public Stores
+        </h2>
+
+        <div class="row">
+            <!-- Store 1 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="store-card">
+                    <div class="store-header">
+                        <div class="store-logo">
+                            <i class="bi bi-bag"></i>
+                        </div>
+                    </div>
+                    <div class="store-body">
+                        <h3 class="store-name">Urban Fashion Boutique</h3>
+                        <div class="store-location">
+                            <i class="bi bi-geo-alt me-1"></i>New York, NY
+                        </div>
+                        <p>High-end fashion boutique with the latest trends and designer collections.</p>
+                        <div class="store-meta">
+                            <div class="meta-item">
+                                <div class="stat-value">24</div>
+                                <div class="stat-label">Products</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="stat-value">8.7k</div>
+                                <div class="stat-label">Sales</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="stat-value">4.8</div>
+                                <div class="stat-label">Rating</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Store 2 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="store-card">
+                    <div class="store-header" style="background: linear-gradient(to right, #43e97b, #38f9d7);">
+                        <div class="store-logo">
+                            <i class="bi bi-cup"></i>
+                        </div>
+                    </div>
+                    <div class="store-body">
+                        <h3 class="store-name">Bean There Café</h3>
+                        <div class="store-location">
+                            <i class="bi bi-geo-alt me-1"></i>San Francisco, CA
+                        </div>
+                        <p>Artisan coffee shop with ethically sourced beans and homemade pastries.</p>
+                        <div class="store-meta">
+                            <div class="meta-item">
+                                <div class="stat-value">32</div>
+                                <div class="stat-label">Products</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="stat-value">12.5k</div>
+                                <div class="stat-label">Sales</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="stat-value">4.9</div>
+                                <div class="stat-label">Rating</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Store 3 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="store-card">
+                    <div class="store-header" style="background: linear-gradient(to right, #ff5858, #f09819);">
+                        <div class="store-logo">
+                            <i class="bi bi-book"></i>
+                        </div>
+                    </div>
+                    <div class="store-body">
+                        <h3 class="store-name">Chapter & Verse Books</h3>
+                        <div class="store-location">
+                            <i class="bi bi-geo-alt me-1"></i>Boston, MA
+                        </div>
+                        <p>Independent bookstore with curated collections and author events.</p>
+                        <div class="store-meta">
+                            <div class="meta-item">
+                                <div class="stat-value">1.2k</div>
+                                <div class="stat-label">Products</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="stat-value">5.3k</div>
+                                <div class="stat-label">Sales</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="stat-value">4.7</div>
+                                <div class="stat-label">Rating</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Information Section -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="profile-section">
+                <h2 class="section-title">
+                    <i class="bi bi-info-circle me-2"></i>Account Information
+                </h2>
+
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3">Contact Details</h5>
+                    <div class="d-flex mb-3">
+                        <i class="bi bi-telephone me-3 fs-5"></i>
+                        <div>
+                            <div class="text-muted small">Phone</div>
+                            <div>+1 (555) 123-4567</div>
+                        </div>
+                    </div>
+                    <div class="d-flex mb-3">
+                        <i class="bi bi-envelope me-3 fs-5"></i>
+                        <div>
+                            <div class="text-muted small">Email</div>
+                            <div>xyz.123@example.com</div>
+                        </div>
+                    </div>
+                    <div class="d-flex">
+                        <i class="bi bi-calendar me-3 fs-5"></i>
+                        <div>
+                            <div class="text-muted small">Member Since</div>
+                            <div>January 15, 2019</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h5 class="fw-bold mb-3">Security</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
+                        <div>
+                            <div>Two-Factor Authentication</div>
+                            <div class="small text-muted">Add an extra layer of security</div>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" checked>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="profile-section">
+                <h2 class="section-title">
+                    <i class="bi bi-shield-check me-2"></i>Security Settings
+                </h2>
+
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>Manage your account security settings
+                </div>
+
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3">Recent Activity</h5>
+                    <div class="d-flex border-start border-3 border-success ps-3 mb-3">
+                        <i class="bi bi-check-circle text-success me-3"></i>
+                        <div>
+                            <div>Logged in from San Francisco, CA</div>
+                            <div class="small text-muted">Today, 09:24 AM</div>
+                        </div>
+                    </div>
+                    <div class="d-flex border-start border-3 border-primary ps-3 mb-3">
+                        <i class="bi bi-key text-primary me-3"></i>
+                        <div>
+                            <div>Password changed</div>
+                            <div class="small text-muted">Yesterday, 04:15 PM</div>
+                        </div>
+                    </div>
+                    <div class="d-flex border-start border-3 border-info ps-3">
+                        <i class="bi bi-phone text-info me-3"></i>
+                        <div>
+                            <div>Added phone number verification</div>
+                            <div class="small text-muted">June 12, 2023</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h5 class="fw-bold mb-3">Quick Actions</h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary flex-fill">
+                            <i class="bi bi-key me-1"></i>Change Password
+                        </button>
+                        <button class="btn btn-outline-primary flex-fill">
+                            <i class="bi bi-phone me-1"></i>Add Phone
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+  // Simple animation for profile elements
+  document.addEventListener('DOMContentLoaded', function() {
+    const elements = document.querySelectorAll('.store-card, .profile-header');
+
+    elements.forEach((el, index) => {
+      setTimeout(() => {
+        el.style.opacity = "1";
+        el.style.transform = "translateY(0)";
+      }, 100 * index);
+    });
+  });
+</script>
+
+<%- include('./layouts/footer') %>

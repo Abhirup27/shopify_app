@@ -536,7 +536,7 @@ export class ProductsConsumer extends WorkerHost {
 
       await this.syncProductLevel(null, 'product-types', options);
     } catch (error) {
-      this.logger.error(error, this.syncProductTypes.name);
+      this.logger.error(error.message, error.stack,this.syncProductTypes.name);
     }
   };
 

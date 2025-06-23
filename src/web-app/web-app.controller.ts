@@ -115,6 +115,13 @@ public async getSettings(@CurrentUser() user: UserDto, @Req() req: Request, @Res
 
   res.render('settings', payload);
 }
+
+@Get('/my-profile')
+public async getMyProfile(@CurrentUser() user: UserDto, @Req() req: Request, @Res() res: Response) {
+    const payload = this.webAppService.getBasePayload(user);
+    payload['csrfToken'] = this.utilsService.generateToken(req, res);
+    res.render('profile', payload);
+}
   /**
    * Only for the super admin
    * */
@@ -256,7 +263,7 @@ public async getSettings(@CurrentUser() user: UserDto, @Req() req: Request, @Res
     } catch (error) {
       this.logger.error(error.message, this.createMember.name);
     }
-    res.redirect('/members');
+    res.redirect(`/members?storeId=${user.store.table_id}`);
   }
 
   @Get('/syncStoreLocations')
@@ -312,7 +319,7 @@ public async getSettings(@CurrentUser() user: UserDto, @Req() req: Request, @Res
           return;
         }
         console.log('this');
-        res.redirect('/products');
+        res.redirect(`/products?storeId=${user.store.table_id}`);
       }
     } catch (error) {
       this.logger.error(error.message, error.stack, this.createProduct.name);

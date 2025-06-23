@@ -49,7 +49,7 @@ export class StartupService implements OnApplicationBootstrap {
         });
 
       //stub store to fetch product types from shopify
-      const store = await this.jobsService.getStore(26);
+      const store = await this.jobsService.getStore(1);
 
       if (store && store != null) {
         // will not sync if the stub store's access token is not an offline token and has expired.

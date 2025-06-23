@@ -27,7 +27,6 @@ async function bootstrap() {
   );
   //app.useGlobalFilters(new CsrfExceptionFilter());
 
-  const routeService: RouteService = app.get(RouteService);
   const configService = app.get(ConfigService);
   const logger = new CustomLogger(configService);
 
@@ -38,14 +37,6 @@ async function bootstrap() {
   app.setBaseViewsDir(join(__dirname, '..', 'views'));
 
   app.setViewEngine('ejs');
-  app.use((req, res, next) => {
-    res.locals.route = (
-      name: string,
-      query: Record<string, string | number | boolean | string[]> = {},
-      params: Record<string, string | number> = {},
-    ) => routeService.route(name, query, params);
-    next();
-  });
 
   await app.listen(configService.get('port') ?? 3000);
 

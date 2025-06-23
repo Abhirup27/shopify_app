@@ -1,3 +1,5 @@
+import * as process from 'node:process';
+
 export default () => ({
   environment: process.env.NODE_ENV || 'production',
 
@@ -6,10 +8,11 @@ export default () => ({
   logToFile: process.env.LOG_TO_FILE,
 
   app_secret: process.env.APP_SECRET,
-  app_url: 'https://rncrb-223-233-71-49.a.free.pinggy.link',
-  app_install_URL: 'https://rncrb-223-233-71-49.a.free.pinggy.link/shopify/auth/redirect',
-  refresh_token_URL: 'https://rncrb-223-233-71-49.a.free.pinggy.link/shopify/auth/updateStoreToken',
-  shopify_api_version: '2024-07',
+  app_url: process.env.APP_URL,
+  app_install_URL: `${process.env.APP_URL}/shopify/auth/redirect`,
+  refresh_token_URL: `${process.env.APP_URL}/shopify/auth/updateStoreToken`,
+
+  shopify_api_version: process.env.API_VERSION,
   shopify_api_key: process.env.API_KEY,
   shopify_api_secret: process.env.API_SECRET,
   //shopify_api_scopes: 'read_products,write_products,read_orders,write_orders',
