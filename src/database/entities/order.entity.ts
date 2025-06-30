@@ -17,7 +17,7 @@ export class Order {
 
   @ManyToOne(() => Store, { nullable: false })
   @JoinColumn({ name: 'store_id', referencedColumnName: 'table_id' })
-  store: Store;
+  store?: Store;
 
   @Column({ type: 'varchar', nullable: true })
   cancel_reason: string;
@@ -26,25 +26,25 @@ export class Order {
   cancelled_at: Date;
 
   @Column({ type: 'varchar', nullable: true })
-  cart_token: string;
+  cart_token?: string;
 
   @Column({ type: 'varchar', nullable: true })
-  checkout_id: string;
+  checkout_id?: string;
 
   @Column({ type: 'varchar', nullable: true })
-  checkout_token: string;
+  checkout_token?: string;
 
   @Column({ type: 'varchar', nullable: true })
-  contact_email: string;
+  contact_email?: string;
 
   @Column({ type: 'timestamp', nullable: true })
   created_at: Date;
 
   @Column({ type: 'varchar', length: 3, nullable: true })
-  currency: string;
+  currency?: string;
 
   @Column({ type: 'json', nullable: true })
-  discount_codes: string;
+  discount_codes?: string;
 
   @Column({ type: 'varchar', nullable: true })
   email: string;
@@ -53,67 +53,67 @@ export class Order {
   financial_status: string;
 
   @Column({ type: 'varchar', nullable: true })
-  fulfillment_status: string;
+  fulfillment_status?: string;
 
   @Column({ type: 'varchar', nullable: true })
-  gateway: string;
+  gateway?: string;
 
   @Column({ type: 'varchar', nullable: true })
   name: string;
 
   @Column({ type: 'text', nullable: true })
-  note: string;
+  note?: string;
 
   @Column({ type: 'varchar', nullable: true })
-  order_number: string;
+  order_number?: string;
 
   @Column({ type: 'varchar', nullable: true })
-  order_status_url: string;
+  order_status_url?: string;
 
   @Column({ type: 'varchar', nullable: true })
   phone: string;
 
   @Column({ type: 'json', nullable: true })
-  tax_lines: string;
+  tax_lines?: string;
 
   @Column({ type: 'integer', nullable: false })
-  quantity: string;
+  quantity: number;
 
   @Column({ type: 'json', nullable: true })
-  subtotal_price_set: string;
+  subtotal_price_set?: string;
 
   @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true })
-  subtotal_price: string;
+  subtotal_price: number;
 
   @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true })
-  total_line_items_price: string;
+  total_line_items_price?: string;
 
   @Column({ type: 'json', nullable: true })
-  total_discounts_set: string;
+  total_discounts_set?: string;
 
   @Column({ type: 'boolean', nullable: true })
   taxes_included: boolean;
 
   @Column({ type: 'boolean', nullable: true })
-  test: boolean;
+  test?: boolean;
 
   @Column({ type: 'json', nullable: true })
   tags: string;
 
   @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true })
-  total_discounts: string;
+  total_discounts: number;
 
   @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true })
-  total_price: string;
+  total_price: number;
 
   @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true })
-  total_price_usd: string;
+  total_price_usd?: number;
 
   @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true })
-  total_tax: string;
+  total_tax?: number;
 
   @Column({ type: 'numeric', precision: 10, scale: 2, nullable: true })
-  total_tip_received: string;
+  total_tip_received?: number;
 
   @Column({ type: 'timestamp', nullable: true })
   updated_at: Date;
@@ -140,10 +140,10 @@ export class Order {
   shipping_address: string;
 
   @Column({ type: 'json', nullable: true })
-  shipping_lines: string;
+  shipping_lines?: string;
 
   @Column({ type: 'json', nullable: true })
-  payment_details: string;
+  payment_details?: string;
 
   @Column({ type: 'varchar', nullable: true })
   ship_country: string;
@@ -155,14 +155,14 @@ export class Order {
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
   })
-  created_at_date: Date;
+  created_at_date?: Date;
 
   @Column({
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',
     onUpdate: 'CURRENT_TIMESTAMP',
   })
-  updated_at_date: Date;
+  updated_at_date?: Date;
 
   /**
   static async getTotalPriceByStoreId(storeId: number, dataSource: DataSource): Promise<number> {

@@ -10,121 +10,11 @@ import { Repository } from 'typeorm';
 import { ShopifyRequestOptions } from 'src/utils/types/ShopifyRequestOptions';
 import { ShopifyResponse } from 'src/utils/types/ShopifyResponse';
 import { TokenExpiredException } from '../token-expired.exception';
+import { SyncOrdersDocument, SyncOrdersQuery, PageInfo } from '../../generated/graphql';
+import { print } from 'graphql';
 
-interface Money {
-  amount: string;
-  currencyCode: string;
-}
 
-interface MoneySet {
-  presentmentMoney: Money;
-  shopMoney: Money;
-}
 
-interface Image {
-  id: string;
-  altText?: string;
-  url: string;
-  width?: number;
-}
-
-interface Product {
-  id: string;
-  productType: string;
-  title: string;
-  vendor: string;
-  updatedAt: string;
-  tags: string[];
-  publishedAt: string;
-  handle: string;
-  descriptionHtml: string;
-  description: string;
-  createdAt: string;
-}
-
-interface Variant {
-  barcode: string;
-  compareAtPrice: string;
-  createdAt: string;
-  displayName: string;
-  id: string;
-  image: Image;
-  inventoryQuantity: number;
-  price: string;
-  title: string;
-  updatedAt: string;
-}
-
-interface TaxLine {
-  priceSet: MoneySet;
-  rate: number;
-  ratePercentage: number;
-  title: string;
-}
-
-interface Address {
-  address1: string;
-  address2?: string;
-  city: string;
-  country: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  province: string;
-  zip: string;
-}
-
-interface Customer {
-  canDelete: boolean;
-  createdAt: string;
-  displayName: string;
-  email: string;
-  firstName: string;
-  hasTimelineComment: boolean;
-  locale: string;
-  note?: string;
-  updatedAt: string;
-  id: string;
-  lastName: string;
-}
-
-interface TrackingInfo {
-  company: string;
-  number: string;
-  url: string;
-}
-
-interface Fulfillment {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  deliveredAt?: string;
-  displayStatus: string;
-  estimatedDeliveryAt?: string;
-  legacyResourceId: string;
-  name: string;
-  status: string;
-  trackingInfo: TrackingInfo;
-}
-
-interface ShippingLine {
-  carrierIdentifier: string;
-  id: string;
-  title: string;
-  custom: boolean;
-  code: string;
-  phone: string;
-  originalPriceSet: MoneySet;
-  source: string;
-  shippingRateHandle: string;
-}
-
-interface PageInfo {
-  hasNextPage: boolean;
-  endCursor: string;
-  hasPreviousPage: boolean;
-  startCursor: string;
-}
 
 type OrderJobNames = typeof JOB_TYPES.SYNC_ORDERS | typeof JOB_TYPES.GET_ORDERS | typeof JOB_TYPES.GET_ORDER;
 type OrderJobs = {
@@ -134,6 +24,7 @@ type OrderJobs = {
 @Processor(QUEUES.ORDERS, { concurrency: 10 })
 export class OrdersConsumer extends WorkerHost {
   private readonly logger = new Logger(OrdersConsumer.name);
+  private readonly syncOrdersQueryString: string = print(SyncOrdersDocument);
 
   constructor(
     private readonly configService: ConfigService,
@@ -190,8 +81,8 @@ export class OrdersConsumer extends WorkerHost {
 
     do {
       options.data = this.getQueryObjectForOrders(cursor);
-      const response: ShopifyResponse = await this.utilsService.requestToShopify('post', options);
-      console.log(JSON.stringify(response))
+      const response = await this.utilsService.requestToShopify<SyncOrdersQuery>('post', options);
+      //console.log(JSON.stringify(response))
       if (response.statusCode == 401) {
         // job.moveToFailed(Error('401'), job.token)
         //job.moveToCompleted(Error('401'), job.token);
@@ -205,56 +96,60 @@ export class OrdersConsumer extends WorkerHost {
       }
       //throw Error('401');
       if (response.statusCode == 200) {
+        console.log('this ran')
         //console.log(response.respBody["data"]['orders']['edges']);
-        await this.saveOrdersInDB(store.table_id, response.respBody['orders']['edges']);
+        await this.saveOrdersInDB(store.table_id, response.respBody);
       }
       //console.log(response.respBody['extensions']['cost']['fields']);
       // console.log(response.respBody["data"]['orders']['edges']);
       // await this.saveOrdersInDB(store.table_id, response.respBody["data"]['orders']['edges']);
       //console.log(response.respBody);
-      cursor = this.getCursorFromResponse(response.respBody['orders']['pageInfo']);
+      cursor = this.getCursorFromResponse(response.respBody.orders.pageInfo);
     } while (cursor !== null);
     return true;
   };
   /**
    *need to change the code such that it updates existing users. Right now it doesn't update the table even if one of the orders from the response(the arguements to this func) already exist in DB.
    * */
-  private async saveOrdersInDB(storeId: number, orders: any[]): Promise<void> {
+  private async saveOrdersInDB(storeId: number, orders: SyncOrdersQuery): Promise<void> {
     try {
-      if (!orders || !Array.isArray(orders) || orders.length === 0) {
+      if (!orders || !Array.isArray(orders.orders.edges) || orders.orders.edges.length === 0) {
         return;
       }
 
-      const formattedOrders = orders.map(order => {
+      //need to remove creating Date objects and JSON
+      const formattedOrders = orders.orders.edges.map(order => {
         const node = order.node;
         //console.log(node.fulfillments);
-        return {
+        const orderFormatted: Order = {
           email: node.email,
           name: node.name,
-          processed_at: node.processedAt,
+          processed_at: new Date(node.processedAt),
           taxes_included: node.taxesIncluded,
           id: this.extractIdFromGraphQLId(node.legacyResourceId),
           financial_status: node.displayFinancialStatus,
-          closed_at: node.closedAt,
+          closed_at: new Date(node.closedAt),
           cancel_reason: node.cancelReason,
-          cancelled_at: node.cancelledAt,
-          created_at: node.createdAt,
-          updated_at: node.updatedAt,
+          cancelled_at: new Date(node.cancelledAt),
+          created_at: new Date(node.createdAt),
+          updated_at: new Date(node.updatedAt),
           tags: Array.isArray(node.tags) ? JSON.stringify(node.tags) : node.tags,
           phone: node.phone,
           store_id: storeId,
           line_items: this.formatLineItems(node.lineItems),
           shipping_address: this.formatAddress(node.shippingAddress),
           billing_address: this.formatAddress(node.billingAddress),
-          fulfillments: node.fulfillments,
+          fulfillments: JSON.stringify(node.fulfillments),
+          //fulfillment_status: node.fulfillments[0].status, //update this later
           ship_country: node.shippingAddress?.country || null,
           ship_province: node.shippingAddress?.province || null,
           quantity: node.subtotalLineItemsQuantity,
           total_price: node.totalPriceSet.shopMoney.amount,
           subtotal_price: node.subtotalPriceSet.shopMoney.amount,
           total_discounts: node.totalDiscountsSet.shopMoney.amount,
-          customer: node.customer,
+          customer: JSON.stringify(node.customer),
         };
+        return orderFormatted;
       });
 
       // Using TypeORM's upsert functionality
@@ -287,6 +182,7 @@ export class OrdersConsumer extends WorkerHost {
         )
         .execute(); 
       */
+      console.log(formattedOrders)
       const query = this.ordersRepository.create(formattedOrders);
       await this.ordersRepository.upsert(query, ['id']);
     } catch (error) {
@@ -401,290 +297,15 @@ export class OrdersConsumer extends WorkerHost {
     return order;
   };
 
-  public getQueryObjectForOrders = (cursor: string | null): { query: string } | null => {
+  public getQueryObjectForOrders = (cursor: string | null) => {
     try {
-      const filter = `(first: 5${cursor ? `, after: "${cursor}"` : ''})`;
 
-      const query = `{
-            orders${filter} {
-                edges {
-                node {
-                    id
-                    email
-                    name
-                    processedAt
-                    registeredSourceUrl
-                    taxesIncluded
-                    legacyResourceId
-                    fulfillable
-                    customerLocale
-                    phone
-                    displayFinancialStatus
-                    confirmed
-                    closed
-                    closedAt
-                    cancelReason
-                    cancelledAt
-                    createdAt
-                    updatedAt
-                    tags
-                    totalPriceSet {
-                        presentmentMoney {
-                            amount
-                            currencyCode
-                        }
-                        shopMoney {
-                            amount
-                            currencyCode
-                        }
-                    }
-                    subtotalPriceSet  {
-                        presentmentMoney {
-                            amount
-                            currencyCode
-                        }
-                        shopMoney {
-                            amount
-                            currencyCode
-                        }
-                    }
-                    totalDiscountsSet  {
-                        presentmentMoney {
-                            amount
-                            currencyCode
-                        }
-                        shopMoney {
-                            amount
-                            currencyCode
-                        }
-                    }
-                    subtotalLineItemsQuantity
-                    lineItems(first: 20) {
-                    edges {
-                        node {
-                        id
-                        image {
-                            id
-                            altText
-                            url
-                            width
-                        }
-                        name
-                        nonFulfillableQuantity
-                        originalTotalSet {
-                            presentmentMoney {
-                            amount
-                            currencyCode
-                            }
-                            shopMoney {
-                            amount
-                            currencyCode
-                            }
-                        }
-                        product {
-                            id
-                            productType
-                            title
-                            vendor
-                            updatedAt
-                            tags
-                            publishedAt
-                            handle
-                            descriptionHtml
-                            description
-                            createdAt
-                        }
-                        quantity
-                        sku
-                        taxLines {
-                            priceSet {
-                            presentmentMoney {
-                                amount
-                                currencyCode
-                            }
-                            shopMoney {
-                                amount
-                                currencyCode
-                            }
-                            }
-                            rate
-                            ratePercentage
-                            title
-                        }
-                        taxable
-                        title
-                        unfulfilledQuantity
-                        variantTitle
-                        variant {
-                            barcode
-                            compareAtPrice
-                            createdAt
-                            displayName
-                            id
-                            image {
-                            id
-                            altText
-                            url
-                            width
-                            }
-                            inventoryQuantity
-                            price
-                            title
-                            updatedAt
-                        }
-                        vendor
-                        }
-                    }
-                    pageInfo {
-                        hasNextPage
-                        endCursor
-                        hasPreviousPage
-                        startCursor
-                    }
-                    }
-                    
-                    fulfillments {
-                        createdAt
-                        deliveredAt
-                        displayStatus
-                        estimatedDeliveryAt
-                        id
-                        inTransitAt
-                        legacyResourceId
-                        location {
-                            id
-                            name
-                        }
-                        name
-                        status
-                        totalQuantity
-                        trackingInfo {
-                            company
-                            number
-                            url
-                        }
-                    }
-                    
-
-                    totalPriceSet {
-                    presentmentMoney {
-                        amount
-                        currencyCode
-                    }
-                    shopMoney {
-                        amount
-                        currencyCode
-                    }
-                    }
-                    shippingLine {
-                    carrierIdentifier
-                    id
-                    title
-                    custom
-                    code
-                    phone
-                    originalPriceSet {
-                        presentmentMoney {
-                        amount
-                        currencyCode
-                        }
-                        shopMoney {
-                        amount
-                        currencyCode
-                        }
-                    }
-                    source
-                    shippingRateHandle
-                    }
-                    shippingAddress {
-                    address1
-                    address2
-                    city
-                    country
-                    firstName
-                    lastName
-                    phone
-                    province
-                    zip
-                    }
-                    billingAddress {
-                    address1
-                    address2
-                    city
-                    country
-                    firstName
-                    lastName
-                    phone
-                    province
-                    zip
-                    }
-                    customer {
-                    addresses(first :2){
-                    address1
-                    address2
-                    city
-                    company
-                    country
-                    countryCodeV2
-                    firstName
-                    lastName
-                    latitude
-                    longitude
-                    phone
-                    zip
-                    }
-                    canDelete
-                    createdAt
-                    displayName
-                    email
-                    firstName
-                    hasTimelineComment
-                    locale
-                    note
-                    updatedAt
-                    id
-                    lastName
-                    }
-                    currentSubtotalPriceSet {
-                    presentmentMoney {
-                        amount
-                        currencyCode
-                    }
-                    shopMoney {
-                        amount
-                        currencyCode
-                    }
-                    }
-                    currentTaxLines {
-                    channelLiable
-                    priceSet {
-                        presentmentMoney {
-                        amount
-                        currencyCode
-                        }
-                        shopMoney {
-                        amount
-                        currencyCode
-                        }
-                    }
-                    rate
-                    ratePercentage
-                    title
-                    }
-                }
-                }
-                pageInfo {
-                hasNextPage
-                endCursor
-                hasPreviousPage
-                startCursor
-                }
-            }
-            }`;
-
-      return { query };
+      return {
+        query: this.syncOrdersQueryString,
+        variables: { cursor },
+      };
     } catch (error) {
-      this.logger.error(error.message, this.getQueryObjectForOrders.name);
+      this.logger.error(error.message, error.stack,this.getQueryObjectForOrders.name);
       return null;
     }
   };

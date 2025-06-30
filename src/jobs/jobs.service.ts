@@ -97,7 +97,7 @@ export class JobsService {
         //job.remove();
 
         //Since the SYNC_PRODUCT_TYPES is mainly a background/cron job, we don't add it to pause queue
-        if(job.name != JOB_TYPES.SYNC_PRODUCT_TYPES && job.name != JOB_TYPES.BUY_STORE_PLAN) {
+        if(job.name != JOB_TYPES.BUY_STORE_PLAN) {
           const pausedJob = await this.pausedQueue.add(
             job.queueName + ':' + job.data['store'].myshopify_domain + ':' + type,
             { queue: job.queueName, jobName: job.name, id: job.id, task_type: type },

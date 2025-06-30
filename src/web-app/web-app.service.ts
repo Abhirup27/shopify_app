@@ -88,7 +88,7 @@ export class WebAppService {
       let totalRevenue = 0;
       if (recentOrders && recentOrders.length > 0) {
         totalRevenue = recentOrders.reduce((sum, order) => {
-          const orderPrice = parseFloat(order.total_price) || 0;
+          const orderPrice = order.total_price || 0;
           return sum + orderPrice;
         }, 0);
       }

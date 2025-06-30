@@ -1,0 +1,279 @@
+query SyncOrders($cursor: String) {
+    orders(first: 250, after: $cursor) {
+        edges {
+            node {
+                id
+                email
+                name
+                processedAt
+                registeredSourceUrl
+                taxesIncluded
+                legacyResourceId
+                fulfillable
+                customerLocale
+                phone
+                displayFinancialStatus
+                confirmed
+                closed
+                closedAt
+                cancelReason
+                cancelledAt
+                createdAt
+                updatedAt
+                tags
+                totalPriceSet {
+                    presentmentMoney {
+                        amount
+                        currencyCode
+                    }
+                    shopMoney {
+                        amount
+                        currencyCode
+                    }
+                }
+                subtotalPriceSet  {
+                    presentmentMoney {
+                        amount
+                        currencyCode
+                    }
+                    shopMoney {
+                        amount
+                        currencyCode
+                    }
+                }
+                totalDiscountsSet  {
+                    presentmentMoney {
+                        amount
+                        currencyCode
+                    }
+                    shopMoney {
+                        amount
+                        currencyCode
+                    }
+                }
+                subtotalLineItemsQuantity
+                lineItems(first: 20) {
+                    edges {
+                        node {
+                            id
+                            image {
+                                id
+                                altText
+                                url
+                                width
+                            }
+                            name
+                            nonFulfillableQuantity
+                            originalTotalSet {
+                                presentmentMoney {
+                                    amount
+                                    currencyCode
+                                }
+                                shopMoney {
+                                    amount
+                                    currencyCode
+                                }
+                            }
+                            product {
+                                id
+                                productType
+                                title
+                                vendor
+                                updatedAt
+                                tags
+                                publishedAt
+                                handle
+                                descriptionHtml
+                                description
+                                createdAt
+                            }
+                            quantity
+                            sku
+                            taxLines {
+                                priceSet {
+                                    presentmentMoney {
+                                        amount
+                                        currencyCode
+                                    }
+                                    shopMoney {
+                                        amount
+                                        currencyCode
+                                    }
+                                }
+                                rate
+                                ratePercentage
+                                title
+                            }
+                            taxable
+                            title
+                            unfulfilledQuantity
+                            variantTitle
+                            variant {
+                                barcode
+                                compareAtPrice
+                                createdAt
+                                displayName
+                                id
+                                image {
+                                    id
+                                    altText
+                                    url
+                                    width
+                                }
+                                inventoryQuantity
+                                price
+                                title
+                                updatedAt
+                            }
+                            vendor
+                        }
+                    }
+                    pageInfo {
+                        hasNextPage
+                        endCursor
+                        hasPreviousPage
+                        startCursor
+                    }
+                }
+
+                fulfillments {
+                    createdAt
+                    deliveredAt
+                    displayStatus
+                    estimatedDeliveryAt
+                    id
+                    inTransitAt
+                    legacyResourceId
+                    location {
+                        id
+                        name
+                    }
+                    name
+                    status
+                    totalQuantity
+                    trackingInfo {
+                        company
+                        number
+                        url
+                    }
+                }
+
+
+                totalPriceSet {
+                    presentmentMoney {
+                        amount
+                        currencyCode
+                    }
+                    shopMoney {
+                        amount
+                        currencyCode
+                    }
+                }
+                shippingLine {
+                    carrierIdentifier
+                    id
+                    title
+                    custom
+                    code
+                    phone
+                    originalPriceSet {
+                        presentmentMoney {
+                            amount
+                            currencyCode
+                        }
+                        shopMoney {
+                            amount
+                            currencyCode
+                        }
+                    }
+                    source
+                    shippingRateHandle
+                }
+                shippingAddress {
+                    address1
+                    address2
+                    city
+                    country
+                    firstName
+                    lastName
+                    phone
+                    province
+                    zip
+                }
+                billingAddress {
+                    address1
+                    address2
+                    city
+                    country
+                    firstName
+                    lastName
+                    phone
+                    province
+                    zip
+                }
+                customer {
+                    addresses(first :2){
+                        address1
+                        address2
+                        city
+                        company
+                        country
+                        countryCodeV2
+                        firstName
+                        lastName
+                        latitude
+                        longitude
+                        phone
+                        zip
+                    }
+                    canDelete
+                    createdAt
+                    displayName
+                    email
+                    firstName
+                    hasTimelineComment
+                    locale
+                    note
+                    updatedAt
+                    id
+                    lastName
+                }
+                currentSubtotalPriceSet {
+                    presentmentMoney {
+                        amount
+                        currencyCode
+                    }
+                    shopMoney {
+                        amount
+                        currencyCode
+                    }
+                }
+                currentTaxLines {
+                    channelLiable
+                    priceSet {
+                        presentmentMoney {
+                            amount
+                            currencyCode
+                        }
+                        shopMoney {
+                            amount
+                            currencyCode
+                        }
+                    }
+                    rate
+                    ratePercentage
+                    title
+                }
+            }
+        }
+        pageInfo {
+            hasNextPage
+            endCursor
+            hasPreviousPage
+            startCursor
+        }
+
+    }
+
+}
+

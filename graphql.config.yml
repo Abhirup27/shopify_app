@@ -12,3 +12,4 @@ generates:
         DateTime: string
         HTML: string
         URL: string
+        Decimal: number

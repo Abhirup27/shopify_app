@@ -560,7 +560,7 @@ export class ProductsConsumer extends WorkerHost {
     cacheKey: string,
     options: ShopifyRequestOptions,
   ): Promise<void> {
-    try {
+    //try {
       // Get sub product types for the parentId
       options.data = this.getTaxonomyPayload(parentId);
       const response = await this.utilsService.requestToShopify<ProductTypesResponse>('post', options);
@@ -599,17 +599,18 @@ export class ProductsConsumer extends WorkerHost {
       await this.cacheService.set(cacheKey, currentLevelMap);
       await this.setProductCategorySyncStatus(true);
       //await this.cacheService.storeMap(cacheKey, currentLevelMap);
-    } catch (error) {
-      if (error instanceof TokenExpiredException) {
-        throw error;
-      }
-      this.logger.error(
-        `Error syncing product level with parent ID ${parentId}: ${error}`,
-        error.stack,
-        this.syncProductLevel.name,
-      );
 
-    }
+     //} catch (error) {
+    //   if (error instanceof TokenExpiredException) {
+    //     throw error;
+    //   }
+    //   this.logger.error(
+    //     `Error syncing product level with parent ID ${parentId}: ${error}`,
+    //     error.stack,
+    //     this.syncProductLevel.name,
+    //   );
+    //
+    // }
   }
 
   private createProduct = async (
