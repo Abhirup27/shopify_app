@@ -1,4 +1,4 @@
-import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
+import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { JOB_TYPES, JobRegistry, QUEUES } from '../constants/jobs.constants';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -9,7 +9,6 @@ import { Job, UnrecoverableError } from 'bullmq';
 import { ShopifyRequestOptions } from 'src/utils/types/ShopifyRequestOptions';
 import { AxiosHeaders } from 'axios';
 import { Product } from 'src/database/entities/product.entity';
-import { ShopifyResponse } from 'src/utils/types/ShopifyResponse';
 import { Logger } from '@nestjs/common';
 import { newProductDto } from 'src/web-app/dtos/new-product.dto';
 import { StoreLocations } from 'src/database/entities/storeLocations.entity';
@@ -23,6 +22,9 @@ import {
   CreateProductMutation,
   CreateProductVariantsBulkDocument,
   CreateProductVariantsBulkMutation,
+  GetTaxonomyDocument,
+  GetTaxonomyQuery,
+  InventoryQuantity,
   ProductInput,
   ProductVariantsBulkInput,
   SyncProductsDocument,
@@ -48,13 +50,11 @@ export type ProductsType = {
  *The expected response of taxonomy query.
  * */
 type ProductTypesResponse = {
-
   taxonomy: {
     categories: {
       nodes: ProductsType[];
     };
   };
-
 };
 
 /**
@@ -82,12 +82,13 @@ export class ProductsConsumer extends WorkerHost {
   /**
    * Initialize all the graphql queries from AST to a string.
    * */
+  private readonly taxonomyQueryString: string = print(GetTaxonomyDocument);
   private readonly syncProductsQueryString: string = print(SyncProductsDocument);
   private readonly createProductMutation: string = print(CreateProductDocument);
   private readonly createProductVariantsBulk: string = print(CreateProductVariantsBulkDocument);
 
   constructor(
-    private readonly cacheService:  CacheService,
+    private readonly cacheService: CacheService,
     private readonly dataService: DataService,
     private readonly configService: ConfigService,
     private readonly utilsService: UtilsService,
@@ -106,7 +107,6 @@ export class ProductsConsumer extends WorkerHost {
 
   public process = async (job: ProductsQueueJob): Promise<JobRegistry[ProductsQueueJobName]['result']> => {
     try {
-
       switch (job.name) {
         case JOB_TYPES.SYNC_PRODUCTS:
           return await this.syncProducts(job.data, job);
@@ -173,7 +173,6 @@ export class ProductsConsumer extends WorkerHost {
     data: JobRegistry[typeof JOB_TYPES.SYNC_PRODUCTS]['data'],
     job: Job,
   ): Promise<JobRegistry[typeof JOB_TYPES.SYNC_PRODUCTS]['result']> => {
-
     const totalProducts: any[] = [];
     const totalProductVariants: any[] = [];
     let cursor: string | null = null;
@@ -226,9 +225,7 @@ export class ProductsConsumer extends WorkerHost {
         .execute();
     */
     // The query gives an error if there are no products in the store, So I'll have to refactor or do an else condition.
-    if( shopifyProductIds.length> 0 ) {
-
-
+    if (shopifyProductIds.length > 0) {
       await this.productsRepository
         .createQueryBuilder()
         .delete()
@@ -294,7 +291,7 @@ export class ProductsConsumer extends WorkerHost {
               id: this.extractIdFromGraphQLId(inventoryLevel.location.id, 'Location'),
               isActive: inventoryLevel.location.isActive,
             },
-            quantities: inventoryLevel.quantities.map((quantity: any) => ({
+            quantities: inventoryLevel.quantities.map((quantity: InventoryQuantity) => ({
               id: quantity.id,
               name: quantity.name,
               quantity: quantity.quantity,
@@ -402,7 +399,6 @@ export class ProductsConsumer extends WorkerHost {
     //return Promise.resolve(products);
 
     return products;
-
   };
 
   private isArray(array: unknown): array is string[] {
@@ -425,33 +421,14 @@ export class ProductsConsumer extends WorkerHost {
     return result;
   };
 
-  private getTaxonomyPayload(id?: string): { query: string } {
+  private getTaxonomyPayload(id?: string) {
     const categoriesParams = id ? `categories(first: 250, childrenOf: "${id}")` : `categories(first: 250)`;
 
-    const query = `{
-    taxonomy {
-      ${categoriesParams} {
-        nodes {
-          id
-          fullName
-          name
-          isRoot
-          level
-          isLeaf
-          childrenIds
-          parentId
-        }
-        pageInfo {
-          hasNextPage
-          endCursor
-          hasPreviousPage
-          startCursor
-        }
-      }
-    }
-  }`;
 
-    return { query };
+    return {
+      query: this.taxonomyQueryString,
+      variables: { id },
+    };
   }
 
   private async cacheProductTypes(parentId: string | null = '', cacheKey: string = 'product-types'): Promise<void> {
@@ -474,7 +451,7 @@ export class ProductsConsumer extends WorkerHost {
           children = await this.productTypesRepository.findBy({ isRoot: true });
 
           //if there are no root types, that means it has not been synced from shopify to DB ever, so abort
-          if(children.length == 0) {
+          if (children.length == 0) {
             return;
           }
         } else {
@@ -508,24 +485,26 @@ export class ProductsConsumer extends WorkerHost {
       );
     }
   }
-  private setProductTypeUpdated = async (
-    tableName: string = 'product_type',
-    timestamp?: Date
-  ): Promise<void> => {
+  private setProductTypeUpdated = async (tableName: string = 'product_type', timestamp?: Date): Promise<void> => {
     const updateTime = timestamp || new Date();
 
-    await this.entityManager.query(`
+    await this.entityManager.query(
+      `
     INSERT INTO table_metadata (table_name, last_updated)
     VALUES ($1, $2)
     ON CONFLICT (table_name)
     DO UPDATE SET last_updated = $2
-  `, [tableName, updateTime]);
+  `,
+      [tableName, updateTime],
+    );
   };
 
   private getProductTypeUpdated = async (tableName: string = 'product_type'): Promise<Date | null> => {
-    const result = await this.entityManager.query(`SELECT last_updated
-                                                   FROM table_metadata
-                                                   WHERE table_name = $1`, [ tableName, ]);
+    const result = await this.entityManager.query(
+      `SELECT last_updated
+      FROM table_metadata
+      WHERE table_name = $1`,
+      [tableName],);
 
     return result.length > 0 ? result[0].last_updated : null;
   };
@@ -539,8 +518,7 @@ export class ProductsConsumer extends WorkerHost {
       console.log(lastUpdated);
       const minutes = lastUpdated !== null ? new Date().getTime() - lastUpdated.getTime() : null;
       if (minutes != null && minutes / (1000 * 60) < 30) {
-
-         return;
+        return;
       }
 
       const options: ShopifyRequestOptions = {
@@ -551,7 +529,7 @@ export class ProductsConsumer extends WorkerHost {
       this.syncProductLevel(null, 'product-types', options);
       this.setProductTypeUpdated();
     } catch (error) {
-      this.logger.error(error.message, error.stack,this.syncProductTypes.name);
+      this.logger.error(error.message, error.stack, this.syncProductTypes.name);
     }
   };
 
@@ -561,46 +539,47 @@ export class ProductsConsumer extends WorkerHost {
     options: ShopifyRequestOptions,
   ): Promise<void> {
     //try {
-      // Get sub product types for the parentId
-      options.data = this.getTaxonomyPayload(parentId);
-      const response = await this.utilsService.requestToShopify<ProductTypesResponse>('post', options);
-      if (response.statusCode === 401) {
-        throw new TokenExpiredException(`Token expired`, {
-          shop: '',
-          jobId: '',
-        });
+    // Get sub product types for the parentId
+    options.data = this.getTaxonomyPayload(parentId);
+    const response = await this.utilsService.requestToShopify<ProductTypesResponse>('post', options);
+    if (response.statusCode === 401) {
+      // throw new TokenExpiredException(`Token expired`, {
+      //   shop: '',
+      //   jobId: '',
+      // });
+      throw Error('token expired');
+    }
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw new Error('Invalid response');
+    }
+    let productTypes = response.respBody?.taxonomy?.categories?.nodes || [];
+
+    if (!productTypes.length) return;
+
+    //starting to update the cache
+    await this.setProductCategorySyncStatus(false);
+
+    productTypes = this.productTypesRepository.create(productTypes);
+    productTypes = await this.productTypesRepository.save(productTypes);
+
+    const currentLevelMap: Record<string, string> = {};
+
+    for (const product of productTypes) {
+      currentLevelMap[product.id] = product.name;
+
+      // If this node has children (not a leaf), recursively process the next level
+      if (product.isLeaf === false) {
+        // product's ID as the cache key for its children
+        await this.syncProductLevel(product.id, product.id, options);
       }
-      if(response.statusCode != 200 && response.statusCode != 201) {
-        throw new Error('Invalid response');
-      }
-      let productTypes = response.respBody?.taxonomy?.categories?.nodes || [];
+    }
 
-      if (!productTypes.length) return;
+    // Cache the map for the current level
+    await this.cacheService.set(cacheKey, currentLevelMap);
+    await this.setProductCategorySyncStatus(true);
+    //await this.cacheService.storeMap(cacheKey, currentLevelMap);
 
-      //starting to update the cache
-      await this.setProductCategorySyncStatus(false);
-
-      productTypes = this.productTypesRepository.create(productTypes);
-      productTypes = await this.productTypesRepository.save(productTypes, );
-
-      const currentLevelMap: Record<string, string> = {};
-
-      for (const product of productTypes) {
-        currentLevelMap[product.id] = product.name;
-
-        // If this node has children (not a leaf), recursively process the next level
-        if (product.isLeaf === false) {
-          // product's ID as the cache key for its children
-          await this.syncProductLevel(product.id, product.id, options);
-        }
-      }
-
-      // Cache the map for the current level
-      await this.cacheService.set(cacheKey, currentLevelMap);
-      await this.setProductCategorySyncStatus(true);
-      //await this.cacheService.storeMap(cacheKey, currentLevelMap);
-
-     //} catch (error) {
+    //} catch (error) {
     //   if (error instanceof TokenExpiredException) {
     //     throw error;
     //   }
@@ -619,25 +598,24 @@ export class ProductsConsumer extends WorkerHost {
   ): Promise<JobRegistry[typeof JOB_TYPES.CREATE_PRODUCT]['result']> => {
     let lock: Lock;
     let credits: number;
-    try{
-
+    try {
       lock = await this.dataService.getStoreCreditsLock(data.store.id);
       this.logger.debug(JSON.stringify(lock));
       credits = await this.dataService.getStoreCredits(data.store.id);
 
-     // const credits = await this.dataService.readStoreCredits(data.store.id);
+      // const credits = await this.dataService.readStoreCredits(data.store.id);
       console.log(credits);
-      if( isNaN(credits) || credits == undefined ){
+      if (isNaN(credits) || credits == undefined) {
         job.delay = 2000;
         //await job.moveToDelayed(2000, job.token);
         await job.moveToFailed(new Error('lock or credits not found.'), job.token);
-       return true;
+        return true;
       }
-      if( credits < 2 ) {
+      if (credits < 2) {
         await job.moveToFailed(new UnrecoverableError('credits too low for the operation.'), job.token);
         return true;
       }
-    } catch( error ) {
+    } catch (error) {
       throw error;
     }
     const store: Store = data.store;
@@ -690,7 +668,7 @@ export class ProductsConsumer extends WorkerHost {
         await this.productVariantsRepository.upsert(variant, ['id']);
       }
     }
-    credits-= 2;
+    credits -= 2;
     await this.dataService.setStoreCredits(data.store.id, credits);
     await lock.release();
     return true;

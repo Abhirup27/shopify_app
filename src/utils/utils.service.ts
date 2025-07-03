@@ -217,7 +217,9 @@ export class UtilsService {
 
       if (method === 'post' && typeof endpointOrOptions === 'object' && endpointOrOptions.url?.includes('graphql')) {
         if (response.data.errors) {
+          reqResult.statusCode= 400;
           reqResult.graphQLErrors = response.data.errors;
+          this.logger.error(JSON.stringify(response.data.errors));
         }
         // Flatten response for GraphQL calls
         reqResult.respBody = response.data.data;

@@ -10,7 +10,13 @@ import { Repository } from 'typeorm';
 import { ShopifyRequestOptions } from 'src/utils/types/ShopifyRequestOptions';
 import { ShopifyResponse } from 'src/utils/types/ShopifyResponse';
 import { TokenExpiredException } from '../token-expired.exception';
-import { SyncOrdersDocument, SyncOrdersQuery, PageInfo } from '../../generated/graphql';
+import {
+  SyncOrdersDocument,
+  SyncOrdersQuery,
+  PageInfo,
+  LineItemConnection,
+  MailingAddress, LineItemEdge, OrderEdge,
+} from '../../generated/graphql';
 import { print } from 'graphql';
 
 
@@ -87,6 +93,7 @@ export class OrdersConsumer extends WorkerHost {
         // job.moveToFailed(Error('401'), job.token)
         //job.moveToCompleted(Error('401'), job.token);
         //job.remove()
+        console.log('yes');
         throw new TokenExpiredException(`Token expired for ${data.store.table_id}`, {
           shop: data.store.table_id.toString(),
           jobId: job.id,
@@ -97,6 +104,7 @@ export class OrdersConsumer extends WorkerHost {
       //throw Error('401');
       if (response.statusCode == 200) {
         console.log('this ran')
+        console.log(JSON.stringify(response))
         //console.log(response.respBody["data"]['orders']['edges']);
         await this.saveOrdersInDB(store.table_id, response.respBody);
       }
@@ -120,6 +128,7 @@ export class OrdersConsumer extends WorkerHost {
       //need to remove creating Date objects and JSON
       const formattedOrders = orders.orders.edges.map(order => {
         const node = order.node;
+        console.log(node);
         //console.log(node.fulfillments);
         const orderFormatted: Order = {
           email: node.email,
@@ -136,7 +145,7 @@ export class OrdersConsumer extends WorkerHost {
           tags: Array.isArray(node.tags) ? JSON.stringify(node.tags) : node.tags,
           phone: node.phone,
           store_id: storeId,
-          line_items: this.formatLineItems(node.lineItems),
+          line_items: this.formatLineItems(node.lineItems as LineItemConnection),
           shipping_address: this.formatAddress(node.shippingAddress),
           billing_address: this.formatAddress(node.billingAddress),
           fulfillments: JSON.stringify(node.fulfillments),
@@ -190,13 +199,13 @@ export class OrdersConsumer extends WorkerHost {
       throw error;
     }
   }
-  private formatLineItems(lineItems: any): string {
+  private formatLineItems(order: LineItemConnection): string {
     try {
-      if (!lineItems?.edges) {
+      if (!order?.edges) {
         return null;
       }
 
-      const formattedItems = lineItems.edges.map(({ node: item }) => ({
+      const formattedItems = order.edges.map(({ node: item }) => ({
         id: this.extractIdFromGraphQLId(item.id, 'LineItem'),
         admin_graphql_api_id: item.id,
         fulfillable_quantity: item.unfulfilledQuantity,
@@ -219,7 +228,7 @@ export class OrdersConsumer extends WorkerHost {
     }
   }
 
-  private formatAddress(address: any): string {
+  private formatAddress(address: Partial<MailingAddress>): string {
     try {
       if (!address) {
         return null;

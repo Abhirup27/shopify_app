@@ -1,9 +1,11 @@
 query SyncOrders($cursor: String) {
     orders(first: 250, after: $cursor) {
         edges {
+            cursor
             node {
                 id
                 email
+                hasTimelineComment
                 name
                 processedAt
                 registeredSourceUrl
@@ -53,15 +55,22 @@ query SyncOrders($cursor: String) {
                 }
                 subtotalLineItemsQuantity
                 lineItems(first: 20) {
+                    nodes {
+                        id
+                    }
                     edges {
+                        cursor
                         node {
+                            canRestock
+                            currentQuantity
+                            restockable
+                            requiresShipping
+                            refundableQuantity
+                            merchantEditable
+                            isGiftCard
                             id
-                            image {
-                                id
-                                altText
-                                url
-                                width
-                            }
+                            quantity
+                            sku
                             name
                             nonFulfillableQuantity
                             originalTotalSet {
@@ -73,6 +82,12 @@ query SyncOrders($cursor: String) {
                                     amount
                                     currencyCode
                                 }
+                            }
+                            image {
+                                id
+                                altText
+                                url
+                                width
                             }
                             product {
                                 id
@@ -87,8 +102,6 @@ query SyncOrders($cursor: String) {
                                 description
                                 createdAt
                             }
-                            quantity
-                            sku
                             taxLines {
                                 priceSet {
                                     presentmentMoney {
@@ -190,6 +203,7 @@ query SyncOrders($cursor: String) {
                     shippingRateHandle
                 }
                 shippingAddress {
+                    id
                     address1
                     address2
                     city
@@ -201,6 +215,7 @@ query SyncOrders($cursor: String) {
                     zip
                 }
                 billingAddress {
+                    id
                     address1
                     address2
                     city

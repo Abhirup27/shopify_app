@@ -1,5 +1,5 @@
 overwrite: true
-schema: 'https://shopify.dev/admin-graphql-direct-proxy/2024-07'
+schema: 'https://shopify.dev/admin-graphql-direct-proxy/2025-07'
 documents: './src/**/*.graphql'
 generates:
   src/generated/graphql.ts:
