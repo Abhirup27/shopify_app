@@ -1,14 +1,4 @@
-import {
-  BadRequestException,
-  Controller,
-  Get,
-  Logger,
-  Query,
-  Req,
-  Res,
-  UnauthorizedException,
-  UseFilters,
-} from '@nestjs/common';
+import { Controller, Get, Logger, Query, Req, Res, UnauthorizedException, UseFilters } from '@nestjs/common';
 import { ShopifyAuthService } from './shopify-auth.service';
 import { UtilsService } from 'src/utils/utils.service';
 import { ConfigService } from '@nestjs/config';
@@ -46,10 +36,14 @@ export class ShopifyAuthController {
    *It checks if the store already exists in the database or not. If not, it redirects to /shopify/auth/redirect to carry out the installation.
    * */
   @Get('/')
-  public async startInstallation(@Req() request: Request, @Query() query: GetInstallInitQueryDto, @Res() response) {
+  public async startInstallation(
+    @Req() request: Request,
+    @Query() query: GetInstallInitQueryDto,
+    @Res() response: Response,
+  ) {
     try {
       const shop: string = query.shop;
-      const endpoint = `https://${shop}/admin/oauth/authorize?client_id=${this.clientId}&scope=${this.accessScopes}&redirect_uri=${this.redirectUri}`;
+      //const endpoint = `https://${shop}/admin/oauth/authorize?client_id=${this.clientId}&scope=${this.accessScopes}&redirect_uri=${this.redirectUri}`;
       console.log(query);
       const validRequest: boolean = await this.utilsService.validateRequestFromShopify(query);
       if (validRequest) {
@@ -112,7 +106,7 @@ export class ShopifyAuthController {
    * This route handles the installation.
    * */
   @Get('/redirect')
-  public async install(@Req() request: Request, @Query() query: GetInstallCodeDto, @Res() response) {
+  public async install(@Req() request: Request, @Query() query: GetInstallCodeDto, @Res() response: Response) {
     //console.log(request)
     try {
       const validateHMAC: boolean = await this.utilsService.validateRequestFromShopify(query);
@@ -126,8 +120,6 @@ export class ShopifyAuthController {
           const shopDetails = await this.installationService.getShopDetailsFromShopify(shop, accessToken);
           console.log(shopDetails);
           const storeToDB = await this.installationService.saveStoreDetails(shopDetails.shop, accessToken);
-
-
 
           //console.log(shopDetails)
           if (storeToDB.success) {
@@ -198,9 +190,10 @@ export class ShopifyAuthController {
           if (stores.length > 0) {
             let store: number = stores[0].id;
             if (stores.length > 1) {
-              store = parseInt((await this.installationService.getShopDetailsFromShopify(shop, accessToken)).shop.id
-                .split('/')
-                .pop(), 10);
+              store = parseInt(
+                (await this.installationService.getShopDetailsFromShopify(shop, accessToken)).shop.id.split('/').pop(),
+                10,
+              );
             }
             const updateAccessToken = await this.installationService.updateAccessToken(store, accessToken);
             //console.log(updateAccessToken);

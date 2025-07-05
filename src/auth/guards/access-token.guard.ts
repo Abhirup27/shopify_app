@@ -1,12 +1,13 @@
 import { CanActivate, ExecutionContext, Inject, Injectable, SetMetadata, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Observable } from 'rxjs';
+//import { Observable } from 'rxjs';
 import jwtConfiguration from '../config/jwt.config';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { REQUEST_USER_KEY } from '../constants/auth.constants';
 import { Reflector } from '@nestjs/core';
 import { DataService } from 'src/data/data.service';
+import { TRequest } from '../../types/express';
 
 /**
  * Marks the route as a public route. This route can be accessed publicly. The AccessToken Guard will be skipped (return true).
@@ -26,7 +27,7 @@ export class AccessTokenGuard implements CanActivate {
     private dataService: DataService,
   ) {}
 
-  private extractToken = (request: Request): string | undefined => {
+  private extractToken = (request: TRequest <Record<string, any>, { storeId?: string }>): string | undefined => {
     // console.log(request.body);
 
     const [_, token] = request.headers.authorization?.split(' ') ?? [];
@@ -41,9 +42,9 @@ export class AccessTokenGuard implements CanActivate {
     }
 
     //extract the request from context
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<TRequest<Record<string, any>, { storeId?: string }>>();
     //get the response object
-    const response = context.switchToHttp().getResponse();
+    const response = context.switchToHttp().getResponse<Response>();
     //extract token
     const token = this.extractToken(request);
 

@@ -8,14 +8,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from 'src/database/entities/order.entity';
 import { Repository } from 'typeorm';
 import { ShopifyRequestOptions } from 'src/utils/types/ShopifyRequestOptions';
-import { ShopifyResponse } from 'src/utils/types/ShopifyResponse';
+
 import { TokenExpiredException } from '../token-expired.exception';
 import {
   SyncOrdersDocument,
   SyncOrdersQuery,
   PageInfo,
   LineItemConnection,
-  MailingAddress, LineItemEdge, OrderEdge,
+  MailingAddress,
 } from '../../generated/graphql';
 import { print } from 'graphql';
 

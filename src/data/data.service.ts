@@ -1,4 +1,4 @@
-import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
+
 import { Inject, Injectable, Logger, RequestTimeoutException, UnauthorizedException, UseFilters } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Customer } from 'src/database/entities/customer.entity';
@@ -17,8 +17,8 @@ import { RequestExceptionFilter } from 'src/filters/timeout.exception.filter';
 import { Repository, UpdateResult } from 'typeorm';
 import { CacheService } from './cache/cache.service';
 import { randomBytes } from 'crypto';
-import Redlock, { ExecutionResult, Lock } from 'redlock';
-import { JOB_TYPES, JobRegistry } from '../jobs/constants/jobs.constants';
+import Redlock, {  Lock } from 'redlock';
+
 @Injectable()
 export class DataService {
   private readonly logger = new Logger(DataService.name);
@@ -107,9 +107,9 @@ export class DataService {
   public getCurrentPlan = async (storeId: number): Promise<StorePlan> => {
     try {
       const cacheCredits = await this.cacheService.get<number>(`${storeId}-credits`);
-  console.log(cacheCredits);
-      const dbResult= await this.storePlanRepository.findOne({ where: { store_id: storeId } });
-      console.log(dbResult.credits)
+      console.log(cacheCredits);
+      const dbResult = await this.storePlanRepository.findOne({ where: { store_id: storeId } });
+      console.log(dbResult.credits);
       if (cacheCredits != undefined || !isNaN(cacheCredits)) {
         dbResult.credits = cacheCredits;
       }
@@ -499,15 +499,15 @@ export class DataService {
       }
     }
       result = await this.cacheService.get<Record<string, string>>('product-types');
-      if (result == undefined ||
-        result == null) {
-        this.cacheProductTypes();
-        const db = await this.productTypeRepository.findBy({ parentId: key });
-        const record: Record<string, string> = Object.fromEntries(
-          db.map(item => [item.id, item.name])
-        );
 
-        return record;
+      if (result == undefined || result == null) {
+          this.cacheProductTypes();
+          const db = await this.productTypeRepository.findBy({ parentId: key });
+          const record: Record<string, string> = Object.fromEntries(
+            db.map(item => [item.id, item.name])
+          );
+
+          return record;
       }
       return result;
 

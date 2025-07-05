@@ -9,8 +9,6 @@ import {
   OneToMany,
 } from 'typeorm';
 import { Store } from './store.entity';
-import { isArray } from 'class-validator';
-import { ConfigService } from '@nestjs/config';
 import { ProductVariant } from './productVariant.entity';
 
 @Entity()

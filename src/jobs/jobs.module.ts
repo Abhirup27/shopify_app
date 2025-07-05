@@ -57,7 +57,7 @@ import { CacheModule } from '../data/cache/cache.module';
       imports: [ConfigModule],
       inject: [ConfigService],
 
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         connection: {
           host: configService.get<string>('redis.host'),
           port: configService.get<number>('redis.port'),
@@ -76,7 +76,7 @@ import { CacheModule } from '../data/cache/cache.module';
     RedisModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory:  (configService: ConfigService) => ({
         type: 'single',
         //url: configService.get<string>('REDIS_URL'),
         url: `redis://${configService.get<string>('redis.host')}:${configService.get<number>('redis.port')}`,
@@ -88,7 +88,7 @@ import { CacheModule } from '../data/cache/cache.module';
     {
       inject: [ConfigService],
       provide: 'BullQueue_PAUSED_QUEUE',
-      useFactory: async configService =>
+      useFactory: configService =>
         new Queue('PAUSED_QUEUE', {
           connection: {
             url: `redis://${configService.get('redis.host')}:${configService.get('redis.port')}`,

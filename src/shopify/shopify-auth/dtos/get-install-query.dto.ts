@@ -1,5 +1,4 @@
-import { Type } from 'class-transformer';
-import { IsHash, IsNotEmpty, IsNumber, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsHash, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
 
 /**
  * Data Transfer Object when someone installs the app from the shopify app store or accesses it, these two params get passed

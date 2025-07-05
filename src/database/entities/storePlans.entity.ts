@@ -2,7 +2,8 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,ManyToOne,
+  JoinColumn,
+  ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -42,7 +43,7 @@ export class StorePlan {
   @JoinColumn({ name: 'user_id', referencedColumnName: 'user_id' })
   user?: User;
 
-  @Column({type: 'varchar', nullable: false})
+  @Column({ type: 'varchar', nullable: false })
   status: string;
 
   @Column({ type: 'varchar', unsigned: true, nullable: true })

@@ -1,8 +1,9 @@
-import { CanActivate, ExecutionContext, Inject, Injectable, SetMetadata } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, SetMetadata } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { DataService } from '../../data/data.service';
-
+//import {Request} from 'express';
+import { TRequest } from '../../types/express';
 export const Public = () => SetMetadata('isPublic', true);
 
 @Injectable()
@@ -19,8 +20,8 @@ export class StoreContextGuard implements CanActivate {
     if (isPublic) {
       return true;
     }
-    const request = context.switchToHttp().getRequest();
-    const { _parsedUrl, query } = request;
+    const request = context.switchToHttp().getRequest<TRequest<Record<string, any>, { storeId?: string }>>();
+    const { query } = request;
 
     //console.log(_parsedUrl.pathname);
     //console.log('Query:', query)
